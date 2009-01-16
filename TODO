@@ -1,7 +1,5 @@
 Allow a user to specify the auth host they want to connect to 
 
-Rename SoSo auth to 'alternative' auth 
-
 Close out auth HTTP connection when auth is done 
 
 Handle 401 Unauthorized if token expires 
@@ -15,8 +13,6 @@ Rename container method to get_container
 Rename containers -> list_containers 
 
 Rename containers_detail -> list_containers_info 
-
-Rename egg -> storage_object 
 
 Rename objects -> list_objects 
 

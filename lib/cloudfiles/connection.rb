@@ -35,7 +35,7 @@ module CloudFiles
       @authok = false
       @http = {}
       @reqlog = []
-      (@account.nil?)? auth() : auth_soso() ;
+      (@account.nil?)? auth() : auth_alternative() ;
     end
 
     # Returns true if the authentication was successful and returns false otherwise.
@@ -156,7 +156,7 @@ module CloudFiles
     # 
     # Returns true if the authentication was successful.  Throws an AuthenticationException if the request
     # fails.
-    def auth_soso
+    def auth_alternative
       hdrhash = { "X-Storage-User" => @authuser, "X-Storage-Pass" => @authkey }
       response = cfreq("GET","auth.clouddrive.com","/v1/#{@account}/auth",hdrhash)
       if (response.code == "204")

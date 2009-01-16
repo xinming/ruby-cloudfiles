@@ -151,6 +151,7 @@ module CloudFiles
         @authtoken = false
         raise AuthenticationException, "Authentication failed"
       end
+      @http["api.mosso.com"].finish
       true
     end
 
@@ -171,6 +172,7 @@ module CloudFiles
         @authtoken = false
         raise AuthenticationException, "Authentication failed"
       end
+      @http["auth.clouddrive.com"].finish
       true
     end
 

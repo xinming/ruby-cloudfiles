@@ -1,7 +1,5 @@
 Allow a user to specify the auth host they want to connect to 
 
-Close out auth HTTP connection when auth is done 
-
 Handle 401 Unauthorized if token expires 
 
 Rename size to bytes (even in detail requests) 

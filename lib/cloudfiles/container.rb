@@ -2,7 +2,7 @@ module CloudFiles
   class Container
 
     # Name of the container which corresponds to the instantiated container class
-    attr_reader :containername
+    attr_reader :name
 
     # Size of the container (in bytes)
     attr_reader :size
@@ -11,7 +11,7 @@ module CloudFiles
     attr_reader :count
 
     # True if container is public, false if container is private
-    attr_reader :cdn_enabled
+    attr_reader :cdn_enabled?
 
     # CDN container TTL (if container is public)
     attr_reader :cdn_ttl
@@ -21,11 +21,11 @@ module CloudFiles
 
     def initialize(cfclass,name) # :nodoc:
       @cfclass = cfclass
-      @containername = name
+      @name = name
       @storagehost = @cfclass.storagehost
-      @storagepath = @cfclass.storagepath+"/"+@containername
+      @storagepath = @cfclass.storagepath+"/"+@name
       @cdnmgmthost = @cfclass.cdnmgmthost
-      @cdnmgmtpath = @cfclass.cdnmgmtpath+"/"+@containername
+      @cdnmgmtpath = @cfclass.cdnmgmtpath+"/"+@name
       populate
     end
 
@@ -35,18 +35,18 @@ module CloudFiles
     def populate
       # Get the size and object count
       response = @cfclass.cfreq("HEAD",@storagehost,@storagepath+"/")
-      raise NoSuchContainerException, "Container #{@containername} does not exist" unless (response.code == "204")
+      raise NoSuchContainerException, "Container #{@name} does not exist" unless (response.code == "204")
       @size = response["x-container-bytes-used"]
       @count = response["x-container-object-count"]
 
       # Get the CDN-related details
       response = @cfclass.cfreq("HEAD",@cdnmgmthost,@cdnmgmtpath)
       if (response.code == "204")
-        @cdn_enabled = true
+        @cdn_enabled? = true
         @cdn_ttl = response["x-ttl"]
         @cdn_url = response["x-cdn-uri"]
       else
-        @cdn_enabled = false
+        @cdn_enabled? = false
         @cdn_ttl = false
         @cdn_url = false
       end
@@ -55,7 +55,7 @@ module CloudFiles
     # Returns an Object object that can be manipulated.  Refer to the Egg class for available
     # methods.  Throws NoSuchObjectException if the object does not exist.
     def object(objectname)
-      CloudFiles::StorageObject.new(@cfclass,@containername,objectname)
+      CloudFiles::StorageObject.new(@cfclass,@name,objectname)
     end
 
     # Gathers a list of all available objects in the current container.  If no arguments
@@ -109,7 +109,7 @@ module CloudFiles
 
     # Returns true if the container is public and CDN-enabled.  Returns false otherwise.
     def public?
-      return @cdn_enabled
+      return @cdn_enabled?
     end
 
     # Returns true if a container is empty and returns false otherwise.
@@ -140,7 +140,7 @@ module CloudFiles
       raise MisMatchedChecksumException, "Mismatched md5sum" if (response.code == "422")
       raise InvalidResponseException, "Invalid response code #{response.code}" unless (response.code == "201")
       populate
-      CloudFiles::StorageObject.new(@cfclass,@containername,objectname)
+      CloudFiles::StorageObject.new(@cfclass,@name,objectname)
     end
 
     # Removes an object from a container.  True is returned if the removal is successful.  Throws NoSuchObjectException
@@ -160,7 +160,7 @@ module CloudFiles
     def make_public(ttl = 86400)
       headers = { "X-CDN-Enabled" => "True", "X-TTL" => ttl.to_i }
       response = @cfclass.cfreq("PUT",@cdnmgmthost,@cdnmgmtpath,headers)
-      raise NoSuchContainerException, "Container #{@containername} does not exist" unless (response.code == "201" || response.code == "202")
+      raise NoSuchContainerException, "Container #{@name} does not exist" unless (response.code == "201" || response.code == "202")
       populate
       true
     end
@@ -170,7 +170,7 @@ module CloudFiles
     def make_private
       headers = { "X-CDN-Enabled" => "False" }
       response = @cfclass.cfreq("PUT",@cdnmgmthost,@cdnmgmtpath,headers)
-      raise NoSuchContainerException, "Container #{@containername} does not exist" unless (response.code == "201" || response.code == "202")
+      raise NoSuchContainerException, "Container #{@name} does not exist" unless (response.code == "201" || response.code == "202")
       populate
       true
     end

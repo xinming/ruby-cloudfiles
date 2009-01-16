@@ -29,7 +29,7 @@
 # As soon as the class is instantiated, the class will attempt to authenticate with the 
 # Cloud Files service. To test the result of the authentication, use the authok? boolean method.
 module CloudFiles
-  
+
   VERSION = '0.0.1'
   require 'net/http'
   require 'net/https'
@@ -38,12 +38,12 @@ module CloudFiles
   require 'digest/md5'
   require 'jcode' 
   $KCODE = 'u'
-  
+
   $:.unshift(File.dirname(__FILE__))
   require 'cloudfiles/connection'
   require 'cloudfiles/container'
   require 'cloudfiles/storage_object'
-  
+
 end
 
 

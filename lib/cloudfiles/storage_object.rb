@@ -18,7 +18,7 @@ module CloudFiles
     attr_reader :md5sum
 
     # Content type of the object data
-    attr_reader :contenttype
+    attr_reader :content_type
 
     def initialize(cfclass,containername,objectname) # :nodoc:
       @cfclass = cfclass
@@ -37,7 +37,7 @@ module CloudFiles
       @size = response["content-length"]
       @lastmodified = response["last-modified"]
       @md5sum = response["etag"]
-      @contenttype = response["content-type"]
+      @content_type = response["content-type"]
       resphash = {}
       response.to_hash.select { |k,v| k.match(/^x-object-meta/) }.each { |x| resphash[x[0]] = x[1][0].to_s }
       @metadata = resphash

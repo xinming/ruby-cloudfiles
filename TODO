@@ -2,21 +2,11 @@ Handle 401 Unauthorized if token expires
 
 Rename size to bytes (even in detail requests) 
 
-Rename container method to get_container 
-
-Rename containers -> list_containers 
-
-Rename containers_detail -> list_containers_info 
-
-Rename objects -> list_objects 
-
 Rename objects_detail -> list_objects_info objects/objects_detail 
 
 Rename size -> bytes in objects_detail 
 
-Rename type -> content_type in obj_type 
-
-last_modified added to objects_detail 
+last_modified added to objects_detail (last_modified not returned in object body?) ***
 
 flip order on create_object, etc 
 
@@ -25,3 +15,14 @@ make etag/md5sum optional
 Rename set_ttl -> update_cdn_container be consistent with egg accessor names (underscores) 
 
 do writing in egg class, not in container class
+
+**** Non-Ruby? ****
+
+Rename container method to get_container 
+
+Rename containers -> list_containers 
+
+Rename containers_detail -> list_containers_info 
+
+Rename objects -> list_objects 
+

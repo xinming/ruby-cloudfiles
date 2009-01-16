@@ -1,0 +1,39 @@
+Allow a user to specify the auth host they want to connect to 
+
+Rename SoSo auth to 'alternative' auth 
+
+Close out auth HTTP connection when auth is done 
+
+Handle 401 Unauthorized if token expires 
+
+Rename size to bytes (even in detail requests) 
+
+Check for slashes when making containers (they're not allowed) 
+
+Rename container method to get_container 
+
+Rename containers -> list_containers 
+
+Rename containers_detail -> list_containers_info 
+
+Rename egg -> storage_object 
+
+Rename objects -> list_objects 
+
+Rename objects_detail -> list_objects_info objects/objects_detail 
+
+check for integer w/limit + offset (make sure limit + offset are ints) 
+
+Rename size -> bytes in objects_detail 
+
+Rename type -> content_type in obj_type 
+
+last_modified added to objects_detail 
+
+flip order on create_object, etc 
+
+make etag/md5sum optional 
+
+Rename set_ttl -> update_cdn_container be consistent with egg accessor names (underscores) 
+
+do writing in egg class, not in container class

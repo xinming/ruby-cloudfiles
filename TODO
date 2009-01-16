@@ -12,8 +12,6 @@ Rename objects -> list_objects
 
 Rename objects_detail -> list_objects_info objects/objects_detail 
 
-check for integer w/limit + offset (make sure limit + offset are ints) 
-
 Rename size -> bytes in objects_detail 
 
 Rename type -> content_type in obj_type 

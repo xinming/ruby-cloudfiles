@@ -74,8 +74,8 @@ module CloudFiles
     # if the request fails.
     def objects(limit = nil, offset = nil, prefix = nil)
       paramarr = []
-      paramarr << ["limit=#{limit}"] if (!limit.nil?)
-      paramarr << ["offset=#{offset}"] if (!offset.nil?)
+      paramarr << ["limit=#{limit.to_i}"] if (!limit.nil?)
+      paramarr << ["offset=#{offset.to_i}"] if (!offset.nil?)
       paramarr << ["prefix=#{prefix}"] if (!prefix.nil?)
       paramstr = (paramarr.size > 0)? paramarr.join("&") : "" ;
       response = @cfclass.cfreq("GET",@storagehost,"#{@storagepath}?#{paramstr}")
@@ -91,8 +91,8 @@ module CloudFiles
     def objects_detail(limit = nil, offset = nil, prefix = nil)
       paramarr = []
       paramarr << ["format=xml"]
-      paramarr << ["limit=#{limit}"] if (!limit.nil?)
-      paramarr << ["offset=#{offset}"] if (!offset.nil?)
+      paramarr << ["limit=#{limit.to_i}"] if (!limit.nil?)
+      paramarr << ["offset=#{offset.to_i}"] if (!offset.nil?)
       paramarr << ["prefix=#{prefix}"] if (!prefix.nil?)
       paramstr = (paramarr.size > 0)? paramarr.join("&") : "" ;
       response = @cfclass.cfreq("GET",@storagehost,"#{@storagepath}?#{paramstr}")

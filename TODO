@@ -1,5 +1,3 @@
-Allow a user to specify the auth host they want to connect to 
-
 Handle 401 Unauthorized if token expires 
 
 Rename size to bytes (even in detail requests) 

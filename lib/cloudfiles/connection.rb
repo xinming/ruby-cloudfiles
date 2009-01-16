@@ -137,9 +137,9 @@ module CloudFiles
     # 
     # Returns true if the authentication was successful.  Throws an AuthenticationException if the request
     # fails.
-    def auth
+    def auth(args={:host => 'api.mosso.com'})
       hdrhash = { "X-Auth-User" => @authuser, "X-Auth-Key" => @authkey }
-      response = cfreq("GET","api.mosso.com","/auth",hdrhash)
+      response = cfreq("GET",args[:host],"/auth",hdrhash)
       if (response.code == "204")
         @cdnmgmthost = URI.parse(response["x-cdn-management-url"]).host
         @cdnmgmtpath = URI.parse(response["x-cdn-management-url"]).path
@@ -160,9 +160,9 @@ module CloudFiles
     # 
     # Returns true if the authentication was successful.  Throws an AuthenticationException if the request
     # fails.
-    def auth_alternative
+    def auth_alternative(args={:host => 'auth.clouddrive.com'})
       hdrhash = { "X-Storage-User" => @authuser, "X-Storage-Pass" => @authkey }
-      response = cfreq("GET","auth.clouddrive.com","/v1/#{@account}/auth",hdrhash)
+      response = cfreq("GET",args[:host],"/v1/#{@account}/auth",hdrhash)
       if (response.code == "204")
         @storagehost = URI.parse(response["x-storage-url"]).host
         @storagepath = URI.parse(response["x-storage-url"]).path

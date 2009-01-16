@@ -6,8 +6,6 @@ Handle 401 Unauthorized if token expires
 
 Rename size to bytes (even in detail requests) 
 
-Check for slashes when making containers (they're not allowed) 
-
 Rename container method to get_container 
 
 Rename containers -> list_containers 

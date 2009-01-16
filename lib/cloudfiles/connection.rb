@@ -102,7 +102,10 @@ module CloudFiles
 
     # Creates a new container and returns a container object.  Throws an InvalidResponseException if the request
     # fails.
+    # Slash (/) and question mark (?) are invalid characters, and will be stripped out.
     def container_create(containername)
+      containername.gsub!(/[\/\?]/,'')
+      raise SyntaxException, "Container name is limited to 63 characters" if containername.size > 63
       response = cfreq("PUT",@storagehost,"#{@storagepath}/#{containername}")
       raise InvalidResponseException, "Unable to create container #{containername}" unless (response.code == "201" || response.code == "202")
       CloudFiles::Container.new(self,containername)

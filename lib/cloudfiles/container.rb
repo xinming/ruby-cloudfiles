@@ -155,8 +155,10 @@ module CloudFiles
 
     # Makes a container publicly available via the Cloud Files CDN and returns true upon success.  Throws NoSuchContainerException
     # if the container doesn't exist or if the request fails.
-    def make_public
-      headers = { "X-CDN-Enabled" => "True" }
+    # 
+    # Takes an optional argument, which is the CDN cache TTL in seconds (default 86400 seconds or 1 day)
+    def make_public(ttl = 86400)
+      headers = { "X-CDN-Enabled" => "True", "X-TTL" => ttl.to_i }
       response = @cfclass.cfreq("PUT",@cdnmgmthost,@cdnmgmtpath,headers)
       raise NoSuchContainerException, "Container #{@containername} does not exist" unless (response.code == "201" || response.code == "202")
       populate
@@ -167,17 +169,6 @@ module CloudFiles
     # if the container doesn't exist or if the request fails.
     def make_private
       headers = { "X-CDN-Enabled" => "False" }
-      response = @cfclass.cfreq("PUT",@cdnmgmthost,@cdnmgmtpath,headers)
-      raise NoSuchContainerException, "Container #{@containername} does not exist" unless (response.code == "201" || response.code == "202")
-      populate
-      true
-    end
-
-    # Sets the CDN TTL for a public container and returns true upon success.  Throws NoSuchContainerException
-    # if the container isn't public.
-    def set_ttl(ttlvalue)
-      return false if (ttlvalue.to_i == 0)
-      headers = { "X-TTL" => ttlvalue }
       response = @cfclass.cfreq("PUT",@cdnmgmthost,@cdnmgmtpath,headers)
       raise NoSuchContainerException, "Container #{@containername} does not exist" unless (response.code == "201" || response.code == "202")
       populate

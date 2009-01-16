@@ -12,8 +12,6 @@ flip order on create_object, etc
 
 make etag/md5sum optional 
 
-Rename set_ttl -> update_cdn_container be consistent with egg accessor names (underscores) 
-
 do writing in egg class, not in container class
 
 **** Non-Ruby? ****

@@ -11,7 +11,7 @@ module CloudFiles
     attr_reader :count
 
     # True if container is public, false if container is private
-    attr_reader :cdn_enabled?
+    attr_reader :cdn_enabled
 
     # CDN container TTL (if container is public)
     attr_reader :cdn_ttl
@@ -42,11 +42,11 @@ module CloudFiles
       # Get the CDN-related details
       response = @cfclass.cfreq("HEAD",@cdnmgmthost,@cdnmgmtpath)
       if (response.code == "204")
-        @cdn_enabled? = true
+        @cdn_enabled = true
         @cdn_ttl = response["x-ttl"]
         @cdn_url = response["x-cdn-uri"]
       else
-        @cdn_enabled? = false
+        @cdn_enabled = false
         @cdn_ttl = false
         @cdn_url = false
       end
@@ -109,7 +109,7 @@ module CloudFiles
 
     # Returns true if the container is public and CDN-enabled.  Returns false otherwise.
     def public?
-      return @cdn_enabled?
+      return @cdn_enabled
     end
 
     # Returns true if a container is empty and returns false otherwise.

@@ -40,6 +40,7 @@ module CloudFiles
   $KCODE = 'u'
 
   $:.unshift(File.dirname(__FILE__))
+  require 'cloudfiles/authentication'
   require 'cloudfiles/connection'
   require 'cloudfiles/container'
   require 'cloudfiles/storage_object'

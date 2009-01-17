@@ -8,25 +8,27 @@ module CloudFiles
     attr_reader :authkey
 
     # Token returned after a successful authentication [read-only]
-    attr_reader :authtoken
+    attr_accessor :authtoken
 
     # Authentication username provided when the CloudFiles class was instantiated [read-only]
     attr_reader :authuser
 
     # Hostname of the CDN management server [read-only]
-    attr_reader :cdnmgmthost
+    attr_accessor :cdnmgmthost
 
     # Path for managing containers on the CDN management server [read-only]
-    attr_reader :cdnmgmtpath
+    attr_accessor :cdnmgmtpath
 
     # Array of requests that have been made so far
     attr_reader :reqlog
 
     # Hostname of the storage server [read-only]
-    attr_reader :storagehost
+    attr_accessor :storagehost
 
     # Path for managing containers/objects on the storage server [read-only]
-    attr_reader :storagepath
+    attr_accessor :storagepath
+    
+    attr_accessor :authok
 
     def initialize(authuser,authkey,account = nil) # :nodoc:
       @authuser = authuser
@@ -35,7 +37,8 @@ module CloudFiles
       @authok = false
       @http = {}
       @reqlog = []
-      (@account.nil?)? auth() : auth_alternative() ;
+      #(@account.nil?)? auth() : auth_alternative() ;
+      CloudFiles::Authentication.new(self)
     end
 
     # Returns true if the authentication was successful and returns false otherwise.
@@ -151,8 +154,12 @@ module CloudFiles
         @authtoken = false
         raise AuthenticationException, "Authentication failed"
       end
-      @http["api.mosso.com"].finish
+      #@http["api.mosso.com"].finish
       true
+    end
+    
+    def newauth
+      CloudFiles::Authentication.new(self)
     end
 
     # Peforms the alternative SoSo authentication.  Performs the same steps as auth()

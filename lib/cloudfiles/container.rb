@@ -55,7 +55,8 @@ module CloudFiles
     # Returns an Object object that can be manipulated.  Refer to the Egg class for available
     # methods.  Throws NoSuchObjectException if the object does not exist.
     def object(objectname)
-      CloudFiles::StorageObject.new(@cfclass,@name,objectname)
+      CloudFiles::StorageObject.new(@cfclass,self,objectname)
+      populate
     end
 
     # Gathers a list of all available objects in the current container.  If no arguments
@@ -132,7 +133,7 @@ module CloudFiles
     # if the content-length header does not match (should not occur under normal circumstances) or if the request failed.
     # Throws MisMatchedChecksumException if the uploaded data does not match the MD5 hash that is calculated at upload time.
     def create_object(objectname)
-      CloudFiles::StorageObject.new(@cfclass,@name,objectname)
+      CloudFiles::StorageObject.new(@cfclass,self,objectname)
     end
 
     # Removes an object from a container.  True is returned if the removal is successful.  Throws NoSuchObjectException

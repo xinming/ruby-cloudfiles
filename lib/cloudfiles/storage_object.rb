@@ -7,6 +7,8 @@ module CloudFiles
 
     # Size of the object (in bytes)
     attr_reader :size
+    
+    attr_reader :container
 
     # Date of the object's last modification
     attr_reader :lastmodified
@@ -20,9 +22,10 @@ module CloudFiles
     # Content type of the object data
     attr_reader :content_type
 
-    def initialize(cfclass,containername,objectname) # :nodoc:
+    def initialize(cfclass,container,objectname) # :nodoc:
       @cfclass = cfclass
-      @containername = containername
+      @container = container
+      @containername = container.name
       @objectname = objectname
       @storagehost = @cfclass.storagehost
       @storagepath = @cfclass.storagepath+"/#{@containername}/#{@objectname}"
@@ -84,7 +87,9 @@ module CloudFiles
       raise InvalidResponseException, "Invalid content-length header sent" if (response.code == "412")
       raise MisMatchedChecksumException, "Mismatched md5sum" if (response.code == "422")
       raise InvalidResponseException, "Invalid response code #{response.code}" unless (response.code == "201")
-      return CloudFiles::StorageObject.new(@cfclass,@containername,objectname)
+      CloudFiles::StorageObject.new(@cfclass,self.container,objectname)
+      self.container.populate
+      true
     end
 
   end

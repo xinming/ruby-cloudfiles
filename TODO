@@ -8,8 +8,6 @@ Rename size -> bytes in objects_detail
 
 last_modified added to objects_detail (last_modified not returned in object body?) ***
 
-flip order on create_object, etc 
-
 make etag/md5sum optional 
 
 **** Non-Ruby? ****

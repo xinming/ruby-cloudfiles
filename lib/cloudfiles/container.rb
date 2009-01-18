@@ -131,13 +131,13 @@ module CloudFiles
     # A successful retrieval will return an Egg object that can be manipulated further.  Throws InvalidResponseException
     # if the content-length header does not match (should not occur under normal circumstances) or if the request failed.
     # Throws MisMatchedChecksumException if the uploaded data does not match the MD5 hash that is calculated at upload time.
-    def object_create(objectname)
+    def create_object(objectname)
       CloudFiles::StorageObject.new(@cfclass,@name,objectname)
     end
 
     # Removes an object from a container.  True is returned if the removal is successful.  Throws NoSuchObjectException
     # if the object doesn't exist.  Throws InvalidResponseException if the request fails.
-    def object_delete(objectname)
+    def delete_object(objectname)
       response = @cfclass.cfreq("DELETE",@storagehost,"#{@storagepath}/#{objectname}")
       raise NoSuchObjectException, "Object #{objectname} does not exist" if (response.code == "404")
       raise InvalidResponseException, "Invalid response code #{response.code}" unless (response.code == "204")

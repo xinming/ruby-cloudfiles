@@ -145,6 +145,37 @@ module CloudFiles
     def cfreq(method,server,path,headers = nil,data = nil,&block) # :nodoc:
       start = Time.now
       hdrhash = headerprep(headers)
+      path = URI.escape(path)
+      start_http(server,path,headers)
+      success = false
+      count = 0
+      until success == true
+        begin
+          response = case method
+          when "GET"    then @http[server].get(path,hdrhash,&block)
+          when "PUT"    then @http[server].put(path,data,hdrhash)
+          when "HEAD"   then @http[server].head(path,hdrhash)
+          when "POST"   then @http[server].post(path,nil,hdrhash)
+          when "DELETE" then @http[server].delete(path,hdrhash)
+          end
+          success = true
+        rescue EOFError
+          # Server closed the connection, retry
+          raise ConnectionException, "Unable to reconnect to #{server} after #{count} attempts" if count > 5
+          count = count + 1
+          success = false
+          @http[server].finish
+          start_http(server,path,headers)
+        end
+      end
+      responsetime = "%0.3f" % (Time.now - start)
+      @reqlog << "#{method} ".ljust(5)+"=> #{server}#{path} => #{response.code} => #{responsetime}s"
+      response
+    end
+    
+    private
+    
+    def start_http(server,path,headers)
       if (@http[server].nil?)
         begin
           @http[server] = Net::HTTP.new(server,443)
@@ -155,17 +186,6 @@ module CloudFiles
           raise ConnectionException, "Unable to connect to #{server}"
         end
       end
-      path = URI.escape(path)
-      response = case method
-      when "GET"    then @http[server].get(path,hdrhash,&block)
-      when "PUT"    then @http[server].put(path,data,hdrhash)
-      when "HEAD"   then @http[server].head(path,hdrhash)
-      when "POST"   then @http[server].post(path,nil,hdrhash)
-      when "DELETE" then @http[server].delete(path,hdrhash)
-      end
-      responsetime = "%0.3f" % (Time.now - start)
-      @reqlog << "#{method} ".ljust(5)+"=> #{server}#{path} => #{response.code} => #{responsetime}s"
-      response
     end
 
   end

@@ -105,7 +105,7 @@ module CloudFiles
     # Creates a new container and returns a container object.  Throws an InvalidResponseException if the request
     # fails.
     # Slash (/) and question mark (?) are invalid characters, and will be stripped out.
-    def container_create(containername)
+    def create_container(containername)
       containername.gsub!(/[\/\?]/,'')
       raise SyntaxException, "Container name is limited to 63 characters" if containername.size > 63
       response = cfreq("PUT",@storagehost,"#{@storagepath}/#{containername}")
@@ -115,7 +115,7 @@ module CloudFiles
 
     # Deletes a container from the account.  Throws a NonEmptyContainerException if the container still contains
     # objects.  Throws a NoSuchContainerException if the container doesn't exist.
-    def container_delete(containername)
+    def delete_container(containername)
       response = cfreq("DELETE",@storagehost,"#{@storagepath}/#{containername}")
       raise NonEmptyContainerException, "Container #{containername} is not empty" if (response.code == "409")
       raise NoSuchContainerException, "Container #{containername} does not exist" unless (response.code == "204")

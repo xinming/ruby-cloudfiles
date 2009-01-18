@@ -37,7 +37,6 @@ module CloudFiles
       @authok = false
       @http = {}
       @reqlog = []
-      #(@account.nil?)? auth() : auth_alternative() ;
       CloudFiles::Authentication.new(self)
     end
 
@@ -131,56 +130,6 @@ module CloudFiles
       return [] if (response.code == "204")
       raise InvalidResponseException, "Invalid response code #{response.code}" unless (response.code == "200")
       response.body.to_a.map { |x| x.chomp }
-    end
-
-    # Performs standard Cloud Files authentication.  This method is automatically called
-    # by the initialize method, so it should not need to be called manually.  Upon a 
-    # successful login, the authentication token and server hosts/paths will be stored.
-    # The authentication result can be checked with the authok? method.
-    # 
-    # Returns true if the authentication was successful.  Throws an AuthenticationException if the request
-    # fails.
-    def auth(args={:host => 'api.mosso.com'})
-      hdrhash = { "X-Auth-User" => @authuser, "X-Auth-Key" => @authkey }
-      response = cfreq("GET",args[:host],"/auth",hdrhash)
-      if (response.code == "204")
-        @cdnmgmthost = URI.parse(response["x-cdn-management-url"]).host
-        @cdnmgmtpath = URI.parse(response["x-cdn-management-url"]).path
-        @storagehost = URI.parse(response["x-storage-url"]).host
-        @storagepath = URI.parse(response["x-storage-url"]).path
-        @authtoken = response["x-auth-token"]
-        @authok = true
-      else
-        @authtoken = false
-        raise AuthenticationException, "Authentication failed"
-      end
-      #@http["api.mosso.com"].finish
-      true
-    end
-    
-    def newauth
-      CloudFiles::Authentication.new(self)
-    end
-
-    # Peforms the alternative SoSo authentication.  Performs the same steps as auth()
-    # upon completion.
-    # 
-    # Returns true if the authentication was successful.  Throws an AuthenticationException if the request
-    # fails.
-    def auth_alternative(args={:host => 'auth.clouddrive.com'})
-      hdrhash = { "X-Storage-User" => @authuser, "X-Storage-Pass" => @authkey }
-      response = cfreq("GET",args[:host],"/v1/#{@account}/auth",hdrhash)
-      if (response.code == "204")
-        @storagehost = URI.parse(response["x-storage-url"]).host
-        @storagepath = URI.parse(response["x-storage-url"]).path
-        @authtoken = response["x-storage-token"]
-        @authok = true
-      else
-        @authtoken = false
-        raise AuthenticationException, "Authentication failed"
-      end
-      @http["auth.clouddrive.com"].finish
-      true
     end
 
     def headerprep(headers) # :nodoc:

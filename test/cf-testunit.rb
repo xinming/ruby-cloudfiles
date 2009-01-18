@@ -1,8 +1,8 @@
 #!/usr/bin/env ruby
 require '../lib/cloudfiles'
 
-username = "XXXXXXXX"
-apikey = "XXXXXXXXXX"
+username = "XXXXX"
+apikey = "XXXXX"
 
 def assert_test(testtext,bool)
   booltext = (bool)? " PASS" : "*FAIL*" ;
@@ -15,12 +15,12 @@ puts assert_test("Connecting to CloudFiles",cf.class == CloudFiles::Connection)
 
 # Test container creation
 testingcontainer = "CloudFiles Ruby API Testing Container"
-cntnr = cf.container_create(testingcontainer)
+cntnr = cf.create_container(testingcontainer)
 puts assert_test("Creating test container",cntnr.class == CloudFiles::Container)
 
 # Checking container size
-size = cntnr.size.to_i
-puts assert_test("  Checking container size",size == 0)
+bytes = cntnr.bytes.to_i
+puts assert_test("  Checking container size",bytes == 0)
 
 # Checking container count
 count = cntnr.count.to_i
@@ -30,7 +30,8 @@ puts assert_test("  Checking container count",count == 0)
 cloudfilesfilesize = File.read("../lib/cloudfiles.rb").length
 cloudfilesmd5 = Digest::MD5.hexdigest(File.read("../lib/cloudfiles.rb"))
 headers = { "ETag" => cloudfilesmd5, "Content-Type" => "text/ruby", "X-Object-Meta-Testmeta" => "value" }
-myobj = cntnr.object_create("cloudfiles-standard.rb",File.read("../lib/cloudfiles.rb"),headers)
+myobj = cntnr.create_object("cloudfiles-standard.rb")
+myobj.write(File.read("../lib/cloudfiles.rb"), headers)
 puts assert_test("    Uploading object (read into memory)",myobj.class == CloudFiles::StorageObject)
 
 # Check if object exists
@@ -38,8 +39,8 @@ bool = cntnr.object_exists?("cloudfiles-standard.rb")
 puts assert_test("    Checking for object existence",bool)
 
 # Checking container size
-size = cntnr.size.to_i
-puts assert_test("  Checking container size",size == cloudfilesfilesize)
+bytes = cntnr.bytes.to_i
+puts assert_test("  Checking container size",bytes == cloudfilesfilesize)
 
 # Checking container count
 count = cntnr.count.to_i
@@ -48,7 +49,8 @@ puts assert_test("  Checking container count",count == 1)
 # Add a file to the container - stream method
 headers = { "ETag" => cloudfilesmd5, "Content-Type" => "text/ruby", "X-Object-Meta-Testmeta" => "value" }
 f = IO.read("../lib/cloudfiles.rb")
-myobj = cntnr.object_create("cloudfiles-stream.rb",File.read("../lib/cloudfiles.rb"),headers)
+myobj = cntnr.create_object("cloudfiles-stream.rb")
+myobj.write(File.read("../lib/cloudfiles.rb"), headers)
 puts assert_test("    Uploading object (read from stream)",myobj.class == CloudFiles::StorageObject)
 
 # Check if object exists
@@ -56,20 +58,20 @@ bool = cntnr.object_exists?("cloudfiles-stream.rb")
 puts assert_test("    Checking for object existence",bool)
 
 # Checking container size
-size = cntnr.size.to_i
-puts assert_test("  Checking container size",size == (cloudfilesfilesize*2))
+bytes = cntnr.bytes.to_i
+puts assert_test("  Checking container size",bytes == (cloudfilesfilesize*2))
 
 # Checking container count
 count = cntnr.count.to_i
 puts assert_test("  Checking container count",count == 2)
 
 # Check file size
-size = myobj.size.to_i
-puts assert_test("    Checking object size",size == cloudfilesfilesize)
+bytes = myobj.bytes.to_i
+puts assert_test("    Checking object size",bytes == cloudfilesfilesize)
 
 # Check content type
-contenttype = myobj.contenttype
-puts assert_test("    Checking object content type",contenttype == "text/ruby")
+content_type = myobj.content_type
+puts assert_test("    Checking object content type",content_type == "text/ruby")
 
 # Check metadata
 metadata = myobj.metadata
@@ -111,7 +113,7 @@ cdnurl = cntnr.cdn_url
 puts assert_test("  Getting CDN URL",cdnurl)
 
 # Setting CDN URL
-bool = cntnr.set_ttl(7200)
+bool = cntnr.make_public(7200)
 puts assert_test("  Setting CDN TTL",bool)
 
 # Make container private
@@ -123,11 +125,11 @@ bool = cntnr.empty?
 puts assert_test("  Checking if container empty",bool == false)
 
 # Remove standard object
-bool = cntnr.object_delete("cloudfiles-standard.rb")
+bool = cntnr.delete_object("cloudfiles-standard.rb")
 puts assert_test("    Deleting first object",bool)
 
 # Remove stream object
-bool = cntnr.object_delete("cloudfiles-stream.rb")
+bool = cntnr.delete_object("cloudfiles-stream.rb")
 puts assert_test("    Deleting second object",bool)
 
 # Check if container is empty
@@ -135,7 +137,7 @@ bool = cntnr.empty?
 puts assert_test("  Checking if container empty",bool)
 
 # Remove testing container
-bool = cf.container_delete(testingcontainer)
+bool = cf.delete_container(testingcontainer)
 puts assert_test("Removing container",bool)
 
 # Check to see if container exists

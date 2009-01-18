@@ -1,7 +1,5 @@
 Handle 401 Unauthorized if token expires 
 
-Rename size to bytes (even in detail requests) 
-
 Rename objects_detail -> list_objects_info objects/objects_detail 
 
 last_modified added to objects_detail (last_modified not returned in object body?) ***

@@ -6,7 +6,7 @@ module CloudFiles
     attr_reader :objectname
 
     # Size of the object (in bytes)
-    attr_reader :size
+    attr_reader :bytes
     
     attr_reader :container
 
@@ -41,7 +41,7 @@ module CloudFiles
     def populate
       response = @cfclass.cfreq("HEAD",@storagehost,@storagepath)
       raise NoSuchObjectException, "Object #{objectname} does not exist" if (response.code != "204")
-      @size = response["content-length"]
+      @bytes = response["content-length"]
       @lastmodified = response["last-modified"]
       @md5sum = response["etag"]
       @content_type = response["content-type"]

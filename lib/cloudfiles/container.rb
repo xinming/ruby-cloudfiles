@@ -5,7 +5,7 @@ module CloudFiles
     attr_reader :name
 
     # Size of the container (in bytes)
-    attr_reader :size
+    attr_reader :bytes
 
     # Number of objects in the container
     attr_reader :count
@@ -36,7 +36,7 @@ module CloudFiles
       # Get the size and object count
       response = @cfclass.cfreq("HEAD",@storagehost,@storagepath+"/")
       raise NoSuchContainerException, "Container #{@name} does not exist" unless (response.code == "204")
-      @size = response["x-container-bytes-used"]
+      @bytes = response["x-container-bytes-used"]
       @count = response["x-container-object-count"]
 
       # Get the CDN-related details
@@ -102,7 +102,7 @@ module CloudFiles
       doc = REXML::Document.new(response.body)
       detailhash = {}
       doc.elements.each("container/object") { |o|
-        detailhash[o.elements["name"].text] = { :size => o.elements["size"].text, :md5sum => o.elements["hash"].text, :content_type => o.elements["type"].text }
+        detailhash[o.elements["name"].text] = { :bytes => o.elements["size"].text, :md5sum => o.elements["hash"].text, :content_type => o.elements["type"].text }
       }
       doc = nil
       return detailhash

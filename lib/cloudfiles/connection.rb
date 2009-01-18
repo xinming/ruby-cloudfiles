@@ -53,7 +53,7 @@ module CloudFiles
 
     # Returns the cumulative size of all objects in all containers under the account.  Throws an
     # InvalidResponseException if the request fails.
-    def size
+    def bytes
       response = cfreq("HEAD",@storagehost,@storagepath)
       raise InvalidResponseException, "Unable to obtain account size" unless (response.code == "204")
       response["x-account-bytes-used"]
@@ -90,7 +90,7 @@ module CloudFiles
       doc = REXML::Document.new(response.body)
       detailhash = {}
       doc.elements.each("account/container/") { |c|
-        detailhash[c.elements["name"].text] = { :size => c.elements["size"].text, :count => c.elements["count"].text  }
+        detailhash[c.elements["name"].text] = { :bytes => c.elements["size"].text, :count => c.elements["count"].text  }
       }
       doc = nil
       return detailhash

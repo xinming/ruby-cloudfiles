@@ -87,7 +87,7 @@ module CloudFiles
       raise InvalidResponseException, "Invalid content-length header sent" if (response.code == "412")
       raise MisMatchedChecksumException, "Mismatched md5sum" if (response.code == "422")
       raise InvalidResponseException, "Invalid response code #{response.code}" unless (response.code == "201")
-      CloudFiles::StorageObject.new(@cfclass,self.container,objectname)
+      self.populate
       self.container.populate
       true
     end

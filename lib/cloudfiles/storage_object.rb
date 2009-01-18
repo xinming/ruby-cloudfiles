@@ -26,7 +26,11 @@ module CloudFiles
       @objectname = objectname
       @storagehost = @cfclass.storagehost
       @storagepath = @cfclass.storagepath+"/#{@containername}/#{@objectname}"
-      populate
+      begin
+        populate
+      rescue NoSuchObjectException
+        # The object doesn't exist yet
+      end
     end
 
     # Populates data about the object for fast retrieval.  This method is automatically called when the 
@@ -70,6 +74,17 @@ module CloudFiles
       raise InvalidResponseException, "Invalid response code #{response.code}" unless (response.code == "202")
       populate
       true
+    end
+    
+    def write(data,headers=nil)
+      raise SyntaxException, "No data was provided for object '#{self.objectname}'" if (data.nil?)
+      headers = { "Content-Type" => "application/octet-stream" } if (headers.nil?)
+      headers["ETag"] = Digest::MD5.hexdigest(data).to_s
+      response = @cfclass.cfreq("PUT",@storagehost,"#{@storagepath}",headers,data)
+      raise InvalidResponseException, "Invalid content-length header sent" if (response.code == "412")
+      raise MisMatchedChecksumException, "Mismatched md5sum" if (response.code == "422")
+      raise InvalidResponseException, "Invalid response code #{response.code}" unless (response.code == "201")
+      return CloudFiles::StorageObject.new(@cfclass,@containername,objectname)
     end
 
   end

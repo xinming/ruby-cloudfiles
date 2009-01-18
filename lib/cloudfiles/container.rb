@@ -131,15 +131,7 @@ module CloudFiles
     # A successful retrieval will return an Egg object that can be manipulated further.  Throws InvalidResponseException
     # if the content-length header does not match (should not occur under normal circumstances) or if the request failed.
     # Throws MisMatchedChecksumException if the uploaded data does not match the MD5 hash that is calculated at upload time.
-    def object_create(objectname,data,headers = nil)
-      raise SyntaxException, "No data was provided for object '#{objectname}'" if (data.nil?)
-      headers = { "Content-Type" => "application/octet-stream" } if (headers.nil?)
-      headers["ETag"] = Digest::MD5.hexdigest(data).to_s
-      response = @cfclass.cfreq("PUT",@storagehost,"#{@storagepath}/#{objectname}",headers,data)
-      raise InvalidResponseException, "Invalid content-length header sent" if (response.code == "412")
-      raise MisMatchedChecksumException, "Mismatched md5sum" if (response.code == "422")
-      raise InvalidResponseException, "Invalid response code #{response.code}" unless (response.code == "201")
-      populate
+    def object_create(objectname)
       CloudFiles::StorageObject.new(@cfclass,@name,objectname)
     end
 

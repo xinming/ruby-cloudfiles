@@ -12,8 +12,6 @@ flip order on create_object, etc
 
 make etag/md5sum optional 
 
-do writing in egg class, not in container class
-
 **** Non-Ruby? ****
 
 Rename container method to get_container 

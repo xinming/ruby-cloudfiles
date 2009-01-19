@@ -7,27 +7,28 @@ module CloudFiles
     # Authentication key provided when the CloudFiles class was instantiated [read-only]
     attr_reader :authkey
 
-    # Token returned after a successful authentication [read-only]
+    # Token returned after a successful authentication [read-write]
     attr_accessor :authtoken
 
     # Authentication username provided when the CloudFiles class was instantiated [read-only]
     attr_reader :authuser
 
-    # Hostname of the CDN management server [read-only]
+    # Hostname of the CDN management server [read-write]
     attr_accessor :cdnmgmthost
 
-    # Path for managing containers on the CDN management server [read-only]
+    # Path for managing containers on the CDN management server [read-write]
     attr_accessor :cdnmgmtpath
 
     # Array of requests that have been made so far
     attr_reader :reqlog
 
-    # Hostname of the storage server [read-only]
+    # Hostname of the storage server [read-write]
     attr_accessor :storagehost
 
     # Path for managing containers/objects on the storage server [read-only]
     attr_accessor :storagepath
     
+    # Instance variable that is set when authorization succeeds
     attr_accessor :authok
 
     def initialize(authuser,authkey,account = nil) # :nodoc:
@@ -51,7 +52,7 @@ module CloudFiles
       CloudFiles::Container.new(self,name)
     end
 
-    # Returns the cumulative size of all objects in all containers under the account.  Throws an
+    # Returns the cumulative size in bytes of all objects in all containers under the account.  Throws an
     # InvalidResponseException if the request fails.
     def bytes
       response = cfreq("HEAD",@storagehost,@storagepath)
@@ -59,7 +60,7 @@ module CloudFiles
       response["x-account-bytes-used"]
     end
 
-    # Returns the amount of containers present under the account as an integer. Throws an 
+    # Returns the number of containers present under the account as an integer. Throws an 
     # InvalidResponseException if the request fails.
     def count
       response = cfreq("HEAD",@storagehost,@storagepath)
@@ -81,8 +82,8 @@ module CloudFiles
     # held within them.  If no containers exist, an empty hash is returned.  Throws an InvalidResponseException
     # if the request fails.
     # 
-    #   cf.containers_detail              #=> { "container1" => { :size => "36543", :count => "146" }, 
-    #                                           "container2" => { :size => "105943", :count => "25" } }
+    #   cf.containers_detail              #=> { "container1" => { :bytes => "36543", :count => "146" }, 
+    #                                           "container2" => { :bytes => "105943", :count => "25" } }
     def containers_detail
       response = cfreq("GET",@storagehost,"#{@storagepath}?format=xml")
       return {} if (response.code == "204")
@@ -96,15 +97,15 @@ module CloudFiles
       return detailhash
     end
 
-    # Returns true if the container exists and returns false otherwise.
+    # Returns true if the requested container exists and returns false otherwise.
     def container_exists?(containername)
       response = cfreq("HEAD",@storagehost,"#{@storagepath}/#{containername}")
       return (response.code == "204")? true : false ;
     end
 
-    # Creates a new container and returns a container object.  Throws an InvalidResponseException if the request
+    # Creates a new container and returns the CloudFiles::Container object.  Throws an InvalidResponseException if the request
     # fails.
-    # Slash (/) and question mark (?) are invalid characters, and will be stripped out.
+    # Slash (/) and question mark (?) are invalid characters, and will be stripped out.  The container name is limited to 63 characters or less.
     def create_container(containername)
       containername.gsub!(/[\/\?]/,'')
       raise SyntaxException, "Container name is limited to 63 characters" if containername.size > 63
@@ -175,7 +176,7 @@ module CloudFiles
     
     private
     
-    def start_http(server,path,headers)
+    def start_http(server,path,headers) # :nodoc:
       if (@http[server].nil?)
         begin
           @http[server] = Net::HTTP.new(server,443)

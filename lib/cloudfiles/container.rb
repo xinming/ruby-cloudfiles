@@ -55,8 +55,9 @@ module CloudFiles
     # Returns an Object object that can be manipulated.  Refer to the Egg class for available
     # methods.  Throws NoSuchObjectException if the object does not exist.
     def object(objectname)
-      CloudFiles::StorageObject.new(@cfclass,self,objectname)
+      o = CloudFiles::StorageObject.new(@cfclass,self,objectname)
       populate
+      return o
     end
 
     # Gathers a list of all available objects in the current container.  If no arguments
@@ -166,6 +167,10 @@ module CloudFiles
       raise NoSuchContainerException, "Container #{@name} does not exist" unless (response.code == "201" || response.code == "202")
       populate
       true
+    end
+    
+    def to_s # :nodoc:
+      @name
     end
 
   end

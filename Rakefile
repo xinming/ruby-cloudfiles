@@ -9,7 +9,7 @@ echoe = Echoe.new('cloudfiles') do |p|
   p.version = CloudFiles::VERSION
   p.summary = "A Ruby API into Mosso Cloud Files"
   p.description = 'A Ruby version of the Mosso Cloud Files API.'
-  p.url = "http://github.com/minter/cloudfiles"
+  p.url = "http://www.mosso.com/cloudfiles.jsp"
 end
 
 desc 'Generate the .gemspec file in the root directory'

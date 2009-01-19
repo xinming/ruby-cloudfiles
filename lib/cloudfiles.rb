@@ -37,6 +37,9 @@ module CloudFiles
   require 'uri'
   require 'digest/md5'
   require 'jcode' 
+  require 'erb'
+  include ERB::Util
+  
   $KCODE = 'u'
 
   $:.unshift(File.dirname(__FILE__))

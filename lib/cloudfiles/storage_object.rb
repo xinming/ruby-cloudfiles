@@ -1,7 +1,7 @@
 module CloudFiles
 
   class StorageObject
-
+    
     # Name of the object corresponding to the instantiated object
     attr_reader :name
 
@@ -94,6 +94,11 @@ module CloudFiles
       self.populate
       self.container.populate
       true
+    end
+    
+    # If the parent container is public (CDN-enabled), returns the CDN URL to this object.  Otherwise, return nil
+    def public_url
+      self.container.public? ? self.container.cdn_url + "/#{ERB::Util.url_encode(self.name)}" : nil
     end
     
     def to_s # :nodoc:

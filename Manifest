@@ -1,9 +1,10 @@
+cloudfiles.gemspec
 lib/cloudfiles/authentication.rb
 lib/cloudfiles/connection.rb
 lib/cloudfiles/container.rb
 lib/cloudfiles/storage_object.rb
 lib/cloudfiles.rb
+Manifest
 Rakefile
 test/cf-testunit.rb
 TODO
-Manifest

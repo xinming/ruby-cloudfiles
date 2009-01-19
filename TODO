@@ -6,6 +6,8 @@ last_modified added to objects_detail (last_modified not returned in object body
 
 make etag/md5sum optional 
 
+Redo unit tests to make them more standard, use Mocha for mocking.
+
 **** Non-Ruby? ****
 
 Rename container method to get_container 

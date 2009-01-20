@@ -23,13 +23,12 @@ module CloudFiles
     # Content type of the object data
     attr_reader :content_type
 
-    def initialize(cfclass,container,objectname) # :nodoc:
-      @cfclass = cfclass
+    def initialize(container,objectname) # :nodoc:
       @container = container
       @containername = container.name
       @name = objectname
-      @storagehost = @cfclass.storagehost
-      @storagepath = @cfclass.storagepath+"/#{@containername}/#{@name}"
+      @storagehost = self.container.connection.storagehost
+      @storagepath = self.container.connection.storagepath+"/#{@containername}/#{@name}"
       begin
         populate
       rescue NoSuchObjectException
@@ -40,7 +39,7 @@ module CloudFiles
     # Caches data about the CloudFiles::StorageObject for fast retrieval.  This method is automatically called when the 
     # class is initialized, but it can be called again if the data needs to be updated.
     def populate
-      response = @cfclass.cfreq("HEAD",@storagehost,@storagepath)
+      response = self.container.connection.cfreq("HEAD",@storagehost,@storagepath)
       raise NoSuchObjectException, "Object #{@name} does not exist" if (response.code != "204")
       @bytes = response["content-length"]
       @lastmodified = response["last-modified"]
@@ -54,7 +53,7 @@ module CloudFiles
     # Retrieves the data from an object and stores the data in memory.  The data is returned as a string.
     # Throws a NoSuchObjectException if the object doesn't exist.
     def data(headers = nil)
-      response = @cfclass.cfreq("GET",@storagehost,@storagepath)
+      response = self.container.connection.cfreq("GET",@storagehost,@storagepath)
       raise NoSuchObjectException, "Object #{@name} does not exist" unless (response.code == "200")
       response.body.chomp
     end
@@ -62,7 +61,7 @@ module CloudFiles
     # Retrieves the data from an object and returns a stream that must be passed to a block.  Throws a 
     # NoSuchObjectException if the object doesn't exist.
     def data_stream(headers = nil,&block)
-      response = @cfclass.cfreq("GET",@storagehost,@storagepath,nil,nil,&block)
+      response = self.container.connection.cfreq("GET",@storagehost,@storagepath,nil,nil,&block)
       raise NoSuchObjectException, "Object #{@name} does not exist" unless (response.code == "200")
       response
     end
@@ -73,7 +72,7 @@ module CloudFiles
     # Throws NoSuchObjectException if the object doesn't exist.  Throws InvalidResponseException if the request
     # fails.
     def set_metadata(metadatahash)
-      response = @cfclass.cfreq("POST",@storagehost,@storagepath,metadatahash)
+      response = self.container.connection.cfreq("POST",@storagehost,@storagepath,metadatahash)
       raise NoSuchObjectException, "Object #{@name} does not exist" if (response.code == "404")
       raise InvalidResponseException, "Invalid response code #{response.code}" unless (response.code == "202")
       populate
@@ -91,7 +90,7 @@ module CloudFiles
     def write(data,headers=nil)
       raise SyntaxException, "No data was provided for object '#{@name}'" if (data.nil?)
       headers = { "Content-Type" => "application/octet-stream" } if (headers.nil?)
-      response = @cfclass.cfreq("PUT",@storagehost,"#{@storagepath}",headers,data)
+      response = self.container.connection.cfreq("PUT",@storagehost,"#{@storagepath}",headers,data)
       raise InvalidResponseException, "Invalid content-length header sent" if (response.code == "412")
       raise MisMatchedChecksumException, "Mismatched md5sum" if (response.code == "422")
       raise InvalidResponseException, "Invalid response code #{response.code}" unless (response.code == "201")

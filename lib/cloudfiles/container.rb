@@ -18,14 +18,17 @@ module CloudFiles
 
     # CDN container URL (if container if public)
     attr_reader :cdn_url
+    
+    # The parent CloudFiles::Connection object for this container
+    attr_reader :connection
 
-    def initialize(cfclass,name) # :nodoc:
-      @cfclass = cfclass
+    def initialize(connection,name) # :nodoc:
+      @connection = connection
       @name = name
-      @storagehost = @cfclass.storagehost
-      @storagepath = @cfclass.storagepath+"/"+@name
-      @cdnmgmthost = @cfclass.cdnmgmthost
-      @cdnmgmtpath = @cfclass.cdnmgmtpath+"/"+@name
+      @storagehost = self.connection.storagehost
+      @storagepath = self.connection.storagepath+"/"+@name
+      @cdnmgmthost = self.connection.cdnmgmthost
+      @cdnmgmtpath = self.connection.cdnmgmtpath+"/"+@name
       populate
     end
 
@@ -34,13 +37,13 @@ module CloudFiles
     # size, count, cdn_enabled, cdn_ttl, and cdn_url, this method can be called again.
     def populate
       # Get the size and object count
-      response = @cfclass.cfreq("HEAD",@storagehost,@storagepath+"/")
+      response = self.connection.cfreq("HEAD",@storagehost,@storagepath+"/")
       raise NoSuchContainerException, "Container #{@name} does not exist" unless (response.code == "204")
       @bytes = response["x-container-bytes-used"]
       @count = response["x-container-object-count"]
 
       # Get the CDN-related details
-      response = @cfclass.cfreq("HEAD",@cdnmgmthost,@cdnmgmtpath)
+      response = self.connection.cfreq("HEAD",@cdnmgmthost,@cdnmgmtpath)
       if (response.code == "204")
         @cdn_enabled = true
         @cdn_ttl = response["x-ttl"]
@@ -55,7 +58,7 @@ module CloudFiles
     # Returns an Object object that can be manipulated.  Refer to the Egg class for available
     # methods.  Throws NoSuchObjectException if the object does not exist.
     def object(objectname)
-      o = CloudFiles::StorageObject.new(@cfclass,self,objectname)
+      o = CloudFiles::StorageObject.new(self,objectname)
       populate
       return o
     end
@@ -80,7 +83,7 @@ module CloudFiles
       paramarr << ["offset=#{offset.to_i}"] if (!offset.nil?)
       paramarr << ["prefix=#{prefix}"] if (!prefix.nil?)
       paramstr = (paramarr.size > 0)? paramarr.join("&") : "" ;
-      response = @cfclass.cfreq("GET",@storagehost,"#{@storagepath}?#{paramstr}")
+      response = self.connection.cfreq("GET",@storagehost,"#{@storagepath}?#{paramstr}")
       return [] if (response.code == "204")
       raise InvalidResponseException, "Invalid response code #{response.code}" unless (response.code == "200")
       return response.body.to_a.map { |x| x.chomp }
@@ -97,7 +100,7 @@ module CloudFiles
       paramarr << ["offset=#{offset.to_i}"] if (!offset.nil?)
       paramarr << ["prefix=#{prefix}"] if (!prefix.nil?)
       paramstr = (paramarr.size > 0)? paramarr.join("&") : "" ;
-      response = @cfclass.cfreq("GET",@storagehost,"#{@storagepath}?#{paramstr}")
+      response = self.connection.cfreq("GET",@storagehost,"#{@storagepath}?#{paramstr}")
       return [] if (response.code == "204")
       raise InvalidResponseException, "Invalid response code #{response.code}" unless (response.code == "200")
       doc = REXML::Document.new(response.body)
@@ -121,7 +124,7 @@ module CloudFiles
 
     # Returns true if object exists and returns false otherwise.
     def object_exists?(objectname)
-      response = @cfclass.cfreq("HEAD",@storagehost,"#{@storagepath}/#{objectname}")
+      response = self.connection.cfreq("HEAD",@storagehost,"#{@storagepath}/#{objectname}")
       return (response.code == "204")? true : false
     end
 
@@ -134,13 +137,13 @@ module CloudFiles
     # if the content-length header does not match (should not occur under normal circumstances) or if the request failed.
     # Throws MisMatchedChecksumException if the uploaded data does not match the MD5 hash that is calculated at upload time.
     def create_object(objectname)
-      CloudFiles::StorageObject.new(@cfclass,self,objectname)
+      CloudFiles::StorageObject.new(self,objectname)
     end
 
     # Removes an object from a container.  True is returned if the removal is successful.  Throws NoSuchObjectException
     # if the object doesn't exist.  Throws InvalidResponseException if the request fails.
     def delete_object(objectname)
-      response = @cfclass.cfreq("DELETE",@storagehost,"#{@storagepath}/#{objectname}")
+      response = self.connection.cfreq("DELETE",@storagehost,"#{@storagepath}/#{objectname}")
       raise NoSuchObjectException, "Object #{objectname} does not exist" if (response.code == "404")
       raise InvalidResponseException, "Invalid response code #{response.code}" unless (response.code == "204")
       populate
@@ -153,7 +156,7 @@ module CloudFiles
     # Takes an optional argument, which is the CDN cache TTL in seconds (default 86400 seconds or 1 day)
     def make_public(ttl = 86400)
       headers = { "X-CDN-Enabled" => "True", "X-TTL" => ttl.to_i }
-      response = @cfclass.cfreq("PUT",@cdnmgmthost,@cdnmgmtpath,headers)
+      response = self.connection.cfreq("PUT",@cdnmgmthost,@cdnmgmtpath,headers)
       raise NoSuchContainerException, "Container #{@name} does not exist" unless (response.code == "201" || response.code == "202")
       populate
       true
@@ -163,7 +166,7 @@ module CloudFiles
     # if the container doesn't exist or if the request fails.
     def make_private
       headers = { "X-CDN-Enabled" => "False" }
-      response = @cfclass.cfreq("PUT",@cdnmgmthost,@cdnmgmtpath,headers)
+      response = self.connection.cfreq("PUT",@cdnmgmthost,@cdnmgmtpath,headers)
       raise NoSuchContainerException, "Container #{@name} does not exist" unless (response.code == "201" || response.code == "202")
       populate
       true

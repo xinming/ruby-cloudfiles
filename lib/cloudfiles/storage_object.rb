@@ -82,11 +82,15 @@ module CloudFiles
     
     # Takes supplied data and writes it to the object, saving it.  You can supply an optional list of headers, including
     # Content-Type, that will be applied to the object.
+    #
+    # You can compute your own MD5 sum and send it in the "ETag" header.  If you provide yours, it will be compared to
+    # the MD5 sum on the server side.  If they do not match, the server will return a 422 status code and a MisMatchedChecksumException
+    # will be raised.  If you do not provide an MD5 sum as the ETag, one will be computed on the server side.
+    #
     # Updates the container cache and returns true on success, raises exceptions if stuff breaks.
     def write(data,headers=nil)
       raise SyntaxException, "No data was provided for object '#{@name}'" if (data.nil?)
       headers = { "Content-Type" => "application/octet-stream" } if (headers.nil?)
-      headers["ETag"] = Digest::MD5.hexdigest(data).to_s
       response = @cfclass.cfreq("PUT",@storagehost,"#{@storagepath}",headers,data)
       raise InvalidResponseException, "Invalid content-length header sent" if (response.code == "412")
       raise MisMatchedChecksumException, "Mismatched md5sum" if (response.code == "422")

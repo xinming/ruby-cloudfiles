@@ -13,17 +13,6 @@ module CloudFiles
       end
       response = server.get(path,hdrhash)
       if (response.code == "204")
-        @cdnmgmthost = URI.parse(response["x-cdn-management-url"]).host
-        @cdnmgmtpath = URI.parse(response["x-cdn-management-url"]).path
-        @storagehost = URI.parse(response["x-storage-url"]).host
-        @storagepath = URI.parse(response["x-storage-url"]).path
-        @authtoken = response["x-auth-token"]
-        @authok = true
-      else
-        @authtoken = false
-        raise AuthenticationException, "Authentication failed"
-      end
-      if (response.code == "204")
         connection.cdnmgmthost = URI.parse(response["x-cdn-management-url"]).host
         connection.cdnmgmtpath = URI.parse(response["x-cdn-management-url"]).path
         connection.storagehost = URI.parse(response["x-storage-url"]).host

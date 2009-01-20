@@ -31,7 +31,6 @@ module CloudFiles
     def initialize(authuser,authkey) # :nodoc:
       @authuser = authuser
       @authkey = authkey
-      @account = account
       @authok = false
       @http = {}
       @reqlog = []

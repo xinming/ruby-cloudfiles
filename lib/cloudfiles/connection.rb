@@ -1,9 +1,6 @@
 module CloudFiles
 
   class Connection
-    # Authentication account (optional) provided when the CloudFiles class was instantiated [read-only]
-    attr_reader :account
-
     # Authentication key provided when the CloudFiles class was instantiated [read-only]
     attr_reader :authkey
 
@@ -31,7 +28,7 @@ module CloudFiles
     # Instance variable that is set when authorization succeeds
     attr_accessor :authok
 
-    def initialize(authuser,authkey,account = nil) # :nodoc:
+    def initialize(authuser,authkey) # :nodoc:
       @authuser = authuser
       @authkey = authkey
       @account = account

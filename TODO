@@ -1,8 +1,8 @@
 Handle 401 Unauthorized if token expires 
 
-Rename objects_detail -> list_objects_info objects/objects_detail 
+Rename objects_detail -> list_objects_info
 
-last_modified added to objects_detail (last_modified not returned in object body?) ***
+last_modified added to objects_detail (Coming 1/27) ***
 
 Redo unit tests to make them more standard, use Mocha for mocking.
 

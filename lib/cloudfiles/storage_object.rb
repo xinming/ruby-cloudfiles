@@ -80,8 +80,8 @@ module CloudFiles
       true
     end
     
-    # Takes supplied data and writes it to the object, saving it.  You can supply an optional list of headers, including
-    # Content-Type, that will be applied to the object.
+    # Takes supplied data and writes it to the object, saving it.  You can supply an optional hash of headers, including
+    # Content-Type and ETag, that will be applied to the object.
     #
     # You can compute your own MD5 sum and send it in the "ETag" header.  If you provide yours, it will be compared to
     # the MD5 sum on the server side.  If they do not match, the server will return a 422 status code and a MisMatchedChecksumException

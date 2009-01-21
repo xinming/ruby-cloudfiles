@@ -126,20 +126,19 @@ module CloudFiles
       response = cfreq("GET",@cdnmgmthost,@cdnmgmtpath)
       return [] if (response.code == "204")
       raise InvalidResponseException, "Invalid response code #{response.code}" unless (response.code == "200")
-      response.body.to_a.map { |x| x.chomp }
+      response.body.to_a.map { |x| x.chomp }.sort
     end
 
-    def headerprep(headers) # :nodoc:
-      headers = {} if headers.nil?
-      headers["X-Auth-Token"] = @authtoken if (authok? && @account.nil?)
-      headers["X-Storage-Token"] = @authtoken if (authok? && !@account.nil?)
-      headers["Connection"] = "Keep-Alive"
-      headers["User-Agent"] == "Major's Nifty Ruby Cloud Files API (not done yet)"
-      headers.each_key { |k| headers[k] = headers[k].to_s }
-      headers
+    def headerprep(headers = {}) # :nodoc:
+      default_headers = {}
+      default_headers["X-Auth-Token"] = @authtoken if (authok? && @account.nil?)
+      default_headers["X-Storage-Token"] = @authtoken if (authok? && !@account.nil?)
+      default_headers["Connection"] = "Keep-Alive"
+      default_headers["User-Agent"] = "Major's Nifty Ruby Cloud Files API (not done yet)"
+      default_headers.merge(headers)
     end
 
-    def cfreq(method,server,path,headers = nil,data = nil,&block) # :nodoc:
+    def cfreq(method,server,path,headers = {},data = nil,&block) # :nodoc:
       start = Time.now
       hdrhash = headerprep(headers)
       path = URI.escape(path)

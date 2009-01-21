@@ -24,7 +24,6 @@ module CloudFiles
         raise AuthenticationException, "Authentication failed"
       end
       server.finish
-      true
     end
   end
 end

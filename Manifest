@@ -7,4 +7,9 @@ lib/cloudfiles.rb
 Manifest
 Rakefile
 test/cf-testunit.rb
+test/cloudfiles_authentication_test.rb
+test/cloudfiles_connection_test.rb
+test/cloudfiles_container_test.rb
+test/cloudfiles_storage_object_test.rb
+test/test_helper.rb
 TODO

@@ -58,7 +58,7 @@ module CloudFiles
     # Returns an Object object that can be manipulated.  Refer to the Egg class for available
     # methods.  Throws NoSuchObjectException if the object does not exist.
     def object(objectname)
-      o = CloudFiles::StorageObject.new(self,objectname)
+      o = CloudFiles::StorageObject.new(self,objectname,true)
       populate
       return o
     end
@@ -139,7 +139,7 @@ module CloudFiles
     def create_object(objectname)
       CloudFiles::StorageObject.new(self,objectname)
     end
-
+    
     # Removes an object from a container.  True is returned if the removal is successful.  Throws NoSuchObjectException
     # if the object doesn't exist.  Throws InvalidResponseException if the request fails.
     def delete_object(objectname)

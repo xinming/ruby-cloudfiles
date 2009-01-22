@@ -23,19 +23,15 @@ module CloudFiles
     # Content type of the object data
     attr_reader :content_type
 
-    def initialize(container,objectname) # :nodoc:
+    def initialize(container,objectname,force_exist = false) # :nodoc:
       @container = container
       @containername = container.name
       @name = objectname
       @storagehost = self.container.connection.storagehost
       @storagepath = self.container.connection.storagepath+"/#{@containername}/#{@name}"
-      begin
-        populate
-      rescue NoSuchObjectException
-        # The object doesn't exist yet
-      end
+      populate if force_exist
     end
-
+    
     # Caches data about the CloudFiles::StorageObject for fast retrieval.  This method is automatically called when the 
     # class is initialized, but it can be called again if the data needs to be updated.
     def populate
@@ -87,7 +83,7 @@ module CloudFiles
     # will be raised.  If you do not provide an MD5 sum as the ETag, one will be computed on the server side.
     #
     # Updates the container cache and returns true on success, raises exceptions if stuff breaks.
-    def write(data,headers=nil)
+    def write(data=nil,headers=nil)
       raise SyntaxException, "No data was provided for object '#{@name}'" if (data.nil?)
       headers = { "Content-Type" => "application/octet-stream" } if (headers.nil?)
       response = self.container.connection.cfreq("PUT",@storagehost,"#{@storagepath}",headers,data)

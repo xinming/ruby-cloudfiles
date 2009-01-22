@@ -2,7 +2,8 @@
 # 
 # == Cloud Files API
 # ==== Connects Ruby Applications to Rackspace's Cloud Files service (http://www.mosso.com/cloudfiles.jsp)
-# Major Hayden <major.hayden@rackspace.com>
+# Initial work by Major Hayden <major.hayden@rackspace.com>
+# Followup work by H. Wade Minter <wade.minter@rackspace.com>
 # ----
 # === License
 # This program is free software: you can redistribute it and/or modify
@@ -19,15 +20,8 @@
 # To begin reviewing the available methods and examples, review the documentation inside the 
 # CloudFiles class.
 
-# The CloudFiles class is the base class which holds all of the account-related functions.
-# To instantiate the class and use the standard Cloud Files authentication, simply pass the
-# username and API key to the class:
-#   cf = CloudFiles.new("username","api_key")
-# If you have an account that requires the alternative SoSo authentication, provide the
-# account name when instantiating the class:
-#   cf = CloudFiles.new("username","password","account_name")
-# As soon as the class is instantiated, the class will attempt to authenticate with the 
-# Cloud Files service. To test the result of the authentication, use the authok? boolean method.
+# The CloudFiles class is the base class.  Not much of note happens here.
+# To create a new CloudFiles connection, use the CloudFiles::Connection.new('user_name', 'api_key') method.
 module CloudFiles
 
   VERSION = '0.0.1'

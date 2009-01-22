@@ -1,34 +1,38 @@
 module CloudFiles
 
   class Connection
-    # Authentication key provided when the CloudFiles class was instantiated [read-only]
+    # Authentication key provided when the CloudFiles class was instantiated
     attr_reader :authkey
 
-    # Token returned after a successful authentication [read-write]
+    # Token returned after a successful authentication
     attr_accessor :authtoken
 
-    # Authentication username provided when the CloudFiles class was instantiated [read-only]
+    # Authentication username provided when the CloudFiles class was instantiated
     attr_reader :authuser
 
-    # Hostname of the CDN management server [read-write]
+    # Hostname of the CDN management server
     attr_accessor :cdnmgmthost
 
-    # Path for managing containers on the CDN management server [read-write]
+    # Path for managing containers on the CDN management server
     attr_accessor :cdnmgmtpath
 
     # Array of requests that have been made so far
     attr_reader :reqlog
 
-    # Hostname of the storage server [read-write]
+    # Hostname of the storage server
     attr_accessor :storagehost
 
-    # Path for managing containers/objects on the storage server [read-only]
+    # Path for managing containers/objects on the storage server
     attr_accessor :storagepath
     
     # Instance variable that is set when authorization succeeds
     attr_accessor :authok
 
-    def initialize(authuser,authkey) # :nodoc:
+    # Creates a new CloudFiles::Connection object.  Uses CloudFiles::Authentication to perform the login for the connection.
+    # The authuser is the Mosso username, the authkey is the Mosso API key.
+    #
+    # This will likely be the base class for most operations.
+    def initialize(authuser,authkey) 
       @authuser = authuser
       @authkey = authkey
       @authok = false
@@ -42,7 +46,7 @@ module CloudFiles
       @authok
     end
 
-    # Returns a Container object that can be manipulated easily.  Throws a NoSuchContainerException if
+    # Returns an CloudFiles::Container object that can be manipulated easily.  Throws a NoSuchContainerException if
     # the container doesn't exist.
     def container(name)
       CloudFiles::Container.new(self,name)
@@ -61,10 +65,10 @@ module CloudFiles
     def count
       response = cfreq("HEAD",@storagehost,@storagepath)
       raise InvalidResponseException, "Unable to obtain container count" unless (response.code == "204")
-      response["x-account-container-count"]
+      response["x-account-container-count"].to_i
     end
 
-    # Gathers a list of the containers that exist for the account and returns the list of containers
+    # Gathers a list of the containers that exist for the account and returns the sorted list of containers
     # as an array.  If no containers exist, an empty array is returned.  Throws an InvalidResponseException
     # if the request fails.
     def containers
@@ -99,9 +103,11 @@ module CloudFiles
       return (response.code == "204")? true : false ;
     end
 
-    # Creates a new container and returns the CloudFiles::Container object.  Throws an InvalidResponseException if the request
-    # fails.
-    # Slash (/) and question mark (?) are invalid characters, and will be stripped out.  The container name is limited to 63 characters or less.
+    # Creates a new container and returns the CloudFiles::Container object.  Throws an InvalidResponseException if the 
+    # request fails.
+    #
+    # Slash (/) and question mark (?) are invalid characters, and will be stripped out.  The container name is limited to 
+    # 63 characters or less.
     def create_container(containername)
       containername.gsub!(/[\/\?]/,'')
       raise SyntaxException, "Container name is limited to 63 characters" if containername.size > 63
@@ -119,7 +125,7 @@ module CloudFiles
       true
     end
 
-    # Gathers a list of public (CDN-enabled) containers that exist for an account and returns the list of containers
+    # Gathers a sorted list of public (CDN-enabled) containers that exist for an account and returns the list of containers
     # as an array.  If no containers are public, an empty array is returned.  Throws a InvalidResponseException if
     # the request fails.
     def public_containers
@@ -127,15 +133,6 @@ module CloudFiles
       return [] if (response.code == "204")
       raise InvalidResponseException, "Invalid response code #{response.code}" unless (response.code == "200")
       response.body.to_a.map { |x| x.chomp }.sort
-    end
-
-    def headerprep(headers = {}) # :nodoc:
-      default_headers = {}
-      default_headers["X-Auth-Token"] = @authtoken if (authok? && @account.nil?)
-      default_headers["X-Storage-Token"] = @authtoken if (authok? && !@account.nil?)
-      default_headers["Connection"] = "Keep-Alive"
-      default_headers["User-Agent"] = "Major's Nifty Ruby Cloud Files API (not done yet)"
-      default_headers.merge(headers)
     end
 
     def cfreq(method,server,path,headers = {},data = nil,&block) # :nodoc:
@@ -170,6 +167,15 @@ module CloudFiles
     end
     
     private
+    
+    def headerprep(headers = {}) # :nodoc:
+      default_headers = {}
+      default_headers["X-Auth-Token"] = @authtoken if (authok? && @account.nil?)
+      default_headers["X-Storage-Token"] = @authtoken if (authok? && !@account.nil?)
+      default_headers["Connection"] = "Keep-Alive"
+      default_headers["User-Agent"] = "Major's Nifty Ruby Cloud Files API (not done yet)"
+      default_headers.merge(headers)
+    end
     
     def start_http(server,path,headers) # :nodoc:
       if (@http[server].nil?)

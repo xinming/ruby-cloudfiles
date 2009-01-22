@@ -22,7 +22,11 @@ module CloudFiles
     # The parent CloudFiles::Connection object for this container
     attr_reader :connection
 
-    def initialize(connection,name) # :nodoc:
+    # Retrieves an existing CloudFiles::Container object tied to the current CloudFiles::Connection.  If the requested
+    # container does not exist, it will raise a NoSuchContainerException.  
+    # 
+    # Will likely not be called directly, instead use connection.container('container_name') to retrieve the object.
+    def initialize(connection,name)
       @connection = connection
       @name = name
       @storagehost = self.connection.storagehost
@@ -55,7 +59,7 @@ module CloudFiles
       end
     end
 
-    # Returns an Object object that can be manipulated.  Refer to the Egg class for available
+    # Returns the CloudFiles::StorageObject for the named object.  Refer to the CloudFiles::StorageObject class for available
     # methods.  Throws NoSuchObjectException if the object does not exist.
     def object(objectname)
       o = CloudFiles::StorageObject.new(self,objectname,true)
@@ -128,20 +132,14 @@ module CloudFiles
       return (response.code == "204")? true : false
     end
 
-    # Creates an object in the current container and populates it with data.  The data argument is required
-    # and it can be a string or an IO stream.  If a stream is used, the data is read in chunks without 
-    # placing the entire file into memory.  While the headers are optional, it's recommended that you provide
-    # a content type so that it is accurate when you retrieve the data.  Headers can be passed as a hash.
-    # 
-    # A successful retrieval will return an Egg object that can be manipulated further.  Throws InvalidResponseException
-    # if the content-length header does not match (should not occur under normal circumstances) or if the request failed.
-    # Throws MisMatchedChecksumException if the uploaded data does not match the MD5 hash that is calculated at upload time.
+    # Creates an CloudFiles::StorageObject in the current container.  This object then needs to be populated with data via
+    # the CloudFiles::StorageObject.write method before it is saved.
     def create_object(objectname)
       CloudFiles::StorageObject.new(self,objectname)
     end
     
-    # Removes an object from a container.  True is returned if the removal is successful.  Throws NoSuchObjectException
-    # if the object doesn't exist.  Throws InvalidResponseException if the request fails.
+    # Removes an CloudFiles::StorageObject from a container.  True is returned if the removal is successful.  Throws 
+    # NoSuchObjectException if the object doesn't exist.  Throws InvalidResponseException if the request fails.
     def delete_object(objectname)
       response = self.connection.cfreq("DELETE",@storagehost,"#{@storagepath}/#{objectname}")
       raise NoSuchObjectException, "Object #{objectname} does not exist" if (response.code == "404")

@@ -1,5 +1,12 @@
 module CloudFiles
   class Authentication
+    
+    # Performs an authentication to the Cloud Files servers.  Opens a new HTTP connection to the API server,
+    # sends the credentials, and looks for a successful authentication.  If it succeeds, it sets the cdmmgmthost,
+    # cdmmgmtpath, storagehost, storagepath, authtoken, and authok variables on the connection.  If it fails, it raises
+    # an AuthenticationException.
+    #
+    # Should probably never be called directly.
     def initialize(connection)
       path = '/auth'
       hdrhash = { "X-Auth-User" => connection.authuser, "X-Auth-Key" => connection.authkey }

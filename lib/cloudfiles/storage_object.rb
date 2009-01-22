@@ -23,7 +23,10 @@ module CloudFiles
     # Content type of the object data
     attr_reader :content_type
 
-    def initialize(container,objectname,force_exist = false) # :nodoc:
+    # Builds a new CloudFiles::StorageObject in the current container.  If force_exist is set, the object must exist or a
+    # NoSuchObjectException will be raised.  If not, an "empty" CloudFiles::StorageObject will be returned, ready for data
+    # via CloudFiles::StorageObject.write
+    def initialize(container,objectname,force_exist = false) 
       @container = container
       @containername = container.name
       @name = objectname

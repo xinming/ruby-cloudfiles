@@ -22,14 +22,7 @@ class CloudfilesConnectionTest < Test::Unit::TestCase
     @connection.expects(:authok?).returns(true)
     assert_equal @connection.authok?, true
   end
-  
-  def test_headerprep
-    headers = @connection.headerprep({'foo' => 'bar', 'User-Agent' => 'Test-Unit'})
-    assert_equal headers['foo'], 'bar'
-    assert_equal headers['User-Agent'], 'Test-Unit'
-    assert_equal headers['Connection'], 'Keep-Alive'
-  end
-  
+    
   def test_cfreq_get
     build_net_http_object
     assert_nothing_raised do 
@@ -111,7 +104,7 @@ class CloudfilesConnectionTest < Test::Unit::TestCase
   def test_count
     build_net_http_object(:response => {'x-account-container-count' => '5'}, :code => '204')
     count = @connection.count
-    assert_equal count, "5"
+    assert_equal count, 5
   end
   
   def test_count_fails

@@ -56,8 +56,8 @@ module CloudFiles
 
     # Retrieves the data from an object and returns a stream that must be passed to a block.  Throws a 
     # NoSuchObjectException if the object doesn't exist.
-    def data_stream(headers = nil,&block)
-      response = self.container.connection.cfreq("GET",@storagehost,@storagepath,nil,nil,&block)
+    def data_stream(headers = {},&block)
+      response = self.container.connection.cfreq("GET",@storagehost,@storagepath,{},nil,&block)
       raise NoSuchObjectException, "Object #{@name} does not exist" unless (response.code == "200")
       response
     end

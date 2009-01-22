@@ -86,7 +86,7 @@ module CloudFiles
       response = self.connection.cfreq("GET",@storagehost,"#{@storagepath}?#{paramstr}")
       return [] if (response.code == "204")
       raise InvalidResponseException, "Invalid response code #{response.code}" unless (response.code == "200")
-      return response.body.to_a.map { |x| x.chomp }
+      return response.body.to_a.map { |x| x.chomp }.sort
     end
 
     # Retrieves a list of all objects in the current container along with their size, md5sum, and content_type.
@@ -101,7 +101,7 @@ module CloudFiles
       paramarr << ["prefix=#{prefix}"] if (!prefix.nil?)
       paramstr = (paramarr.size > 0)? paramarr.join("&") : "" ;
       response = self.connection.cfreq("GET",@storagehost,"#{@storagepath}?#{paramstr}")
-      return [] if (response.code == "204")
+      return {} if (response.code == "204")
       raise InvalidResponseException, "Invalid response code #{response.code}" unless (response.code == "200")
       doc = REXML::Document.new(response.body)
       detailhash = {}

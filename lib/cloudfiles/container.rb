@@ -154,8 +154,8 @@ module CloudFiles
     # if the container doesn't exist or if the request fails.
     # 
     # Takes an optional argument, which is the CDN cache TTL in seconds (default 86400 seconds or 1 day)
-    def make_public(ttl = 86400)
-      headers = { "X-CDN-Enabled" => "True", "X-TTL" => ttl.to_i }
+    def make_public(ttl = '86400')
+      headers = { "X-CDN-Enabled" => "True", "X-TTL" => ttl.to_s }
       response = self.connection.cfreq("PUT",@cdnmgmthost,@cdnmgmtpath,headers)
       raise NoSuchContainerException, "Container #{@name} does not exist" unless (response.code == "201" || response.code == "202")
       populate

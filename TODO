@@ -1,10 +1,14 @@
+Should container.create_object break when trying to create an object that already exists?
+
+Should containers/objects be returned sorted?
+
+Need a object.write_stream that takes a block
+
 Handle 401 Unauthorized if token expires 
 
 Rename objects_detail -> list_objects_info
 
 last_modified added to objects_detail (Coming 1/27) ***
-
-Redo unit tests to make them more standard, use Mocha for mocking.
 
 **** Non-Ruby? ****
 

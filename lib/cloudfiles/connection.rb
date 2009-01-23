@@ -173,7 +173,7 @@ module CloudFiles
       default_headers["X-Auth-Token"] = @authtoken if (authok? && @account.nil?)
       default_headers["X-Storage-Token"] = @authtoken if (authok? && !@account.nil?)
       default_headers["Connection"] = "Keep-Alive"
-      default_headers["User-Agent"] = "Major's Nifty Ruby Cloud Files API (not done yet)"
+      default_headers["User-Agent"] = "CloudFiles Ruby API"
       default_headers.merge(headers)
     end
     

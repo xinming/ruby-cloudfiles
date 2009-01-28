@@ -223,7 +223,9 @@ class CloudfilesConnectionTest < Test::Unit::TestCase
   end
   
   def test_containers_detail
-    body = %{<?xml version="1.0" encoding="UTF-8"?><account name="MossoCloudFS_xxx"><container><name>CloudFiles Ruby API Testing Container</name><count>2</count><size>5236</size></container><container><name>test</name><count>1</count><size>16</size></container><container><name>webpics</name><count>1</count><size>177496</size></container><container><name>CWX</name><count>3</count><size>3645134</size></container><container><name>Books</name><count>0</count><size>0</size></container><container><name>video</name><count>2</count><size>34141298</size></container><container><name>cszsa</name><count>1</count><size>82804</size></container></account>}
+    body = %{<?xml version="1.0" encoding="UTF-8"?>
+    <account name="MossoCloudFS_012559c7-030d-4bbd-8538-7468896b0e7f">
+    <container><name>Books</name><count>0</count><bytes>0</bytes></container><container><name>cftest</name><count>0</count><bytes>0</bytes></container><container><name>cszsa</name><count>1</count><bytes>82804</bytes></container><container><name>CWX</name><count>3</count><bytes>3645134</bytes></container><container><name>test</name><count>2</count><bytes>20</bytes></container><container><name>video</name><count>2</count><bytes>34141298</bytes></container><container><name>webpics</name><count>1</count><bytes>177496</bytes></container></account>}
     build_net_http_object(:body => body, :code => '200')
     details = @connection.containers_detail
     assert_equal details['CWX'][:count], "3"

@@ -148,8 +148,8 @@ class CloudfilesContainerTest < Test::Unit::TestCase
   def test_fetch_object_detail
     body = %{<?xml version="1.0" encoding="UTF-8"?>
     <container name="video">
-    <object><name>kisscam.mov</name><hash>96efd5a0d78b74cfe2a911c479b98ddd</hash><size>9196332</size><type>video/quicktime</type></object>
-    <object><name>penaltybox.mov</name><hash>d2a4c0c24d8a7b4e935bee23080e0685</hash><size>24944966</size><type>video/quicktime</type></object>
+    <object><name>kisscam.mov</name><hash>96efd5a0d78b74cfe2a911c479b98ddd</hash><bytes>9196332</bytes><content_type>video/quicktime</content_type><last_modified>2008-12-18T10:34:43.867648</last_modified></object>
+    <object><name>penaltybox.mov</name><hash>d2a4c0c24d8a7b4e935bee23080e0685</hash><bytes>24944966</bytes><content_type>video/quicktime</content_type><last_modified>2008-12-18T10:35:19.273927</last_modified></object>
     </container>
     }
     build_net_http_object(:code => '200', :body => body)

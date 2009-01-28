@@ -110,7 +110,7 @@ module CloudFiles
       doc = REXML::Document.new(response.body)
       detailhash = {}
       doc.elements.each("container/object") { |o|
-        detailhash[o.elements["name"].text] = { :bytes => o.elements["size"].text, :md5sum => o.elements["hash"].text, :content_type => o.elements["type"].text }
+        detailhash[o.elements["name"].text] = { :bytes => o.elements["bytes"].text, :md5sum => o.elements["hash"].text, :content_type => o.elements["content_type"].text, :last_modified => Time.parse(o.elements["last_modified"].text) }
       }
       doc = nil
       return detailhash

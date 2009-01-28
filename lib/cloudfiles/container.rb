@@ -67,6 +67,8 @@ module CloudFiles
       populate
       return o
     end
+    alias :get_object :object
+    
 
     # Gathers a list of all available objects in the current container.  If no arguments
     # are passed, all available objects will be retrieved in an array:
@@ -93,6 +95,7 @@ module CloudFiles
       raise InvalidResponseException, "Invalid response code #{response.code}" unless (response.code == "200")
       return response.body.to_a.map { |x| x.chomp }
     end
+    alias :list_objects :objects
 
     # Retrieves a list of all objects in the current container along with their size, md5sum, and content_type.
     # If no objects exist, an empty hash is returned.  Throws an InvalidResponseException if the request fails.
@@ -116,6 +119,7 @@ module CloudFiles
       doc = nil
       return detailhash
     end
+    alias :list_objects_info :objects_detail
 
     # Returns true if the container is public and CDN-enabled.  Returns false otherwise.
     def public?

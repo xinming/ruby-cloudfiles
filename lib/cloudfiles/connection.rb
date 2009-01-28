@@ -51,6 +51,7 @@ module CloudFiles
     def container(name)
       CloudFiles::Container.new(self,name)
     end
+    alias :get_container :container
 
     # Returns the cumulative size in bytes of all objects in all containers under the account.  Throws an
     # InvalidResponseException if the request fails.
@@ -77,6 +78,7 @@ module CloudFiles
       raise InvalidResponseException, "Invalid response code #{response.code}" unless (response.code == "200")
       response.body.to_a.map { |x| x.chomp }
     end
+    alias :list_containers :containers
 
     # Retrieves a list of containers on the account along with their sizes (in bytes) and counts of the objects
     # held within them.  If no containers exist, an empty hash is returned.  Throws an InvalidResponseException
@@ -96,6 +98,7 @@ module CloudFiles
       doc = nil
       return detailhash
     end
+    alias :list_containers_info :containers_detail
 
     # Returns true if the requested container exists and returns false otherwise.
     def container_exists?(containername)

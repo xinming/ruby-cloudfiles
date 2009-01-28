@@ -1,16 +1,3 @@
 Need a object.write_stream that takes a block
 
 Handle 401 Unauthorized if token expires 
-
-Rename objects_detail -> list_objects_info
-
-**** Non-Ruby? ****
-
-Rename container method to get_container 
-
-Rename containers -> list_containers 
-
-Rename containers_detail -> list_containers_info 
-
-Rename objects -> list_objects 
-

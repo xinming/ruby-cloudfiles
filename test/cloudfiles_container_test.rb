@@ -2,15 +2,6 @@ require File.dirname(__FILE__) + '/test_helper'
 
 class CloudfilesContainerTest < Test::Unit::TestCase
   
-#  def create_container
-#    connection = mock(:storagehost => 'test.storage.example', :storagepath => '/dummy/path', :cdnmgmthost => 'cdm.test.example', :cdnmgmtpath => '/dummy/path')
-#    response = {'x-container-bytes-used' => '42', 'x-container-object-count' => '5'}
-#    response.stubs(:code).returns('204')
-#    connection.stubs(:cfreq => response)
-#    @container = CloudFiles::Container.new(connection, 'test_container')
-#  end
-  
-  
   def test_object_creation
     connection = mock(:storagehost => 'test.storage.example', :storagepath => '/dummy/path', :cdnmgmthost => 'cdm.test.example', :cdnmgmtpath => '/dummy/path')
     response = {'x-container-bytes-used' => '42', 'x-container-object-count' => '5'}
@@ -95,7 +86,7 @@ class CloudfilesContainerTest < Test::Unit::TestCase
   end
   
   def test_object_fetch
-    build_net_http_object
+    build_net_http_object(:code => '204', :response => {'last-modified' => 'Wed, 28 Jan 2009 16:16:26 GMT'})
     object = @container.object('good_object')
     assert_equal object.class, CloudFiles::StorageObject
   end

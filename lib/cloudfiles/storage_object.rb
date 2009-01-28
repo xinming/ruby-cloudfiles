@@ -12,7 +12,7 @@ module CloudFiles
     attr_reader :container
 
     # Date of the object's last modification
-    attr_reader :lastmodified
+    attr_reader :last_modified
 
     # Metadata stored with the object
     attr_reader :metadata
@@ -26,13 +26,15 @@ module CloudFiles
     # Builds a new CloudFiles::StorageObject in the current container.  If force_exist is set, the object must exist or a
     # NoSuchObjectException will be raised.  If not, an "empty" CloudFiles::StorageObject will be returned, ready for data
     # via CloudFiles::StorageObject.write
-    def initialize(container,objectname,force_exist = false) 
+    def initialize(container,objectname,args = {:verify => false}) 
+      if args[:verify] == true and container.object_exists?(objectname)
+        raise ObjectExistsException, "Object #{objectname} exists in container #{container}, and you have requested verification on create"
+      end
       @container = container
       @containername = container.name
       @name = objectname
       @storagehost = self.container.connection.storagehost
       @storagepath = self.container.connection.storagepath+"/#{@containername}/#{@name}"
-      populate if force_exist
     end
     
     # Caches data about the CloudFiles::StorageObject for fast retrieval.  This method is automatically called when the 
@@ -41,7 +43,7 @@ module CloudFiles
       response = self.container.connection.cfreq("HEAD",@storagehost,@storagepath)
       raise NoSuchObjectException, "Object #{@name} does not exist" if (response.code != "204")
       @bytes = response["content-length"]
-      @lastmodified = response["last-modified"]
+      @last_modified = Time.parse(response["last-modified"])
       @md5sum = response["etag"]
       @content_type = response["content-type"]
       resphash = {}

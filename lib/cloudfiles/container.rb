@@ -62,7 +62,8 @@ module CloudFiles
     # Returns the CloudFiles::StorageObject for the named object.  Refer to the CloudFiles::StorageObject class for available
     # methods.  Throws NoSuchObjectException if the object does not exist.
     def object(objectname)
-      o = CloudFiles::StorageObject.new(self,objectname,true)
+      o = CloudFiles::StorageObject.new(self,objectname)
+      o.populate
       populate
       return o
     end
@@ -132,10 +133,13 @@ module CloudFiles
       return (response.code == "204")? true : false
     end
 
-    # Creates an CloudFiles::StorageObject in the current container.  This object then needs to be populated with data via
-    # the CloudFiles::StorageObject.write method before it is saved.
-    def create_object(objectname)
-      CloudFiles::StorageObject.new(self,objectname)
+    # Creates a new CloudFiles::StorageObject in the current container. 
+    #
+    # If the optional :verify => true argument is passed, an ObjectExistsException will be raised if an object with
+    # your specified name already exists in the container.  Otherwise, a new object with that name will be returned,
+    # and any data written to the object will overwrite the old object with that name.
+    def create_object(objectname,args = {:verify => false})
+      CloudFiles::StorageObject.new(self,objectname,args)
     end
     
     # Removes an CloudFiles::StorageObject from a container.  True is returned if the removal is successful.  Throws 

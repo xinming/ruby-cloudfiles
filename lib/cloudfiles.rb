@@ -69,3 +69,5 @@ class IOException                 < StandardError # :nodoc:
 end
 class CDNNotEnabledException      < StandardError # :nodoc:
 end
+class ObjectExistsException       < StandardError # :nodoc:
+end

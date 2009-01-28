@@ -14,15 +14,16 @@ class CloudfilesStorageObjectTest < Test::Unit::TestCase
     assert_equal @object.to_s, 'test_object'
   end
   
-  def test_object_creation_force_true
+  def test_object_creation_name_collision
+    CloudFiles::Container.any_instance.stubs(:object_exists?).returns(true)
     connection = stub(:storagehost => 'test.storage.example', :storagepath => '/dummy/path', :cdnmgmthost => 'cdm.test.example', :cdnmgmtpath => '/dummy/path')
     response = {'x-container-bytes-used' => '42', 'x-container-object-count' => '5'}
     response.stubs(:code).returns('999')
     connection.stubs(:cfreq => response)
     CloudFiles::Container.any_instance.stubs(:populate)
     container = CloudFiles::Container.new(connection, 'test_container')
-    assert_raise(NoSuchObjectException) do
-      @object = CloudFiles::StorageObject.new(container, 'test_object',true)
+    assert_raise(ObjectExistsException) do
+      @object = CloudFiles::StorageObject.new(container, 'test_object',:verify => true)
     end
   end
   

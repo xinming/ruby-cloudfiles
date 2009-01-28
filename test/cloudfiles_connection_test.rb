@@ -118,7 +118,7 @@ class CloudfilesConnectionTest < Test::Unit::TestCase
     build_net_http_object(:body => "foo\nbar\nbaz", :code => '200', :response => {})
     public_containers = @connection.public_containers
     assert_equal public_containers.size, 3
-    assert_equal public_containers.first, 'bar'
+    assert_equal public_containers.first, 'foo'
   end
   
   def test_public_containers_empty
@@ -205,7 +205,7 @@ class CloudfilesConnectionTest < Test::Unit::TestCase
     build_net_http_object(:body => "foo\nbar\nbaz\nboo", :code => '200')
     containers = @connection.containers
     assert_equal containers.size, 4
-    assert_equal containers.first, 'bar'
+    assert_equal containers.first, 'foo'
   end
   
   def test_no_containers_yet

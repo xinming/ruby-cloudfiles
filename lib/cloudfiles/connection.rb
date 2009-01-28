@@ -68,14 +68,14 @@ module CloudFiles
       response["x-account-container-count"].to_i
     end
 
-    # Gathers a list of the containers that exist for the account and returns the sorted list of containers
+    # Gathers a list of the containers that exist for the account and returns the list of containers
     # as an array.  If no containers exist, an empty array is returned.  Throws an InvalidResponseException
     # if the request fails.
     def containers
       response = cfreq("GET",@storagehost,@storagepath)
       return [] if (response.code == "204")
       raise InvalidResponseException, "Invalid response code #{response.code}" unless (response.code == "200")
-      response.body.to_a.map { |x| x.chomp }.sort
+      response.body.to_a.map { |x| x.chomp }
     end
 
     # Retrieves a list of containers on the account along with their sizes (in bytes) and counts of the objects
@@ -125,14 +125,14 @@ module CloudFiles
       true
     end
 
-    # Gathers a sorted list of public (CDN-enabled) containers that exist for an account and returns the list of containers
+    # Gathers a list of public (CDN-enabled) containers that exist for an account and returns the list of containers
     # as an array.  If no containers are public, an empty array is returned.  Throws a InvalidResponseException if
     # the request fails.
     def public_containers
       response = cfreq("GET",@cdnmgmthost,@cdnmgmtpath)
       return [] if (response.code == "204")
       raise InvalidResponseException, "Invalid response code #{response.code}" unless (response.code == "200")
-      response.body.to_a.map { |x| x.chomp }.sort
+      response.body.to_a.map { |x| x.chomp }
     end
 
     def cfreq(method,server,path,headers = {},data = nil,&block) # :nodoc:

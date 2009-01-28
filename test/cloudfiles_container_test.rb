@@ -142,7 +142,7 @@ class CloudfilesContainerTest < Test::Unit::TestCase
     objects = @container.objects
     assert_equal objects.class, Array
     assert_equal objects.size, 3
-    assert_equal objects.first, 'bar'
+    assert_equal objects.first, 'foo'
   end
   
   def test_fetch_object_detail

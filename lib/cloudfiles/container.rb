@@ -90,7 +90,7 @@ module CloudFiles
       response = self.connection.cfreq("GET",@storagehost,"#{@storagepath}?#{paramstr}")
       return [] if (response.code == "204")
       raise InvalidResponseException, "Invalid response code #{response.code}" unless (response.code == "200")
-      return response.body.to_a.map { |x| x.chomp }.sort
+      return response.body.to_a.map { |x| x.chomp }
     end
 
     # Retrieves a list of all objects in the current container along with their size, md5sum, and content_type.

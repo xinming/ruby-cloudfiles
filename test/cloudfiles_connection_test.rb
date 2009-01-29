@@ -51,6 +51,22 @@ class CloudfilesConnectionTest < Test::Unit::TestCase
     end
   end
   
+  def test_cfreq_with_static_data
+    build_net_http_object
+    assert_nothing_raised do
+      response = @connection.cfreq("PUT", "test.server.example", "/dummypath", {}, "This is string data")
+    end
+  end
+  
+  def test_cfreq_with_stream_data
+    build_net_http_object
+    require 'tempfile'
+    file = Tempfile.new("test")
+    assert_nothing_raised do
+      response = @connection.cfreq("PUT", "test.server.example", "/dummypath", {}, file)
+    end
+  end
+  
   def test_cfreq_head
     build_net_http_object
     assert_nothing_raised do
@@ -69,7 +85,7 @@ class CloudfilesConnectionTest < Test::Unit::TestCase
     response = {'x-cdn-management-url' => 'http://cdn.example.com/path', 'x-storage-url' => 'http://cdn.example.com/storage', 'authtoken' => 'dummy_token'}
     response.stubs(:code).returns('204')
     server = mock(:use_ssl= => true, :verify_mode= => true, :start => true, :finish => true)
-    server.stubs(:get).raises(EOFError).then.returns(response)
+    server.stubs(:request).raises(EOFError).then.returns(response)
     Net::HTTP.stubs(:new).returns(server)
     assert_nothing_raised do
       response = @connection.cfreq("GET", "test.server.example", "/dummypath")
@@ -81,7 +97,7 @@ class CloudfilesConnectionTest < Test::Unit::TestCase
     response.stubs(:code).returns('204')
     server = mock(:use_ssl= => true, :verify_mode= => true, :start => true)
     server.stubs(:finish).returns(true)
-    server.stubs(:get).raises(EOFError)
+    server.stubs(:request).raises(EOFError)
     Net::HTTP.stubs(:new).returns(server)
     assert_raises(ConnectionException) do
       response = @connection.cfreq("GET", "test.server.example", "/dummypath")
@@ -255,11 +271,7 @@ class CloudfilesConnectionTest < Test::Unit::TestCase
     server.stubs(:verify_mode= => true)
     server.stubs(:start => true)
     server.stubs(:use_ssl=).returns(true)
-    server.stubs(:get).returns(response)
-    server.stubs(:post).returns(response)
-    server.stubs(:put).returns(response)
-    server.stubs(:head).returns(response)
-    server.stubs(:delete).returns(response)
+    server.stubs(:request).returns(response)
     Net::HTTP.stubs(:new).returns(server)
   end
   

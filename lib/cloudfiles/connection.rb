@@ -147,15 +147,20 @@ module CloudFiles
       count = 0
       until success == true
         begin
-          response = case method
-          when "GET"    then @http[server].get(path,hdrhash,&block)
-          when "PUT"    then @http[server].put(path,data,hdrhash)
-          when "HEAD"   then @http[server].head(path,hdrhash)
-          when "POST"   then @http[server].post(path,nil,hdrhash)
-          when "DELETE" then @http[server].delete(path,hdrhash)
+          request = Net::HTTP.const_get(method.to_s.capitalize).new(path,hdrhash)
+          if data
+            if data.respond_to?(:read)
+              request.body_stream = data
+            else
+              request.body = data
+            end
+            request.content_length = data.respond_to?(:lstat) ? data.stat.size : data.size
+          else
+            request.content_length = 0
           end
+          response = @http[server].request(request,block)
           success = true
-        rescue EOFError
+        rescue Errno::EPIPE, Timeout::Error, Errno::EINVAL, EOFError
           # Server closed the connection, retry
           raise ConnectionException, "Unable to reconnect to #{server} after #{count} attempts" if count > 5
           count = count + 1

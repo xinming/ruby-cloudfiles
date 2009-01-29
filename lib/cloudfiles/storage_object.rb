@@ -83,6 +83,9 @@ module CloudFiles
     # Takes supplied data and writes it to the object, saving it.  You can supply an optional hash of headers, including
     # Content-Type and ETag, that will be applied to the object.
     #
+    # If you would rather stream the data in chunks, instead of reading it all into memory at once, you can pass an 
+    # IO object for the data, such as: object.write(open('/path/to/file.mp3'))
+    #
     # You can compute your own MD5 sum and send it in the "ETag" header.  If you provide yours, it will be compared to
     # the MD5 sum on the server side.  If they do not match, the server will return a 422 status code and a MisMatchedChecksumException
     # will be raised.  If you do not provide an MD5 sum as the ETag, one will be computed on the server side.

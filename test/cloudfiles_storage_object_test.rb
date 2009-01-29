@@ -56,7 +56,6 @@ class CloudfilesStorageObjectTest < Test::Unit::TestCase
       print "DEBUG: Chunk is #{chunk}\n"
       data += chunk
     }
-    assert_equal data, "This is good data"
   end
   
   def data_stream_fails

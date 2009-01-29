@@ -52,10 +52,11 @@ class CloudfilesStorageObjectTest < Test::Unit::TestCase
   def test_data_stream_succeeds
     build_net_http_object(:code => '200', :body => 'This is good data')
     data = ""
-    @object.data_stream { |chunk|
-      print "DEBUG: Chunk is #{chunk}\n"
-      data += chunk
-    }
+    assert_nothing_raised do
+      @object.data_stream { |chunk|
+        data += chunk
+      }
+    end
   end
   
   def data_stream_fails

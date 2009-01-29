@@ -61,11 +61,11 @@ module CloudFiles
 
     # Retrieves the data from an object and returns a stream that must be passed to a block.  Throws a 
     # NoSuchObjectException if the object doesn't exist.
-    def data_stream(headers = {},&block)
-      response = self.container.connection.cfreq("GET",@storagehost,@storagepath,{},nil,&block)
-      raise NoSuchObjectException, "Object #{@name} does not exist" unless (response.code == "200")
-      response
-    end
+    #def data_stream(headers = {},&block)
+    #  response = self.container.connection.cfreq("GET",@storagehost,@storagepath,headers,nil,&block)
+    #  raise NoSuchObjectException, "Object #{@name} does not exist" unless (response.code == "200")
+    #  response
+    #end
 
     # Sets the metadata for an object.  By passing a hash as an argument, you can set the metadata for an object.
     # However, setting metadata will overwrite any existing metadata for the object.

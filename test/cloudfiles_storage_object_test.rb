@@ -49,25 +49,25 @@ class CloudfilesStorageObjectTest < Test::Unit::TestCase
     end
   end
   
-  def test_data_stream_succeeds
-    build_net_http_object(:code => '200', :body => 'This is good data')
-    data = ""
-    assert_nothing_raised do
-      @object.data_stream { |chunk|
-        data += chunk
-      }
-    end
-  end
+#  def test_data_stream_succeeds
+#    build_net_http_object(:code => '200', :body => 'This is good data')
+#    data = ""
+#    assert_nothing_raised do
+#      @object.data_stream { |chunk|
+#        data += chunk
+#      }
+#    end
+#  end
   
-  def data_stream_fails
-    build_net_http_object(:code => '999', :body => 'This is bad data')
-    data = ""
-    assert_raise(NoSuchObjectException) do
-      @object.data_stream { |chunk|
-        data += chunk
-      }
-    end
-  end
+#  def data_stream_fails
+#    build_net_http_object(:code => '999', :body => 'This is bad data')
+#    data = ""
+#    assert_raise(NoSuchObjectException) do
+#      @object.data_stream { |chunk|
+#        data += chunk
+#      }
+#    end
+#  end
   
   def test_set_metadata_succeeds
     CloudFiles::StorageObject.any_instance.stubs(:populate).returns(true)

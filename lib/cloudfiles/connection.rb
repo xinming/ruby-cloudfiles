@@ -148,6 +148,7 @@ module CloudFiles
       until success == true
         begin
           request = Net::HTTP.const_get(method.to_s.capitalize).new(path,hdrhash)
+          request.body = nil
           if data
             if data.respond_to?(:read)
               request.body_stream = data
@@ -158,7 +159,7 @@ module CloudFiles
           else
             request.content_length = 0
           end
-          response = @http[server].request(request,block)
+          response = @http[server].request(request,&block)
           success = true
         rescue Errno::EPIPE, Timeout::Error, Errno::EINVAL, EOFError
           # Server closed the connection, retry

@@ -33,6 +33,8 @@ module CloudFiles
   require 'jcode' 
   require 'time'
   require 'erb'
+  require 'rubygems'
+  require 'mime/types'
   include ERB::Util
   
   $KCODE = 'u'

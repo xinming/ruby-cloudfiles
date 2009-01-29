@@ -88,9 +88,16 @@ module CloudFiles
     # will be raised.  If you do not provide an MD5 sum as the ETag, one will be computed on the server side.
     #
     # Updates the container cache and returns true on success, raises exceptions if stuff breaks.
-    def write(data=nil,headers=nil)
+    def write(data=nil,headers={})
       raise SyntaxException, "No data was provided for object '#{@name}'" if (data.nil?)
-      headers = { "Content-Type" => "application/octet-stream" } if (headers.nil?)
+      # Try to get the content type
+      if headers['Content-Type'].nil?
+        if type = MIME::Types.type_for(self.name).first.nil?
+          headers['Content-Type'] = "application/octet-stream"
+        else
+          headers['Content-Type'] = type.to_s
+        end
+      end
       response = self.container.connection.cfreq("PUT",@storagehost,"#{@storagepath}",headers,data)
       raise InvalidResponseException, "Invalid content-length header sent" if (response.code == "412")
       raise MisMatchedChecksumException, "Mismatched md5sum" if (response.code == "422")

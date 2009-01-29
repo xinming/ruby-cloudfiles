@@ -53,6 +53,7 @@ class CloudfilesStorageObjectTest < Test::Unit::TestCase
     build_net_http_object(:code => '200', :body => 'This is good data')
     data = ""
     @object.data_stream { |chunk|
+      print "DEBUG: Chunk is #{chunk}\n"
       data += chunk
     }
     assert_equal data, "This is good data"
@@ -94,6 +95,15 @@ class CloudfilesStorageObjectTest < Test::Unit::TestCase
     CloudFiles::StorageObject.any_instance.stubs(:populate).returns(true)
     CloudFiles::Container.any_instance.stubs(:populate).returns(true)
     build_net_http_object(:code => '201')
+    assert_nothing_raised do
+      @object.write("This is test data")
+    end
+  end
+  
+  def test_write_sets_mime_type
+    CloudFiles::StorageObject.any_instance.stubs(:populate).returns(true)
+    CloudFiles::Container.any_instance.stubs(:populate).returns(true)
+    build_net_http_object(:name => 'myfile.xml', :code => '201')
     assert_nothing_raised do
       @object.write("This is test data")
     end

@@ -15,8 +15,6 @@ Can you add a version number to your User-Agent?  Major.Minor.Revision format is
 In Container.object, you're calling the container instance's populate method.  Per my previous email, I wouldn't bother with that.  You're initiating two HEAD requests (storage+cdn) to try and keep the container instance's attributes updated because you've added a new storage object.  If the user wants an updated view, they can call
 connection.get_container() again.
 
-Container.objects probably needs 'prefix' to be url-encoded.
-
 Container.create_object allows the user to set a 'noclobber' option if I'm reading that correctly.  The other API's do not support that. Their 'create_object' calls do not talk to the storage system at all. The 'get_object' calls will throw a 404=>NoSuchObject if the remote storage object does not exist.  Looks like your storage_object.initialize works the same way.
 
 Ok, the big one I see that needs fixing is storage_object.data() (and the commented out data_stream()) method.  You're probably already working on this, but the user needs a way to pass a ruby 'block' to the method that can read from the stream in chunks.  Take a look at the AWS gem; they've got some great examples in there.

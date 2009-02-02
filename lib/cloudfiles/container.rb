@@ -88,7 +88,7 @@ module CloudFiles
       paramarr = []
       paramarr << ["limit=#{limit.to_i}"] if (!limit.nil?)
       paramarr << ["offset=#{offset.to_i}"] if (!offset.nil?)
-      paramarr << ["prefix=#{prefix}"] if (!prefix.nil?)
+      paramarr << ["prefix=#{ERB::Util.url_encode(prefix)}"] if (!prefix.nil?)
       paramstr = (paramarr.size > 0)? paramarr.join("&") : "" ;
       response = self.connection.cfreq("GET",@storagehost,"#{@storagepath}?#{paramstr}")
       return [] if (response.code == "204")

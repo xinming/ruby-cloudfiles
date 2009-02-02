@@ -27,6 +27,12 @@ module CloudFiles
     
     # Instance variable that is set when authorization succeeds
     attr_accessor :authok
+    
+    # The total size in bytes under this connection
+    attr_reader :bytes
+    
+    # The total number of containers under this connection
+    attr_reader :count
 
     # Creates a new CloudFiles::Connection object.  Uses CloudFiles::Authentication to perform the login for the connection.
     # The authuser is the Mosso username, the authkey is the Mosso API key.
@@ -53,22 +59,15 @@ module CloudFiles
     end
     alias :get_container :container
 
-    # Returns the cumulative size in bytes of all objects in all containers under the account.  Throws an
-    # InvalidResponseException if the request fails.
-    def bytes
+    # Sets instance variables for the bytes of storage used for this account/connection, as well as the number of containers
+    # stored under the account.
+    def get_info
       response = cfreq("HEAD",@storagehost,@storagepath)
       raise InvalidResponseException, "Unable to obtain account size" unless (response.code == "204")
-      response["x-account-bytes-used"]
+      @bytes = response["x-account-bytes-used"]
+      @count = response["x-account-container-count"].to_i
     end
-
-    # Returns the number of containers present under the account as an integer. Throws an 
-    # InvalidResponseException if the request fails.
-    def count
-      response = cfreq("HEAD",@storagehost,@storagepath)
-      raise InvalidResponseException, "Unable to obtain container count" unless (response.code == "204")
-      response["x-account-container-count"].to_i
-    end
-
+    
     # Gathers a list of the containers that exist for the account and returns the list of containers
     # as an array.  If no containers exist, an empty array is returned.  Throws an InvalidResponseException
     # if the request fails.
@@ -182,7 +181,7 @@ module CloudFiles
       default_headers["X-Auth-Token"] = @authtoken if (authok? && @account.nil?)
       default_headers["X-Storage-Token"] = @authtoken if (authok? && !@account.nil?)
       default_headers["Connection"] = "Keep-Alive"
-      default_headers["User-Agent"] = "CloudFiles Ruby API"
+      default_headers["User-Agent"] = "CloudFiles Ruby API #{VERSION}"
       default_headers.merge(headers)
     end
     

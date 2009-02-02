@@ -63,8 +63,6 @@ module CloudFiles
     # methods.  Throws NoSuchObjectException if the object does not exist.
     def object(objectname)
       o = CloudFiles::StorageObject.new(self,objectname)
-      o.populate
-      populate
       return o
     end
     alias :get_object :object
@@ -139,10 +137,9 @@ module CloudFiles
 
     # Creates a new CloudFiles::StorageObject in the current container. 
     #
-    # If the optional :verify => true argument is passed, an ObjectExistsException will be raised if an object with
-    # your specified name already exists in the container.  Otherwise, a new object with that name will be returned,
-    # and any data written to the object will overwrite the old object with that name.
-    def create_object(objectname,args = {:verify => false})
+    # If an object with the specified name exists in the current container, that object will be returned.  Otherwise,
+    # an empty new object will be returned.
+    def create_object(objectname)
       CloudFiles::StorageObject.new(self,objectname,args)
     end
     
@@ -152,7 +149,6 @@ module CloudFiles
       response = self.connection.cfreq("DELETE",@storagehost,"#{@storagepath}/#{objectname}")
       raise NoSuchObjectException, "Object #{objectname} does not exist" if (response.code == "404")
       raise InvalidResponseException, "Invalid response code #{response.code}" unless (response.code == "204")
-      populate
       true
     end
 
@@ -164,7 +160,6 @@ module CloudFiles
       headers = { "X-CDN-Enabled" => "True", "X-TTL" => ttl.to_s }
       response = self.connection.cfreq("PUT",@cdnmgmthost,@cdnmgmtpath,headers)
       raise NoSuchContainerException, "Container #{@name} does not exist" unless (response.code == "201" || response.code == "202")
-      populate
       true
     end
 
@@ -174,7 +169,6 @@ module CloudFiles
       headers = { "X-CDN-Enabled" => "False" }
       response = self.connection.cfreq("PUT",@cdnmgmthost,@cdnmgmtpath,headers)
       raise NoSuchContainerException, "Container #{@name} does not exist" unless (response.code == "201" || response.code == "202")
-      populate
       true
     end
     

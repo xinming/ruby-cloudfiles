@@ -1,7 +1,5 @@
 1) Have we discussed the API auto-retrying authentication on a 401 response?  If not, that's where I want to take the other API's, so you could be ahead of the curve if you did that.  It should be up to the user to enable re-auth or not, so maybe an argument to your Connection.new() method?  Then you'd want to update your methods that check return statuses for a 401 and re-auth.
 
-Another question comes to mind while reviewing it.  Do you (or the underlying httplib) URL encode/decode container/object/metadata?  That obviously will help with passing in character names with non-alpha like []<>()=+-$. and utf8.
-
 Ok, the big one I see that needs fixing is storage_object.data() (and the commented out data_stream()) method.  You're probably already working on this, but the user needs a way to pass a ruby 'block' to the method that can read from the stream in chunks.  Take a look at the AWS gem; they've got some great examples in there.
 
 The same applies to object.write().  The data argument should support either an in-memory string, block, or byte-stream.

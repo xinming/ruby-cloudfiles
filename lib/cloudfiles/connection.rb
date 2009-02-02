@@ -144,34 +144,26 @@ module CloudFiles
       start_http(server,path,headers)
       success = false
       count = 0
-      until success == true
-        begin
-          request = Net::HTTP.const_get(method.to_s.capitalize).new(path,hdrhash)
-          request.body = nil
-          if data
-            if data.respond_to?(:read)
-              request.body_stream = data
-            else
-              request.body = data
-            end
-            request.content_length = data.respond_to?(:lstat) ? data.stat.size : data.size
-          else
-            request.content_length = 0
-          end
-          response = @http[server].request(request,&block)
-          success = true
-        rescue Errno::EPIPE, Timeout::Error, Errno::EINVAL, EOFError
-          # Server closed the connection, retry
-          raise ConnectionException, "Unable to reconnect to #{server} after #{count} attempts" if count > 5
-          count = count + 1
-          success = false
-          @http[server].finish
-          start_http(server,path,headers)
+      request = Net::HTTP.const_get(method.to_s.capitalize).new(path,hdrhash)
+      #request.body = nil
+      if data
+        print "DEBUG: There was a body of #{data}\n"
+        if data.respond_to?(:read)
+          request.body_stream = data
+        else
+          request.body = data
         end
+        request.content_length = data.respond_to?(:lstat) ? data.stat.size : data.size
+      else
+        request.content_length = 0
       end
-      responsetime = "%0.3f" % (Time.now - start)
-      @reqlog << "#{method} ".ljust(5)+"=> #{server}#{path} => #{response.code} => #{responsetime}s"
-      response
+      return @http[server].request(request,&block)
+    rescue Errno::EPIPE, Timeout::Error, Errno::EINVAL, EOFError
+      # Server closed the connection, retry
+      raise ConnectionException, "Unable to reconnect to #{server} after #{count} attempts" if count > 5
+      count = count + 1
+      @http[server].finish
+      start_http(server,path,headers)
     end
     
     private

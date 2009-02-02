@@ -17,8 +17,8 @@ module CloudFiles
     # Metadata stored with the object
     attr_reader :metadata
 
-    # MD5 hash of the object data
-    attr_reader :md5sum
+    # ETag of the object data
+    attr_reader :etag
 
     # Content type of the object data
     attr_reader :content_type
@@ -44,7 +44,7 @@ module CloudFiles
       raise NoSuchObjectException, "Object #{@name} does not exist" if (response.code != "204")
       @bytes = response["content-length"]
       @last_modified = Time.parse(response["last-modified"])
-      @md5sum = response["etag"]
+      @etag = response["etag"]
       @content_type = response["content-type"]
       resphash = {}
       response.to_hash.select { |k,v| k.match(/^x-object-meta/) }.each { |x| resphash[x[0]] = x[1][0].to_s }
@@ -103,7 +103,7 @@ module CloudFiles
       end
       response = self.container.connection.cfreq("PUT",@storagehost,"#{@storagepath}",headers,data)
       raise InvalidResponseException, "Invalid content-length header sent" if (response.code == "412")
-      raise MisMatchedChecksumException, "Mismatched md5sum" if (response.code == "422")
+      raise MisMatchedChecksumException, "Mismatched etag" if (response.code == "422")
       raise InvalidResponseException, "Invalid response code #{response.code}" unless (response.code == "201")
       self.populate
       self.container.populate

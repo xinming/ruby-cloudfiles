@@ -19,8 +19,6 @@ Container.objects probably needs 'prefix' to be url-encoded.
 
 Container.create_object allows the user to set a 'noclobber' option if I'm reading that correctly.  The other API's do not support that. Their 'create_object' calls do not talk to the storage system at all. The 'get_object' calls will throw a 404=>NoSuchObject if the remote storage object does not exist.  Looks like your storage_object.initialize works the same way.
 
-Do you mind renaming the storage_object's md5sum attr to etag?  On the remote chance that we end up using some other format, then your attr will be more generic.
-
 Ok, the big one I see that needs fixing is storage_object.data() (and the commented out data_stream()) method.  You're probably already working on this, but the user needs a way to pass a ruby 'block' to the method that can read from the stream in chunks.  Take a look at the AWS gem; they've got some great examples in there.
 
 The same applies to object.write().  The data argument should support either an in-memory string, block, or byte-stream.

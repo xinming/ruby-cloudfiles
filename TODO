@@ -6,8 +6,6 @@ You could extend the same argument for lists of containers/objects and that thos
 
 Another question comes to mind while reviewing it.  Do you (or the underlying httplib) URL encode/decode container/object/metadata?  That obviously will help with passing in character names with non-alpha like []<>()=+-$. and utf8.
 
-Can you add a version number to your User-Agent?  Major.Minor.Revision format is fine.  They will all be 1.x.y for v1 of Cloud Files.  I'd also like to keep 1.x consistent across all API's.  Our next API release (which I'd like to include your API with) will be 1.3.0.
-
 In Container.object, you're calling the container instance's populate method.  Per my previous email, I wouldn't bother with that.  You're initiating two HEAD requests (storage+cdn) to try and keep the container instance's attributes updated because you've added a new storage object.  If the user wants an updated view, they can call
 connection.get_container() again.
 
@@ -16,8 +14,6 @@ Container.create_object allows the user to set a 'noclobber' option if I'm readi
 Ok, the big one I see that needs fixing is storage_object.data() (and the commented out data_stream()) method.  You're probably already working on this, but the user needs a way to pass a ruby 'block' to the method that can read from the stream in chunks.  Take a look at the AWS gem; they've got some great examples in there.
 
 The same applies to object.write().  The data argument should support either an in-memory string, block, or byte-stream.
-
-object.set_metadata() shouldn't need to call object.populate() again. Nothing changes about the remote object except for the headers.  If the http response is good, then just set the instance's metadata to the values that you sent (removes one HEAD call).
 
 TESTS: Great work, looks like a comprehensive set of test coverage!   
 Can I ask that you also throw in some tests for UTF8 container/object names too?

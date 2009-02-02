@@ -76,7 +76,6 @@ module CloudFiles
       response = self.container.connection.cfreq("POST",@storagehost,@storagepath,metadatahash)
       raise NoSuchObjectException, "Object #{@name} does not exist" if (response.code == "404")
       raise InvalidResponseException, "Invalid response code #{response.code}" unless (response.code == "202")
-      populate
       true
     end
     

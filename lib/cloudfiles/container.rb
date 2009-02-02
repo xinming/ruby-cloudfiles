@@ -58,6 +58,7 @@ module CloudFiles
         @cdn_url = false
       end
     end
+    alias :refresh :populate
 
     # Returns the CloudFiles::StorageObject for the named object.  Refer to the CloudFiles::StorageObject class for available
     # methods.  Throws NoSuchObjectException if the object does not exist.
@@ -140,7 +141,7 @@ module CloudFiles
     # If an object with the specified name exists in the current container, that object will be returned.  Otherwise,
     # an empty new object will be returned.
     def create_object(objectname)
-      CloudFiles::StorageObject.new(self,objectname,args)
+      CloudFiles::StorageObject.new(self,objectname)
     end
     
     # Removes an CloudFiles::StorageObject from a container.  True is returned if the removal is successful.  Throws 

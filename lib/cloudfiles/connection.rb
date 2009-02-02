@@ -64,7 +64,7 @@ module CloudFiles
     def get_info
       response = cfreq("HEAD",@storagehost,@storagepath)
       raise InvalidResponseException, "Unable to obtain account size" unless (response.code == "204")
-      @bytes = response["x-account-bytes-used"]
+      @bytes = response["x-account-bytes-used"].to_i
       @count = response["x-account-container-count"].to_i
     end
     

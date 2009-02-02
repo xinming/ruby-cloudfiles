@@ -92,7 +92,7 @@ class CloudfilesContainerTest < Test::Unit::TestCase
   end
   
   def test_create_object
-    build_net_http_object
+    build_net_http_object()
     object = @container.create_object('new_object')
     assert_equal object.class, CloudFiles::StorageObject
   end
@@ -168,7 +168,7 @@ class CloudfilesContainerTest < Test::Unit::TestCase
     CloudFiles::Container.any_instance.stubs(:populate).returns(true)
     connection = stub(:storagehost => 'test.storage.example', :storagepath => '/dummy/path', :cdnmgmthost => 'cdm.test.example', :cdnmgmtpath => '/dummy/path')
     args[:response] = {} unless args[:response]
-    response = {'x-cdn-management-url' => 'http://cdn.example.com/path', 'x-storage-url' => 'http://cdn.example.com/storage', 'authtoken' => 'dummy_token'}.merge(args[:response])
+    response = {'x-cdn-management-url' => 'http://cdn.example.com/path', 'x-storage-url' => 'http://cdn.example.com/storage', 'authtoken' => 'dummy_token', 'last-modified' => Time.now.to_s}.merge(args[:response])
     response.stubs(:code).returns(args[:code])
     response.stubs(:body).returns args[:body] || nil
     connection.stubs(:cfreq => response)

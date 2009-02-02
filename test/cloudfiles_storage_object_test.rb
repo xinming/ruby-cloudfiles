@@ -4,7 +4,7 @@ class CloudfilesStorageObjectTest < Test::Unit::TestCase
   
   def test_object_creation
     connection = stub(:storagehost => 'test.storage.example', :storagepath => '/dummy/path', :cdnmgmthost => 'cdm.test.example', :cdnmgmtpath => '/dummy/path')
-    response = {'x-container-bytes-used' => '42', 'x-container-object-count' => '5'}
+    response = {'x-container-bytes-used' => '42', 'x-container-object-count' => '5', 'last-modified' => Time.now.to_s}
     response.stubs(:code).returns('204')
     connection.stubs(:cfreq => response)
     container = CloudFiles::Container.new(connection, 'test_container')
@@ -12,19 +12,6 @@ class CloudfilesStorageObjectTest < Test::Unit::TestCase
     assert_equal @object.name, 'test_object'
     assert_equal @object.class, CloudFiles::StorageObject
     assert_equal @object.to_s, 'test_object'
-  end
-  
-  def test_object_creation_name_collision
-    CloudFiles::Container.any_instance.stubs(:object_exists?).returns(true)
-    connection = stub(:storagehost => 'test.storage.example', :storagepath => '/dummy/path', :cdnmgmthost => 'cdm.test.example', :cdnmgmtpath => '/dummy/path')
-    response = {'x-container-bytes-used' => '42', 'x-container-object-count' => '5'}
-    response.stubs(:code).returns('999')
-    connection.stubs(:cfreq => response)
-    CloudFiles::Container.any_instance.stubs(:populate)
-    container = CloudFiles::Container.new(connection, 'test_container')
-    assert_raise(ObjectExistsException) do
-      @object = CloudFiles::StorageObject.new(container, 'test_object',:verify => true)
-    end
   end
   
   def test_public_url_exists
@@ -143,7 +130,7 @@ class CloudfilesStorageObjectTest < Test::Unit::TestCase
     CloudFiles::Container.any_instance.stubs(:populate).returns(true)
     connection = stub(:storagehost => 'test.storage.example', :storagepath => '/dummy/path', :cdnmgmthost => 'cdm.test.example', :cdnmgmtpath => '/dummy/path')
     args[:response] = {} unless args[:response]
-    response = {'x-cdn-management-url' => 'http://cdn.example.com/path', 'x-storage-url' => 'http://cdn.example.com/storage', 'authtoken' => 'dummy_token'}.merge(args[:response])
+    response = {'x-cdn-management-url' => 'http://cdn.example.com/path', 'x-storage-url' => 'http://cdn.example.com/storage', 'authtoken' => 'dummy_token', 'last-modified' => Time.now.to_s}.merge(args[:response])
     response.stubs(:code).returns(args[:code])
     response.stubs(:body).returns args[:body] || nil
     connection.stubs(:cfreq => response)

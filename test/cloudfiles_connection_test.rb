@@ -104,29 +104,17 @@ class CloudfilesConnectionTest < Test::Unit::TestCase
     end
   end
   
-  def test_bytes
-    build_net_http_object(:response => {'x-account-bytes-used' => '9999'}, :code => '204')
-    bytes = @connection.bytes
-    assert_equal bytes, "9999"
+  def test_get_info
+    build_net_http_object(:response => {'x-account-bytes-used' => '9999', 'x-account-container-count' => '5'}, :code => '204')
+    @connection.get_info
+    assert_equal @connection.bytes, 9999
+    assert_equal @connection.count, 5
   end
   
-  def test_bytes_fails
-    build_net_http_object(:response => {'x-account-bytes-used' => '9999'}, :code => '999')
+  def test_get_info_fails
+    build_net_http_object(:response => {'x-account-bytes-used' => '9999', 'x-account-container-count' => '5'}, :code => '999')
     assert_raises(InvalidResponseException) do
-      bytes = @connection.bytes
-    end
-  end
-  
-  def test_count
-    build_net_http_object(:response => {'x-account-container-count' => '5'}, :code => '204')
-    count = @connection.count
-    assert_equal count, 5
-  end
-  
-  def test_count_fails
-    build_net_http_object(:response => {'x-account-container-count' => '5'}, :code => '999')
-    assert_raises(InvalidResponseException) do
-      count = @connection.count
+      @connection.get_info
     end
   end
   
@@ -181,7 +169,7 @@ class CloudfilesConnectionTest < Test::Unit::TestCase
   def test_create_container_with_invalid_name
     CloudFiles::Container.stubs(:new)
     assert_raise(SyntaxException) do
-      container = @connection.create_container('a'*100)
+      container = @connection.create_container('a'*300)
     end
   end
   

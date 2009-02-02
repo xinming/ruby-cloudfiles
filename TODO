@@ -6,5 +6,4 @@ Ok, the big one I see that needs fixing is storage_object.data() (and the commen
 
 The same applies to object.write().  The data argument should support either an in-memory string, block, or byte-stream.
 
-TESTS: Great work, looks like a comprehensive set of test coverage!   
-Can I ask that you also throw in some tests for UTF8 container/object names too?
+TESTS: Great work, looks like a comprehensive set of test coverage! Can I ask that you also throw in some tests for UTF8 container/object names too?

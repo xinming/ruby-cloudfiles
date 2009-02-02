@@ -50,6 +50,7 @@ module CloudFiles
       response.to_hash.select { |k,v| k.match(/^x-object-meta/) }.each { |x| resphash[x[0]] = x[1][0].to_s }
       @metadata = resphash
     end
+    alias :refresh :populate
 
     # Retrieves the data from an object and stores the data in memory.  The data is returned as a string.
     # Throws a NoSuchObjectException if the object doesn't exist.

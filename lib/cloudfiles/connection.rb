@@ -110,10 +110,10 @@ module CloudFiles
     # request fails.
     #
     # Slash (/) and question mark (?) are invalid characters, and will be stripped out.  The container name is limited to 
-    # 63 characters or less.
+    # 256 characters or less.
     def create_container(containername)
       containername.gsub!(/[\/\?]/,'')
-      raise SyntaxException, "Container name is limited to 63 characters" if containername.size > 63
+      raise SyntaxException, "Container name is limited to 63 characters" if containername.length > 256
       response = cfreq("PUT",@storagehost,"#{@storagepath}/#{containername}")
       raise InvalidResponseException, "Unable to create container #{containername}" unless (response.code == "201" || response.code == "202")
       CloudFiles::Container.new(self,containername)

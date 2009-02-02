@@ -6,8 +6,6 @@ Major and I discussed this in-person about the state-fulness of class objects ve
 
 You could extend the same argument for lists of containers/objects and that those lists should be kept in instance variables too.  The reason why we don't is that that can be memory consuming in an "infinite" storage system.  If I can have an unlimited number of containers/ objects, that could be bad for your health.
 
-3) Container names are now allowed to be 256 bytes.  Which reminds me, is this multi-byte character safe or just single-byte character sets? I had a hell of a time with PHP's single/multi byte characters with things like "strlen".  I just want to double check with you that "string".size returns bytes versus characters.
-
 Another question comes to mind while reviewing it.  Do you (or the underlying httplib) URL encode/decode container/object/metadata?  That obviously will help with passing in character names with non-alpha like []<>()=+-$. and utf8.
 
 Can you add a version number to your User-Agent?  Major.Minor.Revision format is fine.  They will all be 1.x.y for v1 of Cloud Files.  I'd also like to keep 1.x consistent across all API's.  Our next API release (which I'd like to include your API with) will be 1.3.0.

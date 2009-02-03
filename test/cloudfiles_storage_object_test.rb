@@ -87,6 +87,19 @@ class CloudfilesStorageObjectTest < Test::Unit::TestCase
     end
   end
   
+  def test_load_from_filename_succeeds
+    require 'tempfile'
+    out = Tempfile.new('test')
+    out.write("This is test data")
+    out.close
+    CloudFiles::StorageObject.any_instance.stubs(:populate).returns(true)
+    CloudFiles::Container.any_instance.stubs(:populate).returns(true)
+    build_net_http_object(:code => '201')
+    assert_nothing_raised do
+      @object.load_from_filename(out.path)
+    end
+  end
+  
   def test_write_sets_mime_type
     CloudFiles::StorageObject.any_instance.stubs(:populate).returns(true)
     CloudFiles::Container.any_instance.stubs(:populate).returns(true)

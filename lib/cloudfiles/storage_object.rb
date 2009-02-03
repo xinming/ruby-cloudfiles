@@ -115,6 +115,14 @@ module CloudFiles
       true
     end
     
+    # A convenience method to stream data into an object from a local file (or anything that can be loaded by Ruby's open method)
+    #
+    # Throws an Errno::ENOENT if the file cannot be read.
+    def load_from_filename(filename)
+      f = open(filename)
+      self.write(f)
+    end
+    
     # If the parent container is public (CDN-enabled), returns the CDN URL to this object.  Otherwise, return nil
     def public_url
       self.container.public? ? self.container.cdn_url + "/#{URI.encode(self.name)}" : nil

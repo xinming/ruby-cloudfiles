@@ -188,8 +188,9 @@ class CloudfilesConnectionTest < Test::Unit::TestCase
   def test_create_container_name_filter
     CloudFiles::Container.any_instance.stubs(:populate)
     build_net_http_object(:code => '201')
-    container = @connection.create_container('this/has/bad?characters')
-    assert_equal container.name, 'thishasbadcharacters'
+    assert_raises(SyntaxException) do 
+      container = @connection.create_container('this/has/bad?characters')
+    end
   end
   
   def test_container_exists_true

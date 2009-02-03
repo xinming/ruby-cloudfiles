@@ -92,6 +92,18 @@ class CloudfilesConnectionTest < Test::Unit::TestCase
     end
   end
   
+  def test_net_http_raises_one_expired_token
+    CloudFiles::Authentication.expects(:new).returns(true)
+    response = {'x-cdn-management-url' => 'http://cdn.example.com/path', 'x-storage-url' => 'http://cdn.example.com/storage', 'authtoken' => 'dummy_token'}
+    response.stubs(:code).returns('401').then.returns('204')
+    server = mock(:use_ssl= => true, :verify_mode= => true, :start => true)
+    server.stubs(:request).returns(response)
+    Net::HTTP.stubs(:new).returns(server)
+    assert_nothing_raised do
+      response = @connection.cfreq("GET", "test.server.example", "/dummypath")
+    end
+  end
+  
   def test_net_http_raises_continual_eof_exceptions
     response = {'x-cdn-management-url' => 'http://cdn.example.com/path', 'x-storage-url' => 'http://cdn.example.com/storage', 'authtoken' => 'dummy_token'}
     response.stubs(:code).returns('204')

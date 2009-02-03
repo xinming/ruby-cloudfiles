@@ -32,17 +32,9 @@ module CloudFiles
   require 'digest/md5'
   require 'jcode' 
   require 'time'
+  require 'rubygems'
+  require 'mime/types'
 
-  begin
-    require 'mime/types'
-  rescue LoadError => library_not_installed
-    begin
-      require 'rubygems'
-      require 'mime/types'
-    rescue LoadError
-      raise library_not_installed
-    end
-  end  
   $KCODE = 'u'
 
   $:.unshift(File.dirname(__FILE__))

@@ -81,3 +81,5 @@ class CDNNotEnabledException      < StandardError # :nodoc:
 end
 class ObjectExistsException       < StandardError # :nodoc:
 end
+class ExpiredAuthTokenException   < StandardError # :nodoc:
+end

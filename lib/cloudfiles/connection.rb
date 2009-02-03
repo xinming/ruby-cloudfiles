@@ -37,10 +37,14 @@ module CloudFiles
     # Creates a new CloudFiles::Connection object.  Uses CloudFiles::Authentication to perform the login for the connection.
     # The authuser is the Mosso username, the authkey is the Mosso API key.
     #
+    # Setting the optional retry_auth variable to false will cause an exception to be thrown if your authorization token expires.
+    # Otherwise, it will attempt to reauthenticate.
+    #
     # This will likely be the base class for most operations.
-    def initialize(authuser,authkey) 
+    def initialize(authuser,authkey,retry_auth = true) 
       @authuser = authuser
       @authkey = authkey
+      @retry_auth = retry_auth
       @authok = false
       @http = {}
       @reqlog = []
@@ -145,9 +149,7 @@ module CloudFiles
       success = false
       count = 0
       request = Net::HTTP.const_get(method.to_s.capitalize).new(path,hdrhash)
-      #request.body = nil
       if data
-        print "DEBUG: There was a body of #{data}\n"
         if data.respond_to?(:read)
           request.body_stream = data
         else
@@ -157,13 +159,19 @@ module CloudFiles
       else
         request.content_length = 0
       end
-      return @http[server].request(request,&block)
+      response = @http[server].request(request,&block)
+      raise ExpiredAuthTokenException if response.code == "401"
+      response
     rescue Errno::EPIPE, Timeout::Error, Errno::EINVAL, EOFError
       # Server closed the connection, retry
       raise ConnectionException, "Unable to reconnect to #{server} after #{count} attempts" if count > 5
       count = count + 1
       @http[server].finish
       start_http(server,path,headers)
+      retry
+    rescue ExpiredAuthTokenException
+      raise ConnectionException, "Authentication token expired and you have requested not to retry" if @retry_auth == false
+      CloudFiles::Authentication.new(self)
       retry
     end
     

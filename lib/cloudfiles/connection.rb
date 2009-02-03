@@ -141,13 +141,11 @@ module CloudFiles
       response.body.to_a.map { |x| x.chomp }
     end
 
-    def cfreq(method,server,path,headers = {},data = nil,&block) # :nodoc:
+    def cfreq(method,server,path,headers = {},data = nil,attempts = 0,&block) # :nodoc:
       start = Time.now
       hdrhash = headerprep(headers)
       path = URI.escape(path)
       start_http(server,path,headers)
-      success = false
-      count = 0
       request = Net::HTTP.const_get(method.to_s.capitalize).new(path,hdrhash)
       if data
         if data.respond_to?(:read)
@@ -164,8 +162,8 @@ module CloudFiles
       response
     rescue Errno::EPIPE, Timeout::Error, Errno::EINVAL, EOFError
       # Server closed the connection, retry
-      raise ConnectionException, "Unable to reconnect to #{server} after #{count} attempts" if count > 5
-      count = count + 1
+      raise ConnectionException, "Unable to reconnect to #{server} after #{count} attempts" if attempts >= 5
+      attempts += 1
       @http[server].finish
       start_http(server,path,headers)
       retry

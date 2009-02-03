@@ -164,6 +164,7 @@ module CloudFiles
       count = count + 1
       @http[server].finish
       start_http(server,path,headers)
+      retry
     end
     
     private

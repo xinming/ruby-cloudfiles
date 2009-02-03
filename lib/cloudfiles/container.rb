@@ -43,8 +43,8 @@ module CloudFiles
       # Get the size and object count
       response = self.connection.cfreq("HEAD",@storagehost,@storagepath+"/")
       raise NoSuchContainerException, "Container #{@name} does not exist" unless (response.code == "204")
-      @bytes = response["x-container-bytes-used"]
-      @count = response["x-container-object-count"]
+      @bytes = response["x-container-bytes-used"].to_i
+      @count = response["x-container-object-count"].to_i
 
       # Get the CDN-related details
       response = self.connection.cfreq("HEAD",@cdnmgmthost,@cdnmgmtpath)

@@ -111,7 +111,7 @@ module CloudFiles
     
     # If the parent container is public (CDN-enabled), returns the CDN URL to this object.  Otherwise, return nil
     def public_url
-      self.container.public? ? self.container.cdn_url + "/#{ERB::Util.url_encode(self.name)}" : nil
+      self.container.public? ? self.container.cdn_url + "/#{URI.encode(self.name)}" : nil
     end
     
     def to_s # :nodoc:

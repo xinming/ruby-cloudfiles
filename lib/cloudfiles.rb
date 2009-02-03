@@ -32,8 +32,6 @@ module CloudFiles
   require 'digest/md5'
   require 'jcode' 
   require 'time'
-  require 'erb'
-  include ERB::Util
 
   begin
     require 'mime/types'

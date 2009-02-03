@@ -57,6 +57,7 @@ module CloudFiles
         @cdn_ttl = false
         @cdn_url = false
       end
+      true
     end
     alias :refresh :populate
 

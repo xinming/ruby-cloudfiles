@@ -49,6 +49,7 @@ module CloudFiles
       resphash = {}
       response.to_hash.select { |k,v| k.match(/^x-object-meta/) }.each { |x| resphash[x[0]] = x[1][0].to_s }
       @metadata = resphash
+      true
     end
     alias :refresh :populate
 
@@ -62,6 +63,10 @@ module CloudFiles
 
     # Retrieves the data from an object and returns a stream that must be passed to a block.  Throws a 
     # NoSuchObjectException if the object doesn't exist.
+    #
+    # object.data_stream do |chunk|
+    #   myfile += chunk
+    # end
     def data_stream(headers = {},&block)
       self.container.connection.cfreq("GET",@storagehost,@storagepath,headers,nil) do |response|
         raise NoSuchObjectException, "Object #{@name} does not exist" unless (response.code == "200")

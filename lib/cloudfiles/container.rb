@@ -114,7 +114,7 @@ module CloudFiles
       doc = REXML::Document.new(response.body)
       detailhash = {}
       doc.elements.each("container/object") { |o|
-        detailhash[o.elements["name"].text] = { :bytes => o.elements["bytes"].text, :md5sum => o.elements["hash"].text, :content_type => o.elements["content_type"].text, :last_modified => Time.parse(o.elements["last_modified"].text) }
+        detailhash[o.elements["name"].text] = { :bytes => o.elements["bytes"].text, :hash => o.elements["hash"].text, :content_type => o.elements["content_type"].text, :last_modified => Time.parse(o.elements["last_modified"].text) }
       }
       doc = nil
       return detailhash
@@ -158,7 +158,10 @@ module CloudFiles
     # if the container doesn't exist or if the request fails.
     # 
     # Takes an optional argument, which is the CDN cache TTL in seconds (default 86400 seconds or 1 day)
-    def make_public(ttl = '86400')
+    #
+    #   container.make_public(432000)
+    #   => true
+    def make_public(ttl = 86400)
       headers = { "X-CDN-Enabled" => "True", "X-TTL" => ttl.to_s }
       response = self.connection.cfreq("PUT",@cdnmgmthost,@cdnmgmtpath,headers)
       raise NoSuchContainerException, "Container #{@name} does not exist" unless (response.code == "201" || response.code == "202")

@@ -14,9 +14,6 @@ module CloudFiles
     # Date of the object's last modification
     attr_reader :last_modified
 
-    # Metadata stored with the object
-    attr_reader :metadata
-
     # ETag of the object data
     attr_reader :etag
 
@@ -80,7 +77,9 @@ module CloudFiles
     # Throws NoSuchObjectException if the object doesn't exist.  Throws InvalidResponseException if the request
     # fails.
     def set_metadata(metadatahash)
-      response = self.container.connection.cfreq("POST",@storagehost,@storagepath,metadatahash)
+      headers = {}
+      metadatahash.each{|key, value| headers['X-Object-Meta-' + key.to_s.capitalize] = value.to_s}
+      response = self.container.connection.cfreq("POST",@storagehost,@storagepath,headers)
       raise NoSuchObjectException, "Object #{@name} does not exist" if (response.code == "404")
       raise InvalidResponseException, "Invalid response code #{response.code}" unless (response.code == "202")
       true
@@ -97,14 +96,23 @@ module CloudFiles
     # will be raised.  If you do not provide an MD5 sum as the ETag, one will be computed on the server side.
     #
     # Updates the container cache and returns true on success, raises exceptions if stuff breaks.
+    #
+    #   object = container.create_object("newfile.txt")
+    #
+    #   object.write("This is new data")
+    #   => true
+    #
+    #   object.data
+    #   => "This is new data"
     def write(data=nil,headers={})
       raise SyntaxException, "No data was provided for object '#{@name}'" if (data.nil?)
       # Try to get the content type
       if headers['Content-Type'].nil?
-        if type = MIME::Types.type_for(self.name).first.nil?
+        type = MIME::Types.type_for(self.name).first.to_s
+        if type.empty?
           headers['Content-Type'] = "application/octet-stream"
         else
-          headers['Content-Type'] = type.to_s
+          headers['Content-Type'] = type
         end
       end
       response = self.container.connection.cfreq("PUT",@storagehost,"#{@storagepath}",headers,data)

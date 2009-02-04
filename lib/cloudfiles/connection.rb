@@ -145,7 +145,7 @@ module CloudFiles
       start = Time.now
       hdrhash = headerprep(headers)
       path = URI.escape(path)
-      start_http(server,path,headers)
+      start_http(server,path,hdrhash)
       request = Net::HTTP.const_get(method.to_s.capitalize).new(path,hdrhash)
       if data
         if data.respond_to?(:read)

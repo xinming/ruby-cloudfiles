@@ -6,6 +6,7 @@ lib/cloudfiles/storage_object.rb
 lib/cloudfiles.rb
 Manifest
 Rakefile
+README.rdoc
 test/cf-testunit.rb
 test/cloudfiles_authentication_test.rb
 test/cloudfiles_connection_test.rb

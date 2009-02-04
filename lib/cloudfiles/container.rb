@@ -39,6 +39,15 @@ module CloudFiles
     # Retrieves data about the container and populates class variables.  It is automatically called
     # when the Container class is instantiated.  If you need to refresh the variables, such as 
     # size, count, cdn_enabled, cdn_ttl, and cdn_url, this method can be called again.
+    #
+    #   container.count
+    #   => 2
+    #   [Upload new file to the container]
+    #   container.count
+    #   => 2
+    #   container.populate
+    #   container.count
+    #   => 3
     def populate
       # Get the size and object count
       response = self.connection.cfreq("HEAD",@storagehost,@storagepath+"/")
@@ -62,7 +71,16 @@ module CloudFiles
     alias :refresh :populate
 
     # Returns the CloudFiles::StorageObject for the named object.  Refer to the CloudFiles::StorageObject class for available
-    # methods.  Throws NoSuchObjectException if the object does not exist.
+    # methods.  If the object exists, it will be returned.  If the object does not exist yet, an empty object will be returned, and
+    # must have data added to it before it will be saved.
+    # 
+    #   object = container.object('test.txt')
+    #   object.data
+    #   => "This is test data"
+    #
+    #   object = container.object('newfile.txt')
+    #   object.data
+    #   => NoSuchObjectException: Object newfile.txt does not exist
     def object(objectname)
       o = CloudFiles::StorageObject.new(self,objectname)
       return o
@@ -70,16 +88,15 @@ module CloudFiles
     alias :get_object :object
     
 
-    # Gathers a list of all available objects in the current container.  If no arguments
-    # are passed, all available objects will be retrieved in an array:
-    #   cntnr = cf.container("My Container")
-    #   cntnr.objects                     #=> [ "dog", "cat", "donkey"]
+    # Gathers a list of all available objects in the current container and returns an array of object names.  
+    #   container = cf.container("My Container")
+    #   container.objects                     #=> [ "dog", "cat", "donkey"]
     # Pass a limit argument to limit the list to a number of objects:
-    #   cntnr.objects(1)                  #=> [ "dog" ]
+    #   container.objects(1)                  #=> [ "dog" ]
     # Pass an offset with or without a limit to start the list at a certain object:
-    #   cntnr.objects(1,2)                #=> [ "donkey" ]
+    #   container.objects(1,2)                #=> [ "donkey" ]
     # Pass a prefix to search for objects that start with a certain string:
-    #   cntnr.objects(nil,nil,"do")       #=> [ "dog", "donkey" ]
+    #   container.objects(nil,nil,"do")       #=> [ "dog", "donkey" ]
     # All arguments to this method are optional.
     # 
     # Returns an empty array if no object exist in the container.  Throws an InvalidResponseException
@@ -97,10 +114,21 @@ module CloudFiles
     end
     alias :list_objects :objects
 
-    # Retrieves a list of all objects in the current container along with their size, md5sum, and content_type.
+    # Retrieves a list of all objects in the current container along with their size in bytes, hash, and content_type.
     # If no objects exist, an empty hash is returned.  Throws an InvalidResponseException if the request fails.
     # 
     # Returns a hash in the same format as the containers_detail from the CloudFiles class.
+    #
+    #   container.objects_detail
+    #   => {"test.txt"=>{:content_type=>"application/octet-stream", 
+    #                    :hash=>"e2a6fcb4771aa3509f6b27b6a97da55b", 
+    #                    :last_modified=>Mon Jan 19 10:43:36 -0600 2009, 
+    #                    :bytes=>"16"}, 
+    #       "new.txt"=>{:content_type=>"application/octet-stream", 
+    #                   :hash=>"0aa820d91aed05d2ef291d324e47bc96", 
+    #                   :last_modified=>Wed Jan 28 10:16:26 -0600 2009, 
+    #                   :bytes=>"22"}
+    #      }
     def objects_detail(limit = nil, offset = nil, prefix = nil)
       paramarr = []
       paramarr << ["format=xml"]
@@ -122,16 +150,34 @@ module CloudFiles
     alias :list_objects_info :objects_detail
 
     # Returns true if the container is public and CDN-enabled.  Returns false otherwise.
+    #
+    #   public_container.public?
+    #   => true
+    #
+    #   private_container.public?
+    #   => false
     def public?
       return @cdn_enabled
     end
 
     # Returns true if a container is empty and returns false otherwise.
+    #
+    #   new_container.empty?
+    #   => true
+    #
+    #   full_container.empty?
+    #   => false
     def empty?
       return (@count.to_i == 0)? true : false
     end
 
     # Returns true if object exists and returns false otherwise.
+    #
+    #   container.object_exists?('goodfile.txt')
+    #   => true
+    #
+    #   container.object_exists?('badfile.txt')
+    #   => false
     def object_exists?(objectname)
       response = self.connection.cfreq("HEAD",@storagehost,"#{@storagepath}/#{objectname}")
       return (response.code == "204")? true : false
@@ -147,6 +193,12 @@ module CloudFiles
     
     # Removes an CloudFiles::StorageObject from a container.  True is returned if the removal is successful.  Throws 
     # NoSuchObjectException if the object doesn't exist.  Throws InvalidResponseException if the request fails.
+    #
+    #   container.delete_object('new.txt')
+    #   => true
+    #
+    #   container.delete_object('nonexistent_file.txt')
+    #   => NoSuchObjectException: Object nonexistent_file.txt does not exist
     def delete_object(objectname)
       response = self.connection.cfreq("DELETE",@storagehost,"#{@storagepath}/#{objectname}")
       raise NoSuchObjectException, "Object #{objectname} does not exist" if (response.code == "404")
@@ -170,6 +222,11 @@ module CloudFiles
 
     # Makes a container private and returns true upon success.  Throws NoSuchContainerException
     # if the container doesn't exist or if the request fails.
+    #
+    # Note that if the container was previously public, it will continue to exist out on the CDN until it expires.
+    #
+    #   container.make_private
+    #   => true
     def make_private
       headers = { "X-CDN-Enabled" => "False" }
       response = self.connection.cfreq("PUT",@cdnmgmthost,@cdnmgmtpath,headers)

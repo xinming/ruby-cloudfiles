@@ -41,6 +41,8 @@ module CloudFiles
     # Otherwise, it will attempt to reauthenticate.
     #
     # This will likely be the base class for most operations.
+    #
+    #   cf = CloudFiles::Connection.new(MY_USERNAME, MY_API_KEY)
     def initialize(authuser,authkey,retry_auth = true) 
       @authuser = authuser
       @authkey = authkey
@@ -52,29 +54,45 @@ module CloudFiles
     end
 
     # Returns true if the authentication was successful and returns false otherwise.
+    #
+    #   cf.authok?
+    #   => true
     def authok?
       @authok
     end
 
     # Returns an CloudFiles::Container object that can be manipulated easily.  Throws a NoSuchContainerException if
     # the container doesn't exist.
+    #
+    #    container = cf.container('test')
+    #    container.count
+    #    => 2
     def container(name)
       CloudFiles::Container.new(self,name)
     end
     alias :get_container :container
 
     # Sets instance variables for the bytes of storage used for this account/connection, as well as the number of containers
-    # stored under the account.
+    # stored under the account.  Returns a hash with :bytes and :count keys, and also sets the instance variables.
+    #
+    #   cf.get_info
+    #   => {:count=>8, :bytes=>42438527}
+    #   cf.bytes
+    #   => 42438527    
     def get_info
       response = cfreq("HEAD",@storagehost,@storagepath)
       raise InvalidResponseException, "Unable to obtain account size" unless (response.code == "204")
       @bytes = response["x-account-bytes-used"].to_i
       @count = response["x-account-container-count"].to_i
+      {:bytes => @bytes, :count => @count}
     end
     
-    # Gathers a list of the containers that exist for the account and returns the list of containers
+    # Gathers a list of the containers that exist for the account and returns the list of container names
     # as an array.  If no containers exist, an empty array is returned.  Throws an InvalidResponseException
     # if the request fails.
+    #
+    #   cf.containers
+    #   => ["backup", "Books", "cftest", "test", "video", "webpics"] 
     def containers
       response = cfreq("GET",@storagehost,@storagepath)
       return [] if (response.code == "204")
@@ -87,8 +105,9 @@ module CloudFiles
     # held within them.  If no containers exist, an empty hash is returned.  Throws an InvalidResponseException
     # if the request fails.
     # 
-    #   cf.containers_detail              #=> { "container1" => { :bytes => "36543", :count => "146" }, 
-    #                                           "container2" => { :bytes => "105943", :count => "25" } }
+    #   cf.containers_detail              
+    #   => { "container1" => { :bytes => "36543", :count => "146" }, 
+    #        "container2" => { :bytes => "105943", :count => "25" } }
     def containers_detail
       response = cfreq("GET",@storagehost,"#{@storagepath}?format=xml")
       return {} if (response.code == "204")
@@ -104,6 +123,12 @@ module CloudFiles
     alias :list_containers_info :containers_detail
 
     # Returns true if the requested container exists and returns false otherwise.
+    # 
+    #   cf.container_exists?('good_container')
+    #   => true
+    #  
+    #   cf.container_exists?('bad_container')
+    #   => false
     def container_exists?(containername)
       response = cfreq("HEAD",@storagehost,"#{@storagepath}/#{containername}")
       return (response.code == "204")? true : false ;
@@ -114,6 +139,13 @@ module CloudFiles
     #
     # Slash (/) and question mark (?) are invalid characters, and will be stripped out.  The container name is limited to 
     # 256 characters or less.
+    #
+    #   container = cf.create_container('new_container')
+    #   container.name
+    #   => "new_container"
+    #
+    #   container = cf.create_container('bad/name')
+    #   => SyntaxException: Container name cannot contain the characters '/' or '?'
     def create_container(containername)
       raise SyntaxException, "Container name cannot contain the characters '/' or '?'" if containername.match(/[\/\?]/)
       raise SyntaxException, "Container name is limited to 256 characters" if containername.length > 256
@@ -124,6 +156,15 @@ module CloudFiles
 
     # Deletes a container from the account.  Throws a NonEmptyContainerException if the container still contains
     # objects.  Throws a NoSuchContainerException if the container doesn't exist.
+    # 
+    #   cf.delete_container('new_container')
+    #   => true
+    #
+    #   cf.delete_container('video')
+    #   => NonEmptyContainerException: Container video is not empty
+    #
+    #   cf.delete_container('nonexistent')
+    #   => NoSuchContainerException: Container nonexistent does not exist
     def delete_container(containername)
       response = cfreq("DELETE",@storagehost,"#{@storagepath}/#{containername}")
       raise NonEmptyContainerException, "Container #{containername} is not empty" if (response.code == "409")
@@ -131,9 +172,12 @@ module CloudFiles
       true
     end
 
-    # Gathers a list of public (CDN-enabled) containers that exist for an account and returns the list of containers
+    # Gathers a list of public (CDN-enabled) containers that exist for an account and returns the list of container names
     # as an array.  If no containers are public, an empty array is returned.  Throws a InvalidResponseException if
     # the request fails.
+    #
+    #   cf.public_containers
+    #   => ["video", "webpics"]
     def public_containers
       response = cfreq("GET",@cdnmgmthost,@cdnmgmtpath)
       return [] if (response.code == "204")
@@ -141,6 +185,7 @@ module CloudFiles
       response.body.to_a.map { |x| x.chomp }
     end
 
+    # This method actually makes the HTTP calls out to the server
     def cfreq(method,server,path,headers = {},data = nil,attempts = 0,&block) # :nodoc:
       start = Time.now
       hdrhash = headerprep(headers)
@@ -175,6 +220,7 @@ module CloudFiles
     
     private
     
+    # Sets up standard HTTP headers
     def headerprep(headers = {}) # :nodoc:
       default_headers = {}
       default_headers["X-Auth-Token"] = @authtoken if (authok? && @account.nil?)
@@ -184,6 +230,7 @@ module CloudFiles
       default_headers.merge(headers)
     end
     
+    # Starts (or restarts) the HTTP connection
     def start_http(server,path,headers) # :nodoc:
       if (@http[server].nil?)
         begin

@@ -52,6 +52,9 @@ module CloudFiles
 
     # Retrieves the data from an object and stores the data in memory.  The data is returned as a string.
     # Throws a NoSuchObjectException if the object doesn't exist.
+    # 
+    #   object.data
+    #   => "This is the text stored in the file"
     def data(headers = nil)
       response = self.container.connection.cfreq("GET",@storagehost,@storagepath)
       raise NoSuchObjectException, "Object #{@name} does not exist" unless (response.code == "200")
@@ -61,9 +64,13 @@ module CloudFiles
     # Retrieves the data from an object and returns a stream that must be passed to a block.  Throws a 
     # NoSuchObjectException if the object doesn't exist.
     #
-    # object.data_stream do |chunk|
-    #   myfile += chunk
-    # end
+    #   data = ""
+    #   object.data_stream do |chunk|
+    #     data += chunk
+    #   end
+    #  
+    #   data
+    #   => "This is the text stored in the file"
     def data_stream(headers = {},&block)
       self.container.connection.cfreq("GET",@storagehost,@storagepath,headers,nil) do |response|
         raise NoSuchObjectException, "Object #{@name} does not exist" unless (response.code == "200")
@@ -71,6 +78,17 @@ module CloudFiles
       end
     end
 
+    # Returns the object's metadata as a nicely formatted hash, stripping off the X-Meta-Object- prefix that the system prepends to the
+    # key name.
+    #
+    #    object.metadata
+    #    => {"ruby"=>"cool", "foo"=>"bar"}
+    def metadata
+      metahash = {}
+      @metadata.each{|key, value| metahash[key.gsub(/x-object-meta-/,'').gsub(/\+\-/, ' ')] = URI.decode(value).gsub(/\+\-/, ' ')}
+      metahash
+    end
+    
     # Sets the metadata for an object.  By passing a hash as an argument, you can set the metadata for an object.
     # However, setting metadata will overwrite any existing metadata for the object.
     # 
@@ -126,12 +144,30 @@ module CloudFiles
     # A convenience method to stream data into an object from a local file (or anything that can be loaded by Ruby's open method)
     #
     # Throws an Errno::ENOENT if the file cannot be read.
+    #
+    #   object.data
+    #   => "This is my data"
+    #
+    #   object.load_from_filename("/tmp/file.txt")
+    #   => true
+    #
+    #   object.data
+    #   => "This data was in the file /tmp/file.txt"
+    #
+    #   object.load_from_filename("/tmp/nonexistent.txt")
+    #   => Errno::ENOENT: No such file or directory - /tmp/nonexistent.txt
     def load_from_filename(filename)
       f = open(filename)
       self.write(f)
     end
     
     # If the parent container is public (CDN-enabled), returns the CDN URL to this object.  Otherwise, return nil
+    #
+    #   public_object.public_url
+    #   => "http://cdn.cloudfiles.mosso.com/c10181/rampage.jpg"
+    #
+    #   private_object.public_url
+    #   => nil
     def public_url
       self.container.public? ? self.container.cdn_url + "/#{URI.encode(self.name)}" : nil
     end

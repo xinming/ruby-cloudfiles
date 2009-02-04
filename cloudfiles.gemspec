@@ -6,14 +6,14 @@ Gem::Specification.new do |s|
 
   s.required_rubygems_version = Gem::Requirement.new(">= 1.2") if s.respond_to? :required_rubygems_version=
   s.authors = ["H. Wade Minter, Rackspace Hosting"]
-  s.date = %q{2009-01-29}
+  s.date = %q{2009-02-04}
   s.description = %q{A Ruby version of the Mosso Cloud Files API.}
   s.email = %q{wade.minter@rackspace.com}
-  s.extra_rdoc_files = ["lib/cloudfiles/authentication.rb", "lib/cloudfiles/connection.rb", "lib/cloudfiles/container.rb", "lib/cloudfiles/storage_object.rb", "lib/cloudfiles.rb", "TODO"]
-  s.files = ["cloudfiles.gemspec", "lib/cloudfiles/authentication.rb", "lib/cloudfiles/connection.rb", "lib/cloudfiles/container.rb", "lib/cloudfiles/storage_object.rb", "lib/cloudfiles.rb", "Manifest", "Rakefile", "test/cf-testunit.rb", "test/cloudfiles_authentication_test.rb", "test/cloudfiles_connection_test.rb", "test/cloudfiles_container_test.rb", "test/cloudfiles_storage_object_test.rb", "test/test_helper.rb", "TODO"]
+  s.extra_rdoc_files = ["lib/cloudfiles/authentication.rb", "lib/cloudfiles/connection.rb", "lib/cloudfiles/container.rb", "lib/cloudfiles/storage_object.rb", "lib/cloudfiles.rb", "README.rdoc", "TODO"]
+  s.files = ["cloudfiles.gemspec", "lib/cloudfiles/authentication.rb", "lib/cloudfiles/connection.rb", "lib/cloudfiles/container.rb", "lib/cloudfiles/storage_object.rb", "lib/cloudfiles.rb", "Manifest", "Rakefile", "README.rdoc", "test/cf-testunit.rb", "test/cloudfiles_authentication_test.rb", "test/cloudfiles_connection_test.rb", "test/cloudfiles_container_test.rb", "test/cloudfiles_storage_object_test.rb", "test/test_helper.rb", "TODO"]
   s.has_rdoc = true
   s.homepage = %q{http://www.mosso.com/cloudfiles.jsp}
-  s.rdoc_options = ["--line-numbers", "--inline-source", "--title", "Cloudfiles"]
+  s.rdoc_options = ["--line-numbers", "--inline-source", "--title", "Cloudfiles", "--main", "README.rdoc"]
   s.require_paths = ["lib"]
   s.rubyforge_project = %q{cloudfiles}
   s.rubygems_version = %q{1.3.1}

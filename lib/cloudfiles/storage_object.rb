@@ -23,7 +23,7 @@ module CloudFiles
     # Builds a new CloudFiles::StorageObject in the current container.  If force_exist is set, the object must exist or a
     # NoSuchObjectException will be raised.  If not, an "empty" CloudFiles::StorageObject will be returned, ready for data
     # via CloudFiles::StorageObject.write
-    def initialize(container,objectname) 
+    def initialize(container,objectname,force_exists=false) 
       @container = container
       @containername = container.name
       @name = objectname
@@ -31,6 +31,8 @@ module CloudFiles
       @storagepath = self.container.connection.storagepath+"/#{@containername}/#{@name}"
       if container.object_exists?(objectname)
         populate
+      else
+        raise NoSuchObjectException, "Object #{@name} does not exist" if force_exists
       end
     end
     

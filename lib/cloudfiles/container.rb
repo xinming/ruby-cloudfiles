@@ -71,18 +71,16 @@ module CloudFiles
     alias :refresh :populate
 
     # Returns the CloudFiles::StorageObject for the named object.  Refer to the CloudFiles::StorageObject class for available
-    # methods.  If the object exists, it will be returned.  If the object does not exist yet, an empty object will be returned, and
-    # must have data added to it before it will be saved.
+    # methods.  If the object exists, it will be returned.  If the object does not exist, a NoSuchObjectException will be thrown.
     # 
     #   object = container.object('test.txt')
     #   object.data
     #   => "This is test data"
     #
     #   object = container.object('newfile.txt')
-    #   object.data
     #   => NoSuchObjectException: Object newfile.txt does not exist
     def object(objectname)
-      o = CloudFiles::StorageObject.new(self,objectname)
+      o = CloudFiles::StorageObject.new(self,objectname,true)
       return o
     end
     alias :get_object :object

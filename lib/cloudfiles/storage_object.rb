@@ -169,7 +169,7 @@ module CloudFiles
     #   private_object.public_url
     #   => nil
     def public_url
-      self.container.public? ? self.container.cdn_url + "/#{URI.encode(self.name)}" : nil
+      self.container.public? ? self.container.cdn_url + "/#{URI.encode(@name)}" : nil
     end
     
     def to_s # :nodoc:

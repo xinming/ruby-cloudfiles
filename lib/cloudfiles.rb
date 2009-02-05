@@ -1,25 +1,16 @@
 #!/usr/bin/env ruby
 # 
 # == Cloud Files API
-# ==== Connects Ruby Applications to Rackspace's Cloud Files service (http://www.mosso.com/cloudfiles.jsp)
+# ==== Connects Ruby Applications to Rackspace's {Mosso Cloud Files service}[http://www.mosso.com/cloudfiles.jsp]
 # Initial work by Major Hayden <major.hayden@rackspace.com>
-# Followup work by H. Wade Minter <wade.minter@rackspace.com>
-# ----
-# === License
-# This program is free software: you can redistribute it and/or modify
-# it under the terms of the GNU General Public License as published by
-# the Free Software Foundation, either version 3 of the License, or
-# (at your option) any later version.
 # 
-# This program is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-# GNU General Public License for more details.
+# Subsequent work by H. Wade Minter <wade.minter@rackspace.com>
+# ----
 # 
 # === Documentation & Examples
-# To begin reviewing the available methods and examples, review the documentation inside the 
-# CloudFiles class.
-
+# To begin reviewing the available methods and examples, peruse the README file, or begin by looking at documentation for the 
+# CloudFiles::Connection class.
+#
 # The CloudFiles class is the base class.  Not much of note happens here.
 # To create a new CloudFiles connection, use the CloudFiles::Connection.new('user_name', 'api_key') method.
 module CloudFiles

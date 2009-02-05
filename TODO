@@ -1,3 +1,0 @@
-* Content-Type is getting mangled between client and server, adding the charset to the string.
-
-* Metadata keys are being set, but not values.

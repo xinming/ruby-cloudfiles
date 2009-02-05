@@ -161,6 +161,33 @@ module CloudFiles
     def load_from_filename(filename)
       f = open(filename)
       self.write(f)
+      f.close
+      true
+    end
+
+    # A convenience method to stream data from an object into a local file
+    #
+    # Throws an Errno::ENOENT if the file cannot be opened for writing due to a path error, 
+    # and Errno::EACCES if the file cannot be opened for writing due to permissions.
+    #
+    #   object.data
+    #   => "This is my data"
+    #
+    #   object.save_to_filename("/tmp/file.txt")
+    #   => true
+    #
+    #   $ cat /tmp/file.txt
+    #   "This is my data"
+    #
+    #   object.save_to_filename("/tmp/owned_by_root.txt")
+    #   => Errno::EACCES: Permission denied - /tmp/owned_by_root.txt
+    def save_to_filename(filename)
+      File.open(filename, 'w+') do |f|
+        self.data_stream do |chunk|
+          f.write chunk
+        end
+      end
+      true
     end
     
     # If the parent container is public (CDN-enabled), returns the CDN URL to this object.  Otherwise, return nil

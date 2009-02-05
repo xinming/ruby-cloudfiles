@@ -15,7 +15,7 @@
 # To create a new CloudFiles connection, use the CloudFiles::Connection.new('user_name', 'api_key') method.
 module CloudFiles
 
-  VERSION = '0.0.1'
+  VERSION = '1.3.0'
   require 'net/http'
   require 'net/https'
   require 'rexml/document'

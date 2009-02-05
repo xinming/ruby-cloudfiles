@@ -1,5 +1,8 @@
 #!/usr/bin/env ruby
-require '../lib/cloudfiles'
+#
+# Major's live tests that go against the real Cloud Files system.  Requires a valid username and API key to function.
+
+require File.dirname(__FILE__) + '/../lib/cloudfiles'
 
 username = "XXXXX"
 apikey = "XXXXX"
@@ -8,6 +11,8 @@ def assert_test(testtext,bool)
   booltext = (bool)? " PASS" : "*FAIL*" ;
   (testtext+"... ").ljust(50)+booltext
 end
+
+filename = File.dirname(__FILE__) + '/../lib/cloudfiles.rb'
 
 # Test initial connection
 cf = CloudFiles::Connection.new(username,apikey)
@@ -27,11 +32,11 @@ count = cntnr.count
 puts assert_test("  Checking container count",count == 0)
 
 # Add a file to the container - standard method
-cloudfilesfilesize = File.read("../lib/cloudfiles.rb").length
-cloudfilesmd5 = Digest::MD5.hexdigest(File.read("../lib/cloudfiles.rb"))
+cloudfilesfilesize = File.read(filename).length
+cloudfilesmd5 = Digest::MD5.hexdigest(File.read(filename))
 headers = { "ETag" => cloudfilesmd5, "Content-Type" => "text/ruby", "X-Object-Meta-Testmeta" => "value" }
 myobj = cntnr.create_object("cloudfiles-standard.rb")
-myobj.write(File.read("../lib/cloudfiles.rb"), headers)
+myobj.write(File.read(filename), headers)
 puts assert_test("    Uploading object (read into memory)",myobj.class == CloudFiles::StorageObject)
 cntnr.refresh
 
@@ -49,9 +54,9 @@ puts assert_test("  Checking container count",count == 1)
 
 # Add a file to the container - stream method
 headers = { "ETag" => cloudfilesmd5, "Content-Type" => "text/ruby", "X-Object-Meta-Testmeta" => "value" }
-f = IO.read("../lib/cloudfiles.rb")
+f = IO.read(filename)
 myobj = cntnr.create_object("cloudfiles-stream.rb")
-myobj.write(File.read("../lib/cloudfiles.rb"), headers)
+myobj.write(File.read(filename), headers)
 puts assert_test("    Uploading object (read from stream)",myobj.class == CloudFiles::StorageObject)
 cntnr.refresh
 
@@ -77,16 +82,16 @@ puts assert_test("    Checking object content type",content_type == "text/ruby")
 
 # Check metadata
 metadata = myobj.metadata
-puts assert_test("    Checking object metadata",metadata["x-object-meta-testmeta"] == "value")
+puts assert_test("    Checking object metadata",metadata["testmeta"] == "value")
 
 # Set new metadata
-bool = myobj.set_metadata({ "x-object-meta-testmeta2" => "differentvalue"})
+bool = myobj.set_metadata({ "testmeta2" => "differentvalue"})
 puts assert_test("    Setting new object metadata",bool)
 
 # Check new metadata
 myobj.refresh
 metadata = myobj.metadata
-puts assert_test("    Checking new object metadata",metadata["x-object-meta-testmeta2"] == "differentvalue")
+puts assert_test("    Checking new object metadata",metadata["testmeta2"] == "differentvalue")
 
 # Get data via standard method
 data = myobj.data

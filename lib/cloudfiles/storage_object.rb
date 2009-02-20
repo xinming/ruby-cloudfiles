@@ -128,7 +128,7 @@ module CloudFiles
     #   object.data
     #   => "This is new data"
     def write(data=nil,headers={})
-      raise SyntaxException, "No data was provided for object '#{@name}'" if (data.nil?)
+      #raise SyntaxException, "No data was provided for object '#{@name}'" if (data.nil?)
       # Try to get the content type
       if headers['Content-Type'].nil?
         type = MIME::Types.type_for(self.name).first.to_s
@@ -142,6 +142,7 @@ module CloudFiles
       raise InvalidResponseException, "Invalid content-length header sent" if (response.code == "412")
       raise MisMatchedChecksumException, "Mismatched etag" if (response.code == "422")
       raise InvalidResponseException, "Invalid response code #{response.code}" unless (response.code == "201")
+      make_path(File.dirname(self.name))
       self.populate
       true
     end
@@ -206,6 +207,20 @@ module CloudFiles
     
     def to_s # :nodoc:
       @name
+    end
+    
+    private
+    
+    def make_path(path) # :nodoc:
+      if path == "."
+        return
+      else
+        unless self.container.object_exists?(path)
+          o = self.container.create_object(path)
+          o.write(nil,{'Content-Type' => 'application/directory'})
+        end
+        make_path(File.dirname(path))
+      end
     end
 
   end

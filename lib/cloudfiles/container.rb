@@ -88,22 +88,25 @@ module CloudFiles
 
     # Gathers a list of all available objects in the current container and returns an array of object names.  
     #   container = cf.container("My Container")
-    #   container.objects                     #=> [ "dog", "cat", "donkey"]
+    #   container.objects                     #=> [ "dog", "cat", "donkey", "monkeydir/capuchin"]
     # Pass a limit argument to limit the list to a number of objects:
-    #   container.objects(1)                  #=> [ "dog" ]
+    #   container.objects(:limit => 1)                  #=> [ "dog" ]
     # Pass an offset with or without a limit to start the list at a certain object:
-    #   container.objects(1,2)                #=> [ "donkey" ]
+    #   container.objects(:limit => 1, :offset => 2)                #=> [ "donkey" ]
     # Pass a prefix to search for objects that start with a certain string:
-    #   container.objects(nil,nil,"do")       #=> [ "dog", "donkey" ]
+    #   container.objects(:prefix => "do")       #=> [ "dog", "donkey" ]
+    # Only search within a certain path:
+    #   container.objects(:path => 'monkeydir')     #=> ["monkeydir/capuchin"]
     # All arguments to this method are optional.
     # 
     # Returns an empty array if no object exist in the container.  Throws an InvalidResponseException
     # if the request fails.
-    def objects(limit = nil, offset = nil, prefix = nil)
+    def objects(params = {})
       paramarr = []
-      paramarr << ["limit=#{limit.to_i}"] if (!limit.nil?)
-      paramarr << ["offset=#{offset.to_i}"] if (!offset.nil?)
-      paramarr << ["prefix=#{ERB::Util.url_encode(prefix)}"] if (!prefix.nil?)
+      paramarr << ["limit=#{URI.encode(params[:limit].to_i)}"] if params[:limit]
+      paramarr << ["offset=#{URI.encode(params[:offset].to_i)}"] if params[:offset]
+      paramarr << ["prefix=#{URI.encode(params[:prefix])}"] if params[:prefix]
+      paramarr << ["path=#{URI.encode(params[:path])}"] if params[:path]
       paramstr = (paramarr.size > 0)? paramarr.join("&") : "" ;
       response = self.connection.cfreq("GET",@storagehost,"#{@storagepath}?#{paramstr}")
       return [] if (response.code == "204")
@@ -113,7 +116,8 @@ module CloudFiles
     alias :list_objects :objects
 
     # Retrieves a list of all objects in the current container along with their size in bytes, hash, and content_type.
-    # If no objects exist, an empty hash is returned.  Throws an InvalidResponseException if the request fails.
+    # If no objects exist, an empty hash is returned.  Throws an InvalidResponseException if the request fails.  Takes a
+    # parameter hash as an argument, in the same form as the objects method.
     # 
     # Returns a hash in the same format as the containers_detail from the CloudFiles class.
     #
@@ -127,12 +131,13 @@ module CloudFiles
     #                   :last_modified=>Wed Jan 28 10:16:26 -0600 2009, 
     #                   :bytes=>"22"}
     #      }
-    def objects_detail(limit = nil, offset = nil, prefix = nil)
+    def objects_detail(params = {})
       paramarr = []
       paramarr << ["format=xml"]
-      paramarr << ["limit=#{limit.to_i}"] if (!limit.nil?)
-      paramarr << ["offset=#{offset.to_i}"] if (!offset.nil?)
-      paramarr << ["prefix=#{prefix}"] if (!prefix.nil?)
+      paramarr << ["limit=#{URI.encode(params[:limit].to_i)}"] if params[:limit]
+      paramarr << ["offset=#{URI.encode(params[:offset].to_i)}"] if params[:offset]
+      paramarr << ["prefix=#{URI.encode(params[:prefix])}"] if params[:prefix]
+      paramarr << ["path=#{URI.encode(params[:path])}"] if params[:path]
       paramstr = (paramarr.size > 0)? paramarr.join("&") : "" ;
       response = self.connection.cfreq("GET",@storagehost,"#{@storagepath}?#{paramstr}")
       return {} if (response.code == "204")

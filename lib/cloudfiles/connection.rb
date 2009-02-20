@@ -176,10 +176,14 @@ module CloudFiles
     # as an array.  If no containers are public, an empty array is returned.  Throws a InvalidResponseException if
     # the request fails.
     #
+    # If you pass the optional argument as true, it will only show containers that are CURRENTLY being shared on the CDN, 
+    # as opposed to the default behavior which is to show all containers that have EVER been public.
+    #
     #   cf.public_containers
     #   => ["video", "webpics"]
-    def public_containers
-      response = cfreq("GET",@cdnmgmthost,@cdnmgmtpath)
+    def public_containers(enabled_only = false)
+      paramstr = enabled_only == true ? "enabled_only=true" : ""
+      response = cfreq("GET",@cdnmgmthost,"#{@cdnmgmtpath}?#{paramstr}")
       return [] if (response.code == "204")
       raise InvalidResponseException, "Invalid response code #{response.code}" unless (response.code == "200")
       response.body.to_a.map { |x| x.chomp }

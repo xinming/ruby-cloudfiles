@@ -23,13 +23,14 @@ module CloudFiles
     # Builds a new CloudFiles::StorageObject in the current container.  If force_exist is set, the object must exist or a
     # NoSuchObjectException will be raised.  If not, an "empty" CloudFiles::StorageObject will be returned, ready for data
     # via CloudFiles::StorageObject.write
-    def initialize(container,objectname,force_exists=false) 
+    def initialize(container,objectname,force_exists=false,make_path=false) 
       if objectname.match(/\?/)
         raise SyntaxException, "Object #{objectname} contains an invalid character in the name (? not allowed)"
       end
       @container = container
       @containername = container.name
       @name = objectname
+      @make_path = make_path
       @storagehost = self.container.connection.storagehost
       @storagepath = self.container.connection.storagepath+"/#{@containername}/#{@name}"
       if container.object_exists?(objectname)
@@ -130,6 +131,7 @@ module CloudFiles
     def write(data=nil,headers={})
       #raise SyntaxException, "No data was provided for object '#{@name}'" if (data.nil?)
       # Try to get the content type
+      raise SyntaxException, "No data or header updates supplied" if (data.nil? and headers.empty?)
       if headers['Content-Type'].nil?
         type = MIME::Types.type_for(self.name).first.to_s
         if type.empty?
@@ -142,7 +144,7 @@ module CloudFiles
       raise InvalidResponseException, "Invalid content-length header sent" if (response.code == "412")
       raise MisMatchedChecksumException, "Mismatched etag" if (response.code == "422")
       raise InvalidResponseException, "Invalid response code #{response.code}" unless (response.code == "201")
-      make_path(File.dirname(self.name))
+      make_path(File.dirname(self.name)) if @make_path == true
       self.populate
       true
     end
@@ -212,7 +214,7 @@ module CloudFiles
     private
     
     def make_path(path) # :nodoc:
-      if path == "."
+      if path == "." || path == "/"
         return
       else
         unless self.container.object_exists?(path)

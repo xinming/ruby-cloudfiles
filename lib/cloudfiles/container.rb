@@ -95,7 +95,7 @@ module CloudFiles
     #   container.objects(:limit => 1, :offset => 2)                #=> [ "donkey" ]
     # Pass a prefix to search for objects that start with a certain string:
     #   container.objects(:prefix => "do")       #=> [ "dog", "donkey" ]
-    # Only search within a certain path:
+    # Only search within a certain pseudo-filesystem path:
     #   container.objects(:path => 'monkeydir')     #=> ["monkeydir/capuchin"]
     # All arguments to this method are optional.
     # 
@@ -190,8 +190,12 @@ module CloudFiles
     #
     # If an object with the specified name exists in the current container, that object will be returned.  Otherwise,
     # an empty new object will be returned.
-    def create_object(objectname)
-      CloudFiles::StorageObject.new(self,objectname)
+    #
+    # Passing in the optional make_path argument as true will create zero-byte objects to simulate a filesystem path
+    # to the object, if an objectname with path separators ("/path/to/myfile.mp3") is supplied.  These path objects can 
+    # be used in the Container.objects method.
+    def create_object(objectname,make_path = false)
+      CloudFiles::StorageObject.new(self,objectname,false,make_path)
     end
     
     # Removes an CloudFiles::StorageObject from a container.  True is returned if the removal is successful.  Throws 

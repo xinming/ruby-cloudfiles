@@ -14,6 +14,18 @@ class CloudfilesStorageObjectTest < Test::Unit::TestCase
     assert_equal @object.to_s, 'test_object'
   end
   
+  def test_object_creation_with_invalid_name
+    connection = stub(:storagehost => 'test.storage.example', :storagepath => '/dummy/path', :cdnmgmthost => 'cdm.test.example', :cdnmgmtpath => '/dummy/path')
+    response = {'x-container-bytes-used' => '42', 'x-container-object-count' => '5', 'last-modified' => Time.now.to_s}
+    response.stubs(:code).returns('204')
+    connection.stubs(:cfreq => response)
+    container = CloudFiles::Container.new(connection, 'test_container')
+    assert_raises SyntaxException do
+      @object = CloudFiles::StorageObject.new(container, 'test_object?')
+    end
+  end
+  
+  
   def test_public_url_exists
     build_net_http_object(:public => true, :name => 'test object')
     assert_equal @object.public_url, "http://cdn.test.example/test%20object"

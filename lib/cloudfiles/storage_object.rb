@@ -58,17 +58,28 @@ module CloudFiles
 
     # Retrieves the data from an object and stores the data in memory.  The data is returned as a string.
     # Throws a NoSuchObjectException if the object doesn't exist.
+    #
+    # If the optional size and range arguments are provided, the call will return the number of bytes provided by
+    # size, starting from the offset provided in offset.
     # 
     #   object.data
     #   => "This is the text stored in the file"
-    def data(headers = nil)
-      response = self.container.connection.cfreq("GET",@storagehost,@storagepath)
-      raise NoSuchObjectException, "Object #{@name} does not exist" unless (response.code == "200")
+    def data(size=-1,offset=0,headers = {})
+      if size.to_i > 0
+        range = sprintf("bytes=%d-%d", offset.to_i, (offset.to_i + size.to_i) - 1)
+        headers['Range'] = range
+      end
+      response = self.container.connection.cfreq("GET",@storagehost,@storagepath,headers)
+      print "DEBUG: Code is #{response.code}\n"
+      raise NoSuchObjectException, "Object #{@name} does not exist" unless (response.code =~ /^20/)
       response.body.chomp
     end
 
     # Retrieves the data from an object and returns a stream that must be passed to a block.  Throws a 
     # NoSuchObjectException if the object doesn't exist.
+    #
+    # If the optional size and range arguments are provided, the call will return the number of bytes provided by
+    # size, starting from the offset provided in offset.
     #
     #   data = ""
     #   object.data_stream do |chunk|
@@ -77,7 +88,11 @@ module CloudFiles
     #  
     #   data
     #   => "This is the text stored in the file"
-    def data_stream(headers = {},&block)
+    def data_stream(size=-1,offset=0,headers = {},&block)
+      if size.to_i > 0
+        range = sprintf("bytes=%d-%d", offset.to_i, (offset.to_i + size.to_i) - 1)
+        headers['Range'] = range
+      end
       self.container.connection.cfreq("GET",@storagehost,@storagepath,headers,nil) do |response|
         raise NoSuchObjectException, "Object #{@name} does not exist" unless (response.code == "200")
         response.read_body(&block)

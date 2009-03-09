@@ -91,10 +91,20 @@ module CloudFiles
     # as an array.  If no containers exist, an empty array is returned.  Throws an InvalidResponseException
     # if the request fails.
     #
+    # If you supply the optional limit and marker parameters, the call will return the number of containers
+    # specified in limit, starting after the object named in marker.
+    #
     #   cf.containers
     #   => ["backup", "Books", "cftest", "test", "video", "webpics"] 
-    def containers
-      response = cfreq("GET",@storagehost,@storagepath)
+    #
+    #   cf.containers(2,'cftest')
+    #   => ["test", "video"]
+    def containers(limit=0,marker="")
+      paramarr = []
+      paramarr << ["limit=#{URI.encode(limit.to_s)}"] if limit.to_i > 0
+      paramarr << ["offset=#{URI.encode(marker.to_s)}"] unless marker.to_s.empty?
+      paramstr = (paramarr.size > 0)? paramarr.join("&") : "" ;
+      response = cfreq("GET",@storagehost,"#{@storagepath}?#{paramstr}")
       return [] if (response.code == "204")
       raise InvalidResponseException, "Invalid response code #{response.code}" unless (response.code == "200")
       response.body.to_a.map { |x| x.chomp }
@@ -104,12 +114,19 @@ module CloudFiles
     # Retrieves a list of containers on the account along with their sizes (in bytes) and counts of the objects
     # held within them.  If no containers exist, an empty hash is returned.  Throws an InvalidResponseException
     # if the request fails.
+    #
+    # If you supply the optional limit and marker parameters, the call will return the number of containers
+    # specified in limit, starting after the object named in marker.
     # 
     #   cf.containers_detail              
     #   => { "container1" => { :bytes => "36543", :count => "146" }, 
     #        "container2" => { :bytes => "105943", :count => "25" } }
-    def containers_detail
-      response = cfreq("GET",@storagehost,"#{@storagepath}?format=xml")
+    def containers_detail(limit=0,marker="")
+      paramarr = []
+      paramarr << ["limit=#{URI.encode(limit.to_s)}"] if limit.to_i > 0
+      paramarr << ["offset=#{URI.encode(marker.to_s)}"] unless marker.to_s.empty?
+      paramstr = (paramarr.size > 0)? paramarr.join("&") : "" ;
+      response = cfreq("GET",@storagehost,"#{@storagepath}?format=xml&#{paramstr}")
       return {} if (response.code == "204")
       raise InvalidResponseException, "Invalid response code #{response.code}" unless (response.code == "200")
       doc = REXML::Document.new(response.body)

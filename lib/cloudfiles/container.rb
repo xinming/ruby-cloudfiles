@@ -1,5 +1,7 @@
 module CloudFiles
   class Container
+    # See COPYING for license information.
+    # Copyright (c) 2009, Rackspace US, Inc.
 
     # Name of the container which corresponds to the instantiated container class
     attr_reader :name

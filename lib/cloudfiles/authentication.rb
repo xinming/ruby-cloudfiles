@@ -1,5 +1,7 @@
 module CloudFiles
   class Authentication
+    # See COPYING for license information.
+    # Copyright (c) 2009, Rackspace US, Inc.
     
     # Performs an authentication to the Cloud Files servers.  Opens a new HTTP connection to the API server,
     # sends the credentials, and looks for a successful authentication.  If it succeeds, it sets the cdmmgmthost,

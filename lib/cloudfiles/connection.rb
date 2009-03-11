@@ -1,6 +1,8 @@
 module CloudFiles
-
   class Connection
+    # See COPYING for license information.
+    # Copyright (c) 2009, Rackspace US, Inc.
+    
     # Authentication key provided when the CloudFiles class was instantiated
     attr_reader :authkey
 

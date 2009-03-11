@@ -5,6 +5,9 @@
 # Initial work by Major Hayden <major.hayden@rackspace.com>
 # 
 # Subsequent work by H. Wade Minter <wade.minter@rackspace.com>
+#
+# See COPYING for license information.
+# Copyright (c) 2009, Rackspace US, Inc.
 # ----
 # 
 # === Documentation & Examples

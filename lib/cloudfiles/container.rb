@@ -32,9 +32,9 @@ module CloudFiles
       @connection = connection
       @name = name
       @storagehost = self.connection.storagehost
-      @storagepath = self.connection.storagepath+"/"+@name
+      @storagepath = self.connection.storagepath + "/" + URI.encode(@name).gsub(/&/,'%26')
       @cdnmgmthost = self.connection.cdnmgmthost
-      @cdnmgmtpath = self.connection.cdnmgmtpath+"/"+@name
+      @cdnmgmtpath = self.connection.cdnmgmtpath + "/" + URI.encode(@name).gsub(/&/,'%26')
       populate
     end
 
@@ -105,10 +105,10 @@ module CloudFiles
     # if the request fails.
     def objects(params = {})
       paramarr = []
-      paramarr << ["limit=#{URI.encode(params[:limit].to_i)}"] if params[:limit]
-      paramarr << ["offset=#{URI.encode(params[:offset].to_i)}"] if params[:offset]
-      paramarr << ["prefix=#{URI.encode(params[:prefix])}"] if params[:prefix]
-      paramarr << ["path=#{URI.encode(params[:path])}"] if params[:path]
+      paramarr << ["limit=#{URI.encode(params[:limit].to_i).gsub(/&/,'%26')}"] if params[:limit]
+      paramarr << ["offset=#{URI.encode(params[:offset].to_i).gsub(/&/,'%26')}"] if params[:offset]
+      paramarr << ["prefix=#{URI.encode(params[:prefix]).gsub(/&/,'%26')}"] if params[:prefix]
+      paramarr << ["path=#{URI.encode(params[:path]).gsub(/&/,'%26')}"] if params[:path]
       paramstr = (paramarr.size > 0)? paramarr.join("&") : "" ;
       response = self.connection.cfreq("GET",@storagehost,"#{@storagepath}?#{paramstr}")
       return [] if (response.code == "204")
@@ -136,10 +136,10 @@ module CloudFiles
     def objects_detail(params = {})
       paramarr = []
       paramarr << ["format=xml"]
-      paramarr << ["limit=#{URI.encode(params[:limit].to_i)}"] if params[:limit]
-      paramarr << ["offset=#{URI.encode(params[:offset].to_i)}"] if params[:offset]
-      paramarr << ["prefix=#{URI.encode(params[:prefix])}"] if params[:prefix]
-      paramarr << ["path=#{URI.encode(params[:path])}"] if params[:path]
+      paramarr << ["limit=#{URI.encode(params[:limit].to_i).gsub(/&/,'%26')}"] if params[:limit]
+      paramarr << ["offset=#{URI.encode(params[:offset].to_i).gsub(/&/,'%26')}"] if params[:offset]
+      paramarr << ["prefix=#{URI.encode(params[:prefix]).gsub(/&/,'%26')}"] if params[:prefix]
+      paramarr << ["path=#{URI.encode(params[:path]).gsub(/&/,'%26')}"] if params[:path]
       paramstr = (paramarr.size > 0)? paramarr.join("&") : "" ;
       response = self.connection.cfreq("GET",@storagehost,"#{@storagepath}?#{paramstr}")
       return {} if (response.code == "204")
@@ -184,7 +184,7 @@ module CloudFiles
     #   container.object_exists?('badfile.txt')
     #   => false
     def object_exists?(objectname)
-      response = self.connection.cfreq("HEAD",@storagehost,"#{@storagepath}/#{objectname}")
+      response = self.connection.cfreq("HEAD",@storagehost,"#{@storagepath}/#{URI.encode(objectname).gsub(/&/,'%26')}")
       return (response.code == "204")? true : false
     end
 
@@ -209,7 +209,7 @@ module CloudFiles
     #   container.delete_object('nonexistent_file.txt')
     #   => NoSuchObjectException: Object nonexistent_file.txt does not exist
     def delete_object(objectname)
-      response = self.connection.cfreq("DELETE",@storagehost,"#{@storagepath}/#{objectname}")
+      response = self.connection.cfreq("DELETE",@storagehost,"#{@storagepath}/#{URI.encode(objectname).gsub(/&/,'%26')}")
       raise NoSuchObjectException, "Object #{objectname} does not exist" if (response.code == "404")
       raise InvalidResponseException, "Invalid response code #{response.code}" unless (response.code == "204")
       true

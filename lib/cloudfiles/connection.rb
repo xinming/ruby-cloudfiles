@@ -103,8 +103,8 @@ module CloudFiles
     #   => ["test", "video"]
     def containers(limit=0,marker="")
       paramarr = []
-      paramarr << ["limit=#{URI.encode(limit.to_s)}"] if limit.to_i > 0
-      paramarr << ["offset=#{URI.encode(marker.to_s)}"] unless marker.to_s.empty?
+      paramarr << ["limit=#{URI.encode(limit.to_s).gsub(/&/,'%26')}"] if limit.to_i > 0
+      paramarr << ["offset=#{URI.encode(marker.to_s).gsub(/&/,'%26')}"] unless marker.to_s.empty?
       paramstr = (paramarr.size > 0)? paramarr.join("&") : "" ;
       response = cfreq("GET",@storagehost,"#{@storagepath}?#{paramstr}")
       return [] if (response.code == "204")
@@ -125,8 +125,8 @@ module CloudFiles
     #        "container2" => { :bytes => "105943", :count => "25" } }
     def containers_detail(limit=0,marker="")
       paramarr = []
-      paramarr << ["limit=#{URI.encode(limit.to_s)}"] if limit.to_i > 0
-      paramarr << ["offset=#{URI.encode(marker.to_s)}"] unless marker.to_s.empty?
+      paramarr << ["limit=#{URI.encode(limit.to_s).gsub(/&/,'%26')}"] if limit.to_i > 0
+      paramarr << ["offset=#{URI.encode(marker.to_s).gsub(/&/,'%26')}"] unless marker.to_s.empty?
       paramstr = (paramarr.size > 0)? paramarr.join("&") : "" ;
       response = cfreq("GET",@storagehost,"#{@storagepath}?format=xml&#{paramstr}")
       return {} if (response.code == "204")
@@ -212,7 +212,6 @@ module CloudFiles
     def cfreq(method,server,path,headers = {},data = nil,attempts = 0,&block) # :nodoc:
       start = Time.now
       hdrhash = headerprep(headers)
-      path = URI.escape(path)
       start_http(server,path,hdrhash)
       request = Net::HTTP.const_get(method.to_s.capitalize).new(path,hdrhash)
       if data

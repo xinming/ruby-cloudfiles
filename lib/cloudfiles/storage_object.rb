@@ -33,7 +33,7 @@ module CloudFiles
       @name = objectname
       @make_path = make_path
       @storagehost = self.container.connection.storagehost
-      @storagepath = self.container.connection.storagepath+"/#{@containername}/#{@name}"
+      @storagepath = self.container.connection.storagepath+"/#{URI.encode(@containername).gsub(/&/,'%26')}/#{URI.encode(@name).gsub(/&/,'%26')}"
       if container.object_exists?(objectname)
         populate
       else
@@ -220,7 +220,7 @@ module CloudFiles
     #   private_object.public_url
     #   => nil
     def public_url
-      self.container.public? ? self.container.cdn_url + "/#{URI.encode(@name)}" : nil
+      self.container.public? ? self.container.cdn_url + "/#{URI.encode(@name).gsub(/&/,'%26')}" : nil
     end
     
     def to_s # :nodoc:

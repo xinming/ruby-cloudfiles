@@ -4,6 +4,19 @@
 
 This is a Ruby interface into the Rackspace[http://rackspace.com/] {Mosso Cloud Files}[http://www.mosso.com/cloudfiles.jsp] service. Cloud Files is reliable, scalable and affordable web-based storage hosting for backing up and archiving all your static content.  Cloud Files is the first and only cloud service that leverages a tier one CDN provider to create such an easy and complete storage-to-delivery solution for media content.
 
+== Installation
+
+This gem is available on Github[http://github.com/rackspace/ruby-cloudfiles/].  To install it, do
+
+  gem sources -a http://gems.github.com
+  
+  sudo gem install rackspace-cloudfiles
+  
+To use it in a Rails application, add the following information to your config/environment.rb
+
+  config.gem "rackspace-cloudfiles", :source => "http://gems.github.com", :lib => "cloudfiles"
+  
+
 == Examples
 
 See the class definitions for documentation on specific methods and operations.

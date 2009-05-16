@@ -147,7 +147,7 @@ module CloudFiles
     def write(data=nil,headers={})
       #raise SyntaxException, "No data was provided for object '#{@name}'" if (data.nil?)
       # Try to get the content type
-      raise SyntaxException, "No data or header updates supplied" if (data.nil? and headers.empty?)
+      raise SyntaxException, "No data or header updates supplied" if ((data.nil? && $stdin.tty?) and headers.empty?)
       if headers['Content-Type'].nil?
         type = MIME::Types.type_for(self.name).first.to_s
         if type.empty?
@@ -156,6 +156,8 @@ module CloudFiles
           headers['Content-Type'] = type
         end
       end
+      # If we're taking data from standard input, send that IO object to cfreq
+      data = $stdin if (data.nil? && $stdin.tty? == false)
       response = self.container.connection.cfreq("PUT",@storagehost,"#{@storagepath}",headers,data)
       raise InvalidResponseException, "Invalid content-length header sent" if (response.code == "412")
       raise MisMatchedChecksumException, "Mismatched etag" if (response.code == "422")

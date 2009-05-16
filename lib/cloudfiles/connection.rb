@@ -211,6 +211,7 @@ module CloudFiles
     # This method actually makes the HTTP calls out to the server
     def cfreq(method,server,path,headers = {},data = nil,attempts = 0,&block) # :nodoc:
       start = Time.now
+      headers['Transfer-Encoding'] = "chunked" if data.is_a?(IO)
       hdrhash = headerprep(headers)
       start_http(server,path,hdrhash)
       request = Net::HTTP.const_get(method.to_s.capitalize).new(path,hdrhash)
@@ -220,7 +221,9 @@ module CloudFiles
         else
           request.body = data
         end
-        request.content_length = data.respond_to?(:lstat) ? data.stat.size : data.size
+        unless data.is_a?(IO)
+          request.content_length = data.respond_to?(:lstat) ? data.stat.size : data.size
+        end
       else
         request.content_length = 0
       end

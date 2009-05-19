@@ -144,9 +144,16 @@ module CloudFiles
     #
     #   object.data
     #   => "This is new data"
+    #
+    # If you are passing your data in via STDIN, just do an
+    #
+    #   object.write
+    #
+    # with no data (or, if you need to pass headers)
+    #
+    #  object.write(nil,{'header' => 'value})
+    
     def write(data=nil,headers={})
-      #raise SyntaxException, "No data was provided for object '#{@name}'" if (data.nil?)
-      # Try to get the content type
       raise SyntaxException, "No data or header updates supplied" if ((data.nil? && $stdin.tty?) and headers.empty?)
       if headers['Content-Type'].nil?
         type = MIME::Types.type_for(self.name).first.to_s

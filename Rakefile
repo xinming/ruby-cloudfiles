@@ -1,5 +1,5 @@
 require 'rubygems'
-gem 'echoe', '~> 3.0.1'
+gem 'echoe', '>= 3.0.1'
 require 'echoe'
 require './lib/cloudfiles.rb'
  

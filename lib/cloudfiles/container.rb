@@ -113,7 +113,7 @@ module CloudFiles
       response = self.connection.cfreq("GET",@storagehost,"#{@storagepath}?#{paramstr}")
       return [] if (response.code == "204")
       raise InvalidResponseException, "Invalid response code #{response.code}" unless (response.code == "200")
-      return response.body.to_a.map { |x| x.chomp }
+      return CloudFiles.lines(response.body)
     end
     alias :list_objects :objects
 

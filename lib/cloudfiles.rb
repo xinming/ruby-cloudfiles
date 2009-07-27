@@ -24,12 +24,14 @@ module CloudFiles
   require 'rexml/document'
   require 'uri'
   require 'digest/md5'
-  require 'jcode' 
   require 'time'
   require 'rubygems'
   require 'mime/types'
 
-  $KCODE = 'u'
+  unless "".respond_to? :each_char
+    require "jcode"
+    $KCODE = 'u'
+  end
 
   $:.unshift(File.dirname(__FILE__))
   require 'cloudfiles/authentication'
@@ -37,6 +39,9 @@ module CloudFiles
   require 'cloudfiles/container'
   require 'cloudfiles/storage_object'
 
+  def self.lines(str)
+    (str.respond_to?(:lines) ? str.lines : str).to_a.map { |x| x.chomp }
+  end
 end
 
 

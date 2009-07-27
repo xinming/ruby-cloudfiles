@@ -18,9 +18,6 @@ module CloudFiles
     # Path for managing containers on the CDN management server
     attr_accessor :cdnmgmtpath
 
-    # Array of requests that have been made so far
-    attr_reader :reqlog
-
     # Hostname of the storage server
     attr_accessor :storagehost
 
@@ -51,7 +48,6 @@ module CloudFiles
       @retry_auth = retry_auth
       @authok = false
       @http = {}
-      @reqlog = []
       CloudFiles::Authentication.new(self)
     end
 
@@ -109,7 +105,7 @@ module CloudFiles
       response = cfreq("GET",@storagehost,"#{@storagepath}?#{paramstr}")
       return [] if (response.code == "204")
       raise InvalidResponseException, "Invalid response code #{response.code}" unless (response.code == "200")
-      response.body.to_a.map { |x| x.chomp }
+      CloudFiles.lines(response.body)
     end
     alias :list_containers :containers
 
@@ -205,7 +201,7 @@ module CloudFiles
       response = cfreq("GET",@cdnmgmthost,"#{@cdnmgmtpath}?#{paramstr}")
       return [] if (response.code == "204")
       raise InvalidResponseException, "Invalid response code #{response.code}" unless (response.code == "200")
-      response.body.to_a.map { |x| x.chomp }
+      CloudFiles.lines(response.body)
     end
 
     # This method actually makes the HTTP calls out to the server

@@ -71,7 +71,6 @@ module CloudFiles
         headers['Range'] = range
       end
       response = self.container.connection.cfreq("GET",@storagehost,@storagepath,headers)
-      print "DEBUG: Code is #{response.code}\n"
       raise NoSuchObjectException, "Object #{@name} does not exist" unless (response.code =~ /^20/)
       response.body.chomp
     end

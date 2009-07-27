@@ -2,11 +2,11 @@
 
 Gem::Specification.new do |s|
   s.name = %q{cloudfiles}
-  s.version = "1.3.0.3"
+  s.version = "1.3.0.4"
 
   s.required_rubygems_version = Gem::Requirement.new(">= 1.2") if s.respond_to? :required_rubygems_version=
   s.authors = ["H. Wade Minter, Rackspace Hosting"]
-  s.date = %q{2009-05-16}
+  s.date = %q{2009-07-27}
   s.description = %q{A Ruby version of the Mosso Cloud Files API.}
   s.email = %q{wade.minter@rackspace.com}
   s.extra_rdoc_files = ["lib/cloudfiles/authentication.rb", "lib/cloudfiles/connection.rb", "lib/cloudfiles/container.rb", "lib/cloudfiles/storage_object.rb", "lib/cloudfiles.rb", "README.rdoc", "TODO"]
@@ -26,13 +26,10 @@ Gem::Specification.new do |s|
 
     if Gem::Version.new(Gem::RubyGemsVersion) >= Gem::Version.new('1.2.0') then
       s.add_runtime_dependency(%q<mime-types>, [">= 1.0"])
-      s.add_development_dependency(%q<echoe>, [">= 0"])
     else
       s.add_dependency(%q<mime-types>, [">= 1.0"])
-      s.add_dependency(%q<echoe>, [">= 0"])
     end
   else
     s.add_dependency(%q<mime-types>, [">= 1.0"])
-    s.add_dependency(%q<echoe>, [">= 0"])
   end
 end

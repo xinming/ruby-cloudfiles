@@ -10,7 +10,7 @@ class CloudfilesContainerTest < Test::Unit::TestCase
     @container = CloudFiles::Container.new(connection, 'test_container')
     assert_equal @container.name, 'test_container'
     assert_equal @container.class, CloudFiles::Container
-    assert_equal @container.public?, true
+    assert_equal @container.public?, false
   end
   
   def test_object_creation_no_such_container
@@ -23,15 +23,15 @@ class CloudfilesContainerTest < Test::Unit::TestCase
     end
   end
   
-  def test_object_creation_no_cdn
+  def test_object_creation_with_cdn
     connection = mock(:storagehost => 'test.storage.example', :storagepath => '/dummy/path', :cdnmgmthost => 'cdm.test.example', :cdnmgmtpath => '/dummy/path')
-    response = {'x-container-bytes-used' => '42', 'x-container-object-count' => '5'}
-    response.stubs(:code).returns('204').then.returns('999')
+    response = {'x-container-bytes-used' => '42', 'x-container-object-count' => '5', 'x-cdn-enabled' => 'True'}
+    response.stubs(:code).returns('204')
     connection.stubs(:cfreq => response)
     @container = CloudFiles::Container.new(connection, 'test_container')
     assert_equal @container.name, 'test_container'
-    assert_equal @container.cdn_enabled, false
-    assert_equal @container.public?, false
+    assert_equal @container.cdn_enabled, true
+    assert_equal @container.public?, true
   end
   
   def test_to_s

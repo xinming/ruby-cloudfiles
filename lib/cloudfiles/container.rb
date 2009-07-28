@@ -59,15 +59,11 @@ module CloudFiles
 
       # Get the CDN-related details
       response = self.connection.cfreq("HEAD",@cdnmgmthost,@cdnmgmtpath)
-      if (response.code == "204")
-        @cdn_enabled = true
-        @cdn_ttl = response["x-ttl"]
-        @cdn_url = response["x-cdn-uri"]
-      else
-        @cdn_enabled = false
-        @cdn_ttl = false
-        @cdn_url = false
-      end
+      raise NoSuchContainerException, "Container #{@name} does not exist" unless (response.code == "204")
+      @cdn_enabled = ((response["x-cdn-enabled"] || "").downcase == "true") ? true : false
+      @cdn_ttl = @cdn_enable ? response["x-ttl"] : false
+      @cdn_url = @cdn_enable ? response["x-cdn-uri"] : false
+
       true
     end
     alias :refresh :populate
@@ -223,8 +219,11 @@ module CloudFiles
     #   container.make_public(432000)
     #   => true
     def make_public(ttl = 86400)
-      headers = { "X-CDN-Enabled" => "True", "X-TTL" => ttl.to_s }
-      response = self.connection.cfreq("PUT",@cdnmgmthost,@cdnmgmtpath,headers)
+      response = self.connection.cfreq("PUT",@cdnmgmthost,@cdnmgmtpath)
+      raise NoSuchContainerException, "Container #{@name} does not exist" unless (response.code == "201" || response.code == "202")
+
+      headers = { "X-TTL" => ttl.to_s }
+      response = self.connection.cfreq("POST",@cdnmgmthost,@cdnmgmtpath,headers)
       raise NoSuchContainerException, "Container #{@name} does not exist" unless (response.code == "201" || response.code == "202")
       true
     end
@@ -238,7 +237,7 @@ module CloudFiles
     #   => true
     def make_private
       headers = { "X-CDN-Enabled" => "False" }
-      response = self.connection.cfreq("PUT",@cdnmgmthost,@cdnmgmtpath,headers)
+      response = self.connection.cfreq("POST",@cdnmgmthost,@cdnmgmtpath,headers)
       raise NoSuchContainerException, "Container #{@name} does not exist" unless (response.code == "201" || response.code == "202")
       true
     end

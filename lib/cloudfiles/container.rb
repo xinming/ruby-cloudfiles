@@ -59,7 +59,6 @@ module CloudFiles
 
       # Get the CDN-related details
       response = self.connection.cfreq("HEAD",@cdnmgmthost,@cdnmgmtpath)
-      raise NoSuchContainerException, "Container #{@name} does not exist" unless (response.code == "204")
       @cdn_enabled = ((response["x-cdn-enabled"] || "").downcase == "true") ? true : false
       @cdn_ttl = @cdn_enabled ? response["x-ttl"] : false
       @cdn_url = @cdn_enabled ? response["x-cdn-uri"] : false

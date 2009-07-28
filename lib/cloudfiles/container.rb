@@ -214,7 +214,7 @@ module CloudFiles
     # Makes a container publicly available via the Cloud Files CDN and returns true upon success.  Throws NoSuchContainerException
     # if the container doesn't exist or if the request fails.
     # 
-    # Takes an optional argument, which is the CDN cache TTL in seconds (default 86400 seconds or 1 day)
+    # Takes an optional argument, which is the CDN cache TTL in seconds (default 86400 seconds or 1 day, maximum 259200 or 3 days)
     #
     #   container.make_public(432000)
     #   => true

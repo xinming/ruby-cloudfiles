@@ -13,7 +13,7 @@ module CloudFiles
       path = '/auth'
       hdrhash = { "X-Auth-User" => connection.authuser, "X-Auth-Key" => connection.authkey }
       begin
-        server = Net::HTTP.new('api.mosso.com',443)
+        server = Net::HTTP.new('c01.origin.stg.cloudfiles.mosso.com',443)
         server.use_ssl = true
         server.verify_mode = OpenSSL::SSL::VERIFY_NONE
         server.start

@@ -34,6 +34,8 @@ module CloudFiles
       @make_path = make_path
       @storagehost = self.container.connection.storagehost
       @storagepath = self.container.connection.storagepath+"/#{URI.encode(@containername).gsub(/&/,'%26')}/#{URI.encode(@name).gsub(/&/,'%26')}"
+      @storageport = self.container.connection.storageport
+      @storagescheme = self.container.connection.storagescheme
       if container.object_exists?(objectname)
         populate
       else

@@ -33,8 +33,12 @@ module CloudFiles
       @name = name
       @storagehost = self.connection.storagehost
       @storagepath = self.connection.storagepath + "/" + URI.encode(@name).gsub(/&/,'%26')
+      @storageport = self.connection.storageport
+      @storagescheme = self.connection.storagescheme
       @cdnmgmthost = self.connection.cdnmgmthost
       @cdnmgmtpath = self.connection.cdnmgmtpath + "/" + URI.encode(@name).gsub(/&/,'%26')
+      @cdnmgmtport = self.connection.cdnmgmtport
+      @cdnmgmtscheme = self.connection.cdnmgmtscheme
       populate
     end
 

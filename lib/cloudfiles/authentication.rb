@@ -22,8 +22,6 @@ module CloudFiles
       end
       response = server.get(path,hdrhash)
       if (response.code == "204")
-        print "DEBUG: CDN URL is " + response["x-cdn-management-url"] + "\n"
-        print "DEBUG: Storage URL is " + response["x-storage-url"] + "and SSL is " + "\n"
         connection.cdnmgmthost = URI.parse(response["x-cdn-management-url"]).host
         connection.cdnmgmtpath = URI.parse(response["x-cdn-management-url"]).path
         connection.cdnmgmtport = URI.parse(response["x-cdn-management-url"]).port

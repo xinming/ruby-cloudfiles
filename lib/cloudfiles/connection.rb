@@ -176,7 +176,7 @@ module CloudFiles
     def create_container(containername)
       raise SyntaxException, "Container name cannot contain the characters '/' or '?'" if containername.match(/[\/\?]/)
       raise SyntaxException, "Container name is limited to 256 characters" if containername.length > 256
-      response = cfreq("PUT",@storagehost,"#{@storagepath}/#{containername}",@storageport,@storagescheme,{'x-log-retention' => log_retention.to_s.capitalize})
+      response = cfreq("PUT",@storagehost,"#{@storagepath}/#{containername}",@storageport,@storagescheme)
       raise InvalidResponseException, "Unable to create container #{containername}" unless (response.code == "201" || response.code == "202")
       CloudFiles::Container.new(self,containername)
     end

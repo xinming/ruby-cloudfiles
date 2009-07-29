@@ -7,9 +7,9 @@ echoe = Echoe.new('cloudfiles') do |p|
   p.author = ["H. Wade Minter", "Rackspace Hosting"]
   p.email = 'wade.minter@rackspace.com'
   p.version = CloudFiles::VERSION
-  p.summary = "A Ruby API into Mosso Cloud Files"
-  p.description = 'A Ruby version of the Mosso Cloud Files API.'
-  p.url = "http://www.mosso.com/cloudfiles.jsp"
+  p.summary = "A Ruby API into Rackspace Cloud Files"
+  p.description = 'A Ruby version of the Rackspace Cloud Files API.'
+  p.url = "http://www.rackspacecloud.com/cloud_hosting_products/files"
   p.runtime_dependencies = ["mime-types >=1.0"]
 end
 

@@ -1,8 +1,8 @@
-= Mosso Cloud Files
+= Rackspace Cloud Files
 
 == Description
 
-This is a Ruby interface into the Rackspace[http://rackspace.com/] {Mosso Cloud Files}[http://www.mosso.com/cloudfiles.jsp] service. Cloud Files is reliable, scalable and affordable web-based storage hosting for backing up and archiving all your static content.  Cloud Files is the first and only cloud service that leverages a tier one CDN provider to create such an easy and complete storage-to-delivery solution for media content.
+This is a Ruby interface into the Rackspace[http://rackspace.com/] {Cloud Files}[http://www.rackspacecloud.com/cloud_hosting_products/files] service. Cloud Files is reliable, scalable and affordable web-based storage hosting for backing up and archiving all your static content.  Cloud Files is the first and only cloud service that leverages a tier one CDN provider to create such an easy and complete storage-to-delivery solution for media content.
 
 == Installation
 

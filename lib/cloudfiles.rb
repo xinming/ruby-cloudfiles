@@ -1,7 +1,7 @@
 #!/usr/bin/env ruby
 # 
 # == Cloud Files API
-# ==== Connects Ruby Applications to Rackspace's {Mosso Cloud Files service}[http://www.mosso.com/cloudfiles.jsp]
+# ==== Connects Ruby Applications to Rackspace's {Cloud Files service}[http://www.rackspacecloud.com/cloud_hosting_products/files]
 # Initial work by Major Hayden <major.hayden@rackspace.com>
 # 
 # Subsequent work by H. Wade Minter <wade.minter@rackspace.com>

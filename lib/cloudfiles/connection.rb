@@ -46,7 +46,7 @@ module CloudFiles
     attr_reader :count
 
     # Creates a new CloudFiles::Connection object.  Uses CloudFiles::Authentication to perform the login for the connection.
-    # The authuser is the Mosso username, the authkey is the Mosso API key.
+    # The authuser is the Rackspace Cloud username, the authkey is the Rackspace Cloud API key.
     #
     # Setting the optional retry_auth variable to false will cause an exception to be thrown if your authorization token expires.
     # Otherwise, it will attempt to reauthenticate.
@@ -176,7 +176,7 @@ module CloudFiles
     def create_container(containername)
       raise SyntaxException, "Container name cannot contain the characters '/' or '?'" if containername.match(/[\/\?]/)
       raise SyntaxException, "Container name is limited to 256 characters" if containername.length > 256
-      response = cfreq("PUT",@storagehost,"#{@storagepath}/#{containername}",@storageport,@storagescheme)
+      response = cfreq("PUT",@storagehost,"#{@storagepath}/#{containername}",@storageport,@storagescheme,{'x-log-retention' => log_retention.to_s.capitalize})
       raise InvalidResponseException, "Unable to create container #{containername}" unless (response.code == "201" || response.code == "202")
       CloudFiles::Container.new(self,containername)
     end

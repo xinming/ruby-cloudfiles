@@ -89,6 +89,15 @@ class CloudfilesContainerTest < Test::Unit::TestCase
     assert_equal @container.empty?, true
   end
   
+  def test_log_retention_is_true
+    connection = mock(:storagehost => 'test.storage.example', :storagepath => '/dummy/path', :storageport => 443, :storagescheme => 'https', :cdnmgmthost => 'cdm.test.example', :cdnmgmtpath => '/dummy/path', :cdnmgmtport => 443, :cdnmgmtscheme => 'https')
+    response = {'x-container-bytes-used' => '0', 'x-container-object-count' => '0', 'x-cdn-enabled' => 'True', 'x-log-retention' => 'True'}
+    response.stubs(:code).returns('204')
+    connection.stubs(:cfreq => response)
+    @container = CloudFiles::Container.new(connection, 'test_container')
+    assert_equal @container.log_retention?, true
+  end
+  
   def test_object_fetch
     build_net_http_object(:code => '204', :response => {'last-modified' => 'Wed, 28 Jan 2009 16:16:26 GMT'})
     object = @container.object('good_object')
@@ -166,6 +175,11 @@ class CloudfilesContainerTest < Test::Unit::TestCase
     end
   end
   
+  def test_setting_log_retention
+    build_net_http_object(:code => '201')
+    assert(@container.log_retention='false')
+  end
+  
   private
   
   def build_net_http_object(args={:code => '204' })
@@ -176,16 +190,6 @@ class CloudfilesContainerTest < Test::Unit::TestCase
     response.stubs(:code).returns(args[:code])
     response.stubs(:body).returns args[:body] || nil
     connection.stubs(:cfreq => response)
-    #server = mock()
-    #server.stubs(:verify_mode= => true)
-    #server.stubs(:start => true)
-    #server.stubs(:use_ssl=).returns(true)
-    #server.stubs(:get).returns(response)
-    #server.stubs(:post).returns(response)
-    #server.stubs(:put).returns(response)
-    #server.stubs(:head).returns(response)
-    #server.stubs(:delete).returns(response)
-    #Net::HTTP.stubs(:new).returns(server)
     @container = CloudFiles::Container.new(connection, 'test_container')
     @container.stubs(:connection).returns(connection)
   end

@@ -44,7 +44,7 @@ module CloudFiles
     # Caches data about the CloudFiles::StorageObject for fast retrieval.  This method is automatically called when the 
     # class is initialized, but it can be called again if the data needs to be updated.
     def populate
-      response = self.container.connection.cfreq("HEAD",@storagehost,@storagepath)
+      response = self.container.connection.cfreq("HEAD",@storagehost,@storagepath,@storageport,@storagescheme)
       raise NoSuchObjectException, "Object #{@name} does not exist" if (response.code != "204")
       @bytes = response["content-length"]
       @last_modified = Time.parse(response["last-modified"])
@@ -70,7 +70,7 @@ module CloudFiles
         range = sprintf("bytes=%d-%d", offset.to_i, (offset.to_i + size.to_i) - 1)
         headers['Range'] = range
       end
-      response = self.container.connection.cfreq("GET",@storagehost,@storagepath,headers)
+      response = self.container.connection.cfreq("GET",@storagehost,@storagepath,@storageport,@storagescheme,headers)
       raise NoSuchObjectException, "Object #{@name} does not exist" unless (response.code =~ /^20/)
       response.body.chomp
     end
@@ -93,7 +93,7 @@ module CloudFiles
         range = sprintf("bytes=%d-%d", offset.to_i, (offset.to_i + size.to_i) - 1)
         headers['Range'] = range
       end
-      self.container.connection.cfreq("GET",@storagehost,@storagepath,headers,nil) do |response|
+      self.container.connection.cfreq("GET",@storagehost,@storagepath,@storageport,@storagescheme,headers,nil) do |response|
         raise NoSuchObjectException, "Object #{@name} does not exist" unless (response.code == "200")
         response.read_body(&block)
       end
@@ -118,7 +118,7 @@ module CloudFiles
     def set_metadata(metadatahash)
       headers = {}
       metadatahash.each{|key, value| headers['X-Object-Meta-' + key.to_s.capitalize] = value.to_s}
-      response = self.container.connection.cfreq("POST",@storagehost,@storagepath,headers)
+      response = self.container.connection.cfreq("POST",@storagehost,@storagepath,@storageport,@storagescheme,headers)
       raise NoSuchObjectException, "Object #{@name} does not exist" if (response.code == "404")
       raise InvalidResponseException, "Invalid response code #{response.code}" unless (response.code == "202")
       true
@@ -164,7 +164,7 @@ module CloudFiles
       end
       # If we're taking data from standard input, send that IO object to cfreq
       data = $stdin if (data.nil? && $stdin.tty? == false)
-      response = self.container.connection.cfreq("PUT",@storagehost,"#{@storagepath}",headers,data)
+      response = self.container.connection.cfreq("PUT",@storagehost,"#{@storagepath}",@storageport,@storagescheme,headers,data)
       raise InvalidResponseException, "Invalid content-length header sent" if (response.code == "412")
       raise MisMatchedChecksumException, "Mismatched etag" if (response.code == "422")
       raise InvalidResponseException, "Invalid response code #{response.code}" unless (response.code == "201")

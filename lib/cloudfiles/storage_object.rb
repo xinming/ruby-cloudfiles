@@ -226,7 +226,7 @@ module CloudFiles
     # If the parent container is public (CDN-enabled), returns the CDN URL to this object.  Otherwise, return nil
     #
     #   public_object.public_url
-    #   => "http://cdn.cloudfiles.mosso.com/c10181/rampage.jpg"
+    #   => "http://c0001234.cdn.cloudfiles.rackspacecloud.com/myfile.jpg"
     #
     #   private_object.public_url
     #   => nil

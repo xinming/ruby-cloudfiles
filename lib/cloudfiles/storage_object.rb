@@ -167,9 +167,10 @@ module CloudFiles
       # If we're taking data from standard input, send that IO object to cfreq
       data = $stdin if (data.nil? && $stdin.tty? == false)
       response = self.container.connection.cfreq("PUT",@storagehost,"#{@storagepath}",@storageport,@storagescheme,headers,data)
-      raise InvalidResponseException, "Invalid content-length header sent" if (response.code == "412")
-      raise MisMatchedChecksumException, "Mismatched etag" if (response.code == "422")
-      raise InvalidResponseException, "Invalid response code #{response.code}" unless (response.code == "201")
+      code = response.code
+      raise InvalidResponseException, "Invalid content-length header sent" if (code == "412")
+      raise MisMatchedChecksumException, "Mismatched etag" if (code == "422")
+      raise InvalidResponseException, "Invalid response code #{code}" unless (code == "201")
       make_path(File.dirname(self.name)) if @make_path == true
       self.populate
       true

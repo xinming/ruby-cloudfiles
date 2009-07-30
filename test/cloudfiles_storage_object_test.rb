@@ -41,6 +41,11 @@ class CloudfilesStorageObjectTest < Test::Unit::TestCase
     assert_equal @object.data, 'This is good data'
   end
   
+  def test_data_with_offset_succeeds
+    build_net_http_object(:code => '200', :body => 'Thi')
+    assert_equal @object.data(3), 'Thi'
+  end
+  
   def test_data_fails
     build_net_http_object(:code => '999', :body => 'This is bad data')
     assert_raise(NoSuchObjectException) do
@@ -58,6 +63,17 @@ class CloudfilesStorageObjectTest < Test::Unit::TestCase
     end
   end
   
+  def test_data_stream_with_offset_succeeds
+    build_net_http_object(:code => '200', :body => 'This ')
+    data = ""
+    assert_nothing_raised do
+      @object.data_stream(5) { |chunk|
+        data += chunk
+      }
+    end
+  end
+  
+  # Need to find a way to simulate this properly
   def data_stream_fails
     build_net_http_object(:code => '999', :body => 'This is bad data')
     data = ""
@@ -90,12 +106,35 @@ class CloudfilesStorageObjectTest < Test::Unit::TestCase
     end
   end
   
+  def test_read_metadata_succeeds
+    connection = stub(:storagehost => 'test.storage.example', :storagepath => '/dummy/path', :storageport => 443, :storagescheme => 'https', :cdnmgmthost => 'cdm.test.example', :cdnmgmtpath => '/dummy/path', :cdnmgmtport => 443, :cdnmgmtscheme => 'https')
+    response = {'x-container-bytes-used' => '42', 'x-container-object-count' => '5', 'x-object-meta-foo' => 'Bar', 'last-modified' => Time.now.to_s}
+    response.stubs(:code).returns('204')
+    connection.stubs(:cfreq => response)
+    container = CloudFiles::Container.new(connection, 'test_container')
+    @object = CloudFiles::StorageObject.new(container, 'test_object')
+    assert_equal @object.metadata, {'foo' => 'Bar'}
+  end
+  
   def test_write_succeeds
     CloudFiles::StorageObject.any_instance.stubs(:populate).returns(true)
     CloudFiles::Container.any_instance.stubs(:populate).returns(true)
     build_net_http_object(:code => '201')
     assert_nothing_raised do
       @object.write("This is test data")
+    end
+  end
+  
+  def test_write_with_make_path
+    connection = stub(:storagehost => 'test.storage.example', :storagepath => '/dummy/path', :storageport => 443, :storagescheme => 'https', :cdnmgmthost => 'cdm.test.example', :cdnmgmtpath => '/dummy/path', :cdnmgmtport => 443, :cdnmgmtscheme => 'https')
+    response = {'x-container-bytes-used' => '42', 'x-container-object-count' => '5', 'last-modified' => Time.now.to_s}
+    response.stubs(:code).returns('204').then.returns('204').then.returns('201').then.returns('204')
+    connection.stubs(:cfreq => response)
+    CloudFiles::Container.any_instance.stubs(:populate).returns(true)
+    container = CloudFiles::Container.new(connection, 'test_container')
+    @object = CloudFiles::StorageObject.new(container, 'path/to/my/test_object', false, true)
+    assert_nothing_raised do
+      @object.write("This is path test data")
     end
   end
   

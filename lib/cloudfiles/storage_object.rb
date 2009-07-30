@@ -51,7 +51,7 @@ module CloudFiles
       @etag = response["etag"]
       @content_type = response["content-type"]
       resphash = {}
-      response.to_hash.select { |k,v| k.match(/^x-object-meta/) }.each { |x| resphash[x[0]] = x[1][0].to_s }
+      response.to_hash.select { |k,v| k.match(/^x-object-meta/) }.each { |x| resphash[x[0]] = x[1].to_s }
       @metadata = resphash
       true
     end

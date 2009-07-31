@@ -84,7 +84,7 @@ module CloudFiles
     # Change the log retention status for this container.  Values are true or false.
     #
     # These logs will be periodically (at unpredictable intervals) compressed and uploaded 
-    # to a “.CDN_ACCESS_LOGS” container in the form of “container_name.YYYY-MM-DD-HH.gz”.
+    # to a “.CDN_ACCESS_LOGS” container in the form of “container_name.YYYYMMDDHH-XXXX.gz”.
     def log_retention=(value)
       response = self.connection.cfreq("POST",@cdnmgmthost,@cdnmgmtpath,@cdnmgmtport,@cdnmgmtscheme,{"x-log-retention" => value.to_s.capitalize})
       raise InvalidResponseException, "Invalid response code #{response.code}" unless (response.code == "201" or response.code == "202")

@@ -26,35 +26,35 @@ class CloudfilesConnectionTest < Test::Unit::TestCase
   def test_cfreq_get
     build_net_http_object
     assert_nothing_raised do 
-      response = @connection.cfreq("GET", "test.server.example", "/dummypath")
+      response = @connection.cfreq("GET", "test.server.example", "/dummypath", "80", "http")
     end
   end
   
   def test_cfreq_post
     build_net_http_object
     assert_nothing_raised do
-      response = @connection.cfreq("POST", "test.server.example", "/dummypath")
+      response = @connection.cfreq("POST", "test.server.example", "/dummypath", "80", "http")
     end
   end
   
   def test_cfreq_put
     build_net_http_object
     assert_nothing_raised do
-      response = @connection.cfreq("PUT", "test.server.example", "/dummypath")
+      response = @connection.cfreq("PUT", "test.server.example", "/dummypath", "80", "http")
     end
   end
   
   def test_cfreq_delete
     build_net_http_object
     assert_nothing_raised do
-      response = @connection.cfreq("DELETE", "test.server.example", "/dummypath")
+      response = @connection.cfreq("DELETE", "test.server.example", "/dummypath", "80", "http")
     end
   end
   
   def test_cfreq_with_static_data
     build_net_http_object
     assert_nothing_raised do
-      response = @connection.cfreq("PUT", "test.server.example", "/dummypath", {}, "This is string data")
+      response = @connection.cfreq("PUT", "test.server.example", "/dummypath", "80", "http", {}, "This is string data")
     end
   end
   
@@ -63,32 +63,32 @@ class CloudfilesConnectionTest < Test::Unit::TestCase
     require 'tempfile'
     file = Tempfile.new("test")
     assert_nothing_raised do
-      response = @connection.cfreq("PUT", "test.server.example", "/dummypath", {}, file)
+      response = @connection.cfreq("PUT", "test.server.example", "/dummypath", "80", "http", {}, file)
     end
   end
   
   def test_cfreq_head
     build_net_http_object
     assert_nothing_raised do
-      response = @connection.cfreq("HEAD", "test.server.example", "/dummypath")
+      response = @connection.cfreq("HEAD", "test.server.example", "/dummypath", "80", "http")
     end
   end
   
   def test_net_http_raises_connection_exception
     Net::HTTP.expects(:new).raises(ConnectionException)
     assert_raises(ConnectionException) do
-      response = @connection.cfreq("GET", "test.server.example", "/dummypath")
+      response = @connection.cfreq("GET", "test.server.example", "/dummypath", "80", "http")
     end
   end
   
   def test_net_http_raises_one_eof_exception
     response = {'x-cdn-management-url' => 'http://cdn.example.com/path', 'x-storage-url' => 'http://cdn.example.com/storage', 'authtoken' => 'dummy_token'}
     response.stubs(:code).returns('204')
-    server = mock(:use_ssl= => true, :verify_mode= => true, :start => true, :finish => true)
+    server = stub(:use_ssl= => true, :verify_mode= => true, :start => true, :finish => true)
     server.stubs(:request).raises(EOFError).then.returns(response)
     Net::HTTP.stubs(:new).returns(server)
     assert_nothing_raised do
-      response = @connection.cfreq("GET", "test.server.example", "/dummypath")
+      response = @connection.cfreq("GET", "test.server.example", "/dummypath", "443", "https")
     end
   end
   
@@ -96,23 +96,23 @@ class CloudfilesConnectionTest < Test::Unit::TestCase
     CloudFiles::Authentication.expects(:new).returns(true)
     response = {'x-cdn-management-url' => 'http://cdn.example.com/path', 'x-storage-url' => 'http://cdn.example.com/storage', 'authtoken' => 'dummy_token'}
     response.stubs(:code).returns('401').then.returns('204')
-    server = mock(:use_ssl= => true, :verify_mode= => true, :start => true)
+    server = stub(:use_ssl= => true, :verify_mode= => true, :start => true)
     server.stubs(:request).returns(response)
     Net::HTTP.stubs(:new).returns(server)
     assert_nothing_raised do
-      response = @connection.cfreq("GET", "test.server.example", "/dummypath")
+      response = @connection.cfreq("GET", "test.server.example", "/dummypath", "80", "http")
     end
   end
   
   def test_net_http_raises_continual_eof_exceptions
     response = {'x-cdn-management-url' => 'http://cdn.example.com/path', 'x-storage-url' => 'http://cdn.example.com/storage', 'authtoken' => 'dummy_token'}
     response.stubs(:code).returns('204')
-    server = mock(:use_ssl= => true, :verify_mode= => true, :start => true)
+    server = stub(:use_ssl= => true, :verify_mode= => true, :start => true)
     server.stubs(:finish).returns(true)
     server.stubs(:request).raises(EOFError)
     Net::HTTP.stubs(:new).returns(server)
     assert_raises(ConnectionException) do
-      response = @connection.cfreq("GET", "test.server.example", "/dummypath")
+      response = @connection.cfreq("GET", "test.server.example", "/dummypath", "80", "http")
     end
   end
   

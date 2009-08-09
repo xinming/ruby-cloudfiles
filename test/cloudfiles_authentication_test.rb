@@ -9,7 +9,7 @@ class CloudfilesAuthenticationTest < Test::Unit::TestCase
     server = mock(:use_ssl= => true, :verify_mode= => true, :start => true, :finish => true)
     server.stubs(:get).returns(response)
     Net::HTTP.stubs(:new).returns(server)
-    @connection = stub(:authuser => 'dummy_user', :authkey => 'dummy_key', :cdnmgmthost= => true, :cdnmgmtpath= => true, :storagehost= => true, :storagepath= => true, :authtoken= => true, :authok= => true)
+    @connection = stub(:authuser => 'dummy_user', :authkey => 'dummy_key', :cdnmgmthost= => true, :cdnmgmtpath= => true, :cdnmgmtport= => true, :cdnmgmtscheme= => true, :storagehost= => true, :storagepath= => true, :storageport= => true, :storagescheme= => true, :authtoken= => true, :authok= => true)
     result = CloudFiles::Authentication.new(@connection)
     assert_equal result.class, CloudFiles::Authentication
   end

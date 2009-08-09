@@ -33,8 +33,12 @@ module CloudFiles
       @name = name
       @storagehost = self.connection.storagehost
       @storagepath = self.connection.storagepath + "/" + URI.encode(@name).gsub(/&/,'%26')
+      @storageport = self.connection.storageport
+      @storagescheme = self.connection.storagescheme
       @cdnmgmthost = self.connection.cdnmgmthost
       @cdnmgmtpath = self.connection.cdnmgmtpath + "/" + URI.encode(@name).gsub(/&/,'%26')
+      @cdnmgmtport = self.connection.cdnmgmtport
+      @cdnmgmtscheme = self.connection.cdnmgmtscheme
       populate
     end
 
@@ -52,20 +56,41 @@ module CloudFiles
     #   => 3
     def populate
       # Get the size and object count
-      response = self.connection.cfreq("HEAD",@storagehost,@storagepath+"/")
+      response = self.connection.cfreq("HEAD",@storagehost,@storagepath+"/",@storageport,@storagescheme)
       raise NoSuchContainerException, "Container #{@name} does not exist" unless (response.code == "204")
       @bytes = response["x-container-bytes-used"].to_i
       @count = response["x-container-object-count"].to_i
 
       # Get the CDN-related details
-      response = self.connection.cfreq("HEAD",@cdnmgmthost,@cdnmgmtpath)
+      response = self.connection.cfreq("HEAD",@cdnmgmthost,@cdnmgmtpath,@cdnmgmtport,@cdnmgmtscheme)
       @cdn_enabled = ((response["x-cdn-enabled"] || "").downcase == "true") ? true : false
       @cdn_ttl = @cdn_enabled ? response["x-ttl"] : false
       @cdn_url = @cdn_enabled ? response["x-cdn-uri"] : false
+      if @cdn_enabled
+        @cdn_log = response["x-log-retention"] == "False" ? false : true
+      else
+        @cdn_log = false
+      end
 
       true
     end
     alias :refresh :populate
+    
+    # Returns true if log retention is enabled on this container, false otherwise
+    def log_retention?
+      @cdn_log
+    end
+    
+    # Change the log retention status for this container.  Values are true or false.
+    #
+    # These logs will be periodically (at unpredictable intervals) compressed and uploaded 
+    # to a “.CDN_ACCESS_LOGS” container in the form of “container_name.YYYYMMDDHH-XXXX.gz”.
+    def log_retention=(value)
+      response = self.connection.cfreq("POST",@cdnmgmthost,@cdnmgmtpath,@cdnmgmtport,@cdnmgmtscheme,{"x-log-retention" => value.to_s.capitalize})
+      raise InvalidResponseException, "Invalid response code #{response.code}" unless (response.code == "201" or response.code == "202")
+      return true 
+    end
+      
 
     # Returns the CloudFiles::StorageObject for the named object.  Refer to the CloudFiles::StorageObject class for available
     # methods.  If the object exists, it will be returned.  If the object does not exist, a NoSuchObjectException will be thrown.
@@ -105,7 +130,7 @@ module CloudFiles
       paramarr << ["prefix=#{URI.encode(params[:prefix]).gsub(/&/,'%26')}"] if params[:prefix]
       paramarr << ["path=#{URI.encode(params[:path]).gsub(/&/,'%26')}"] if params[:path]
       paramstr = (paramarr.size > 0)? paramarr.join("&") : "" ;
-      response = self.connection.cfreq("GET",@storagehost,"#{@storagepath}?#{paramstr}")
+      response = self.connection.cfreq("GET",@storagehost,"#{@storagepath}?#{paramstr}",@storageport,@storagescheme)
       return [] if (response.code == "204")
       raise InvalidResponseException, "Invalid response code #{response.code}" unless (response.code == "200")
       return CloudFiles.lines(response.body)
@@ -136,7 +161,7 @@ module CloudFiles
       paramarr << ["prefix=#{URI.encode(params[:prefix]).gsub(/&/,'%26')}"] if params[:prefix]
       paramarr << ["path=#{URI.encode(params[:path]).gsub(/&/,'%26')}"] if params[:path]
       paramstr = (paramarr.size > 0)? paramarr.join("&") : "" ;
-      response = self.connection.cfreq("GET",@storagehost,"#{@storagepath}?#{paramstr}")
+      response = self.connection.cfreq("GET",@storagehost,"#{@storagepath}?#{paramstr}",@storageport,@storagescheme)
       return {} if (response.code == "204")
       raise InvalidResponseException, "Invalid response code #{response.code}" unless (response.code == "200")
       doc = REXML::Document.new(response.body)
@@ -179,7 +204,7 @@ module CloudFiles
     #   container.object_exists?('badfile.txt')
     #   => false
     def object_exists?(objectname)
-      response = self.connection.cfreq("HEAD",@storagehost,"#{@storagepath}/#{URI.encode(objectname).gsub(/&/,'%26')}")
+      response = self.connection.cfreq("HEAD",@storagehost,"#{@storagepath}/#{URI.encode(objectname).gsub(/&/,'%26')}",@storageport,@storagescheme)
       return (response.code == "204")? true : false
     end
 
@@ -204,7 +229,7 @@ module CloudFiles
     #   container.delete_object('nonexistent_file.txt')
     #   => NoSuchObjectException: Object nonexistent_file.txt does not exist
     def delete_object(objectname)
-      response = self.connection.cfreq("DELETE",@storagehost,"#{@storagepath}/#{URI.encode(objectname).gsub(/&/,'%26')}")
+      response = self.connection.cfreq("DELETE",@storagehost,"#{@storagepath}/#{URI.encode(objectname).gsub(/&/,'%26')}",@storageport,@storagescheme)
       raise NoSuchObjectException, "Object #{objectname} does not exist" if (response.code == "404")
       raise InvalidResponseException, "Invalid response code #{response.code}" unless (response.code == "204")
       true
@@ -218,11 +243,11 @@ module CloudFiles
     #   container.make_public(432000)
     #   => true
     def make_public(ttl = 86400)
-      response = self.connection.cfreq("PUT",@cdnmgmthost,@cdnmgmtpath)
+      response = self.connection.cfreq("PUT",@cdnmgmthost,@cdnmgmtpath,@cdnmgmtport,@cdnmgmtscheme)
       raise NoSuchContainerException, "Container #{@name} does not exist" unless (response.code == "201" || response.code == "202")
 
       headers = { "X-TTL" => ttl.to_s }
-      response = self.connection.cfreq("POST",@cdnmgmthost,@cdnmgmtpath,headers)
+      response = self.connection.cfreq("POST",@cdnmgmthost,@cdnmgmtpath,@cdnmgmtport,@cdnmgmtscheme,headers)
       raise NoSuchContainerException, "Container #{@name} does not exist" unless (response.code == "201" || response.code == "202")
       true
     end
@@ -236,7 +261,7 @@ module CloudFiles
     #   => true
     def make_private
       headers = { "X-CDN-Enabled" => "False" }
-      response = self.connection.cfreq("POST",@cdnmgmthost,@cdnmgmtpath,headers)
+      response = self.connection.cfreq("POST",@cdnmgmthost,@cdnmgmtpath,@cdnmgmtport,@cdnmgmtscheme,headers)
       raise NoSuchContainerException, "Container #{@name} does not exist" unless (response.code == "201" || response.code == "202")
       true
     end

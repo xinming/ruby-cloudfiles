@@ -1,7 +1,7 @@
 #!/usr/bin/env ruby
 # 
 # == Cloud Files API
-# ==== Connects Ruby Applications to Rackspace's {Mosso Cloud Files service}[http://www.mosso.com/cloudfiles.jsp]
+# ==== Connects Ruby Applications to Rackspace's {Cloud Files service}[http://www.rackspacecloud.com/cloud_hosting_products/files]
 # Initial work by Major Hayden <major.hayden@rackspace.com>
 # 
 # Subsequent work by H. Wade Minter <wade.minter@rackspace.com>
@@ -18,7 +18,7 @@
 # To create a new CloudFiles connection, use the CloudFiles::Connection.new('user_name', 'api_key') method.
 module CloudFiles
 
-  VERSION = '1.3.0.7'
+  VERSION = '1.4.0.0'
   require 'net/http'
   require 'net/https'
   require 'rexml/document'

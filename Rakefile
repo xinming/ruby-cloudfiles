@@ -1,23 +1,19 @@
-require 'rubygems'
-gem 'echoe', '>= 3.0.1'
-require 'echoe'
 require './lib/cloudfiles.rb'
- 
-echoe = Echoe.new('cloudfiles') do |p|
-  p.author = ["H. Wade Minter", "Rackspace Hosting"]
-  p.email = 'wade.minter@rackspace.com'
-  p.version = CloudFiles::VERSION
-  p.summary = "A Ruby API into Rackspace Cloud Files"
-  p.description = 'A Ruby version of the Rackspace Cloud Files API.'
-  p.url = "http://www.rackspacecloud.com/cloud_hosting_products/files"
-  p.runtime_dependencies = ["mime-types >=1.0"]
-end
 
-desc 'Generate the .gemspec file in the root directory'
-task :gemspec do
-  File.open("#{echoe.name}.gemspec", "w") {|f| f << echoe.spec.to_ruby }
-end
-task :package => :gemspec
+begin
+  require 'jeweler'
+  Jeweler::Tasks.new do |gemspec|
+    gemspec.name = "cloudfiles"
+    gemspec.summary = "A Ruby API into Rackspace Cloud Files"
+    gemspec.description = "A Ruby version of the Rackspace Cloud Files API."
+    gemspec.email = "wade.minter@rackspace.com"
+    gemspec.homepage = "http://www.rackspacecloud.com/cloud_hosting_products/files"
+    gemspec.authors = ["H. Wade Minter", "Rackspace Hosting"]
+  end
+  Jeweler::GemcutterTasks.new
+rescue LoadError
+  puts "Jeweler not available. Install it with: sudo gem install technicalpickles-jeweler -s http://gems.github.com"
+end 
 
 namespace :test do
   desc 'Check test coverage'

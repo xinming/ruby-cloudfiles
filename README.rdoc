@@ -6,21 +6,22 @@ This is a Ruby interface into the Rackspace[http://rackspace.com/] {Cloud Files}
 
 == Installation
 
-This gem is available on Github[http://github.com/rackspace/ruby-cloudfiles/].  To install it, do
+This source is available on Github[http://github.com/rackspace/ruby-cloudfiles/] and the gem is available on Gemcutter[http://gemcutter.org/].  To install it, do
 
-  gem sources -a http://gems.github.com
+  gem sources -a http://gems.rubyforge.org/
   
-  sudo gem install rackspace-cloudfiles
+  sudo gem install cloudfiles
   
 To use it in a Rails application, add the following information to your config/environment.rb
 
-  config.gem "rackspace-cloudfiles", :source => "http://gems.github.com", :lib => "cloudfiles"
+  config.gem "cloudfiles"
   
 
 == Examples
 
 See the class definitions for documentation on specific methods and operations.
 
+  require 'rubygems'
   require 'cloudfiles'
 
   # Log into the Cloud Files system

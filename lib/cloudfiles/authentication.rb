@@ -26,7 +26,7 @@ module CloudFiles
         connection.cdnmgmtpath = URI.parse(response["x-cdn-management-url"]).path
         connection.cdnmgmtport = URI.parse(response["x-cdn-management-url"]).port
         connection.cdnmgmtscheme = URI.parse(response["x-cdn-management-url"]).scheme
-        connection.storagehost = URI.parse(response["x-storage-url"]).host
+        connection.storagehost = set_snet(connection,URI.parse(response["x-storage-url"]).host)
         connection.storagepath = URI.parse(response["x-storage-url"]).path
         connection.storageport = URI.parse(response["x-storage-url"]).port
         connection.storagescheme = URI.parse(response["x-storage-url"]).scheme
@@ -37,6 +37,16 @@ module CloudFiles
         raise AuthenticationException, "Authentication failed"
       end
       server.finish
+    end
+    
+    private
+    
+    def set_snet(connection,hostname)
+      if connection.snet?
+        "snet-#{hostname}"
+      else
+        hostname
+      end
     end
   end
 end

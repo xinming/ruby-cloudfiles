@@ -22,7 +22,14 @@ class CloudfilesConnectionTest < Test::Unit::TestCase
     @connection.expects(:authok?).returns(true)
     assert_equal @connection.authok?, true
   end
-    
+  
+  def test_snet
+    # This would normally be set in CloudFiles::Authentication
+    assert_equal @connection.snet?, false
+    @connection.expects(:snet?).returns(true)
+    assert_equal @connection.snet?, true
+  end
+      
   def test_cfreq_get
     build_net_http_object
     assert_nothing_raised do 

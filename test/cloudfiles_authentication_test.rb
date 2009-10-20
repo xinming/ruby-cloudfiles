@@ -9,7 +9,18 @@ class CloudfilesAuthenticationTest < Test::Unit::TestCase
     server = mock(:use_ssl= => true, :verify_mode= => true, :start => true, :finish => true)
     server.stubs(:get).returns(response)
     Net::HTTP.stubs(:new).returns(server)
-    @connection = stub(:authuser => 'dummy_user', :authkey => 'dummy_key', :cdnmgmthost= => true, :cdnmgmtpath= => true, :cdnmgmtport= => true, :cdnmgmtscheme= => true, :storagehost= => true, :storagepath= => true, :storageport= => true, :storagescheme= => true, :authtoken= => true, :authok= => true)
+    @connection = stub(:authuser => 'dummy_user', :authkey => 'dummy_key', :cdnmgmthost= => true, :cdnmgmtpath= => true, :cdnmgmtport= => true, :cdnmgmtscheme= => true, :storagehost= => true, :storagepath= => true, :storageport= => true, :storagescheme= => true, :authtoken= => true, :authok= => true, :snet? => false)
+    result = CloudFiles::Authentication.new(@connection)
+    assert_equal result.class, CloudFiles::Authentication
+  end
+  
+  def test_snet_authentication
+    response = {'x-cdn-management-url' => 'http://cdn.example.com/path', 'x-storage-url' => 'http://cdn.example.com/storage', 'authtoken' => 'dummy_token'}
+    response.stubs(:code).returns('204')
+    server = mock(:use_ssl= => true, :verify_mode= => true, :start => true, :finish => true)
+    server.stubs(:get).returns(response)
+    Net::HTTP.stubs(:new).returns(server)
+    @connection = stub(:authuser => 'dummy_user', :authkey => 'dummy_key', :cdnmgmthost= => true, :cdnmgmtpath= => true, :cdnmgmtport= => true, :cdnmgmtscheme= => true, :storagehost= => true, :storagepath= => true, :storageport= => true, :storagescheme= => true, :authtoken= => true, :authok= => true, :snet? => true)
     result = CloudFiles::Authentication.new(@connection)
     assert_equal result.class, CloudFiles::Authentication
   end

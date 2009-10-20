@@ -8,7 +8,7 @@ This is a Ruby interface into the Rackspace[http://rackspace.com/] {Cloud Files}
 
 This source is available on Github[http://github.com/rackspace/ruby-cloudfiles/] and the gem is available on Gemcutter[http://gemcutter.org/].  To install it, do
 
-  gem sources -a http://gems.rubyforge.org/
+  gem sources -a http://gemcutter.org/
   
   sudo gem install cloudfiles
   

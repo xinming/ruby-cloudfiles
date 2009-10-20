@@ -18,7 +18,7 @@
 # To create a new CloudFiles connection, use the CloudFiles::Connection.new('user_name', 'api_key') method.
 module CloudFiles
 
-  VERSION = '1.4.0.0'
+  VERSION = IO.read(File.dirname(__FILE__) + '/../VERSION')
   require 'net/http'
   require 'net/https'
   require 'rexml/document'

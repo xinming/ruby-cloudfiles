@@ -238,11 +238,17 @@ module CloudFiles
     # Makes a container publicly available via the Cloud Files CDN and returns true upon success.  Throws NoSuchContainerException
     # if the container doesn't exist or if the request fails.
     # 
-    # Takes an optional argument, which is the CDN cache TTL in seconds (default 86400 seconds or 1 day, maximum 259200 or 3 days)
+    # Takes an optional argument, which is the CDN cache TTL in seconds (default 86400 seconds or 1 day, minimum 3600 or 1 hour, maximum 259200 or 3 days)
     #
     #   container.make_public(432000)
     #   => true
     def make_public(ttl = 86400)
+      if ttl < 3600
+        ttl = 3600
+      end
+      if ttl > 259200
+        ttl = 259200
+      end
       response = self.connection.cfreq("PUT",@cdnmgmthost,@cdnmgmtpath,@cdnmgmtport,@cdnmgmtscheme)
       raise NoSuchContainerException, "Container #{@name} does not exist" unless (response.code == "201" || response.code == "202")
 

@@ -246,7 +246,7 @@ module CloudFiles
       response = self.connection.cfreq("PUT",@cdnmgmthost,@cdnmgmtpath,@cdnmgmtport,@cdnmgmtscheme)
       raise NoSuchContainerException, "Container #{@name} does not exist" unless (response.code == "201" || response.code == "202")
 
-      headers = { "X-TTL" => ttl.to_s }
+      headers = { "X-TTL" => ttl.to_s , "X-CDN-Enabled" => "True" }
       response = self.connection.cfreq("POST",@cdnmgmthost,@cdnmgmtpath,@cdnmgmtport,@cdnmgmtscheme,headers)
       raise NoSuchContainerException, "Container #{@name} does not exist" unless (response.code == "201" || response.code == "202")
       true

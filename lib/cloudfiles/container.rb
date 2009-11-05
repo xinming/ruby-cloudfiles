@@ -23,6 +23,12 @@ module CloudFiles
     
     # The parent CloudFiles::Connection object for this container
     attr_reader :connection
+    
+    # The container ACL on the User Agent
+    attr_reader :user_agent_acl
+    
+    # The container ACL on the site Referrer
+    attr_reader :referrer_acl
 
     # Retrieves an existing CloudFiles::Container object tied to the current CloudFiles::Connection.  If the requested
     # container does not exist, it will raise a NoSuchContainerException.  
@@ -64,8 +70,10 @@ module CloudFiles
       # Get the CDN-related details
       response = self.connection.cfreq("HEAD",@cdnmgmthost,@cdnmgmtpath,@cdnmgmtport,@cdnmgmtscheme)
       @cdn_enabled = ((response["x-cdn-enabled"] || "").downcase == "true") ? true : false
-      @cdn_ttl = @cdn_enabled ? response["x-ttl"] : false
+      @cdn_ttl = @cdn_enabled ? response["x-ttl"].to_i : false
       @cdn_url = @cdn_enabled ? response["x-cdn-uri"] : false
+      @user_agent_acl = response["x-user-agent-acl"]
+      @referrer_acl = response["x-referrer-acl"]
       if @cdn_enabled
         @cdn_log = response["x-log-retention"] == "False" ? false : true
       else
@@ -242,17 +250,25 @@ module CloudFiles
     #
     #   container.make_public(432000)
     #   => true
-    def make_public(ttl = 86400)
-      if ttl < 3600
-        ttl = 3600
+    def make_public(options = {:ttl => 86400})
+      if options.is_a?(Fixnum)
+        print "DEPRECATED: make_public takes a hash of options now, instead of a TTL number"
+        ttl = options
+        options = {:ttl => ttl}
       end
-      if ttl > 259200
-        ttl = 259200
+      if options[:ttl] < 3600
+        options[:ttl] = 3600
       end
+      if options[:ttl] > 259200
+        options[:ttl] = 259200
+      end
+      
       response = self.connection.cfreq("PUT",@cdnmgmthost,@cdnmgmtpath,@cdnmgmtport,@cdnmgmtscheme)
       raise NoSuchContainerException, "Container #{@name} does not exist" unless (response.code == "201" || response.code == "202")
 
-      headers = { "X-TTL" => ttl.to_s , "X-CDN-Enabled" => "True" }
+      headers = { "X-TTL" => options[:ttl].to_s , "X-CDN-Enabled" => "True" }
+      headers["X-User-Agent-ACL"] = options[:user_agent_acl] if options[:user_agent_acl]
+      headers["X-Referrer-ACL"] = options[:referrer_acl] if options[:referrer_acl]
       response = self.connection.cfreq("POST",@cdnmgmthost,@cdnmgmtpath,@cdnmgmtport,@cdnmgmtscheme,headers)
       raise NoSuchContainerException, "Container #{@name} does not exist" unless (response.code == "201" || response.code == "202")
       populate

@@ -74,7 +74,7 @@ module CloudFiles
       end
       response = self.container.connection.cfreq("GET",@storagehost,@storagepath,@storageport,@storagescheme,headers)
       raise NoSuchObjectException, "Object #{@name} does not exist" unless (response.code =~ /^20/)
-      response.body.chomp
+      response.body
     end
 
     # Retrieves the data from an object and returns a stream that must be passed to a block.  Throws a 

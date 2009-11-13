@@ -4,8 +4,8 @@
 
 require File.dirname(__FILE__) + '/../lib/cloudfiles'
 
-username = "XXXXX"
-apikey = "XXXXX"
+username = "YOUR_USERNAME"
+apikey = "YOUR_API_KEY"
 
 def assert_test(testtext,bool)
   booltext = (bool)? " PASS" : "*FAIL*" ;
@@ -19,7 +19,7 @@ cf = CloudFiles::Connection.new(username,apikey)
 puts assert_test("Connecting to CloudFiles",cf.class == CloudFiles::Connection)
 
 # Test container creation
-testingcontainer = "CloudFiles Ruby API Testing Container"
+testingcontainer = "RubyCFTest"
 cntnr = cf.create_container(testingcontainer)
 puts assert_test("Creating test container",cntnr.class == CloudFiles::Container)
 
@@ -121,7 +121,7 @@ cdnurl = cntnr.cdn_url
 puts assert_test("  Getting CDN URL",cdnurl)
 
 # Setting CDN URL
-bool = cntnr.make_public(7200)
+bool = cntnr.make_public(:ttl => 7200)
 puts assert_test("  Setting CDN TTL",bool)
 
 # Make container private

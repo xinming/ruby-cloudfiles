@@ -246,9 +246,15 @@ module CloudFiles
     # Makes a container publicly available via the Cloud Files CDN and returns true upon success.  Throws NoSuchContainerException
     # if the container doesn't exist or if the request fails.
     # 
-    # Takes an optional argument, which is the CDN cache TTL in seconds (default 86400 seconds or 1 day, minimum 3600 or 1 hour, maximum 259200 or 3 days)
+    # Takes an optional hash of options, including:
     #
-    #   container.make_public(432000)
+    # :ttl, which is the CDN cache TTL in seconds (default 86400 seconds or 1 day, minimum 3600 or 1 hour, maximum 259200 or 3 days)
+    #
+    # :user_agent_acl, a Perl-compatible regular expression limiting access to this container to user agents matching the given regular expression
+    #
+    # :referrer_acl, a Perl-compatible regular expression limiting access to this container to HTTP referral URLs matching the given regular expression
+    #
+    #   container.make_public(:ttl => 8900, :user_agent_acl => "/Mozilla/", :referrer_acl => "/^http://rackspace.com")
     #   => true
     def make_public(options = {:ttl => 86400})
       if options.is_a?(Fixnum)

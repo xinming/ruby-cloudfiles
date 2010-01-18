@@ -169,7 +169,7 @@ module CloudFiles
     #   cf.container_exists?('bad_container')
     #   => false
     def container_exists?(containername)
-      response = cfreq("HEAD",@storagehost,"#{@storagepath}/#{containername}",@storageport,@storagescheme)
+      response = cfreq("HEAD",@storagehost,"#{@storagepath}/#{URI.encode(containername).gsub(/&/,'%26')}",@storageport,@storagescheme)
       return (response.code == "204")? true : false ;
     end
 
@@ -188,7 +188,7 @@ module CloudFiles
     def create_container(containername)
       raise SyntaxException, "Container name cannot contain the characters '/' or '?'" if containername.match(/[\/\?]/)
       raise SyntaxException, "Container name is limited to 256 characters" if containername.length > 256
-      response = cfreq("PUT",@storagehost,"#{@storagepath}/#{containername}",@storageport,@storagescheme)
+      response = cfreq("PUT",@storagehost,"#{@storagepath}/#{URI.encode(containername).gsub(/&/,'%26')}",@storageport,@storagescheme)
       raise InvalidResponseException, "Unable to create container #{containername}" unless (response.code == "201" || response.code == "202")
       CloudFiles::Container.new(self,containername)
     end
@@ -205,7 +205,7 @@ module CloudFiles
     #   cf.delete_container('nonexistent')
     #   => NoSuchContainerException: Container nonexistent does not exist
     def delete_container(containername)
-      response = cfreq("DELETE",@storagehost,"#{@storagepath}/#{containername}",@storageport,@storagescheme)
+      response = cfreq("DELETE",@storagehost,"#{@storagepath}/#{URI.encode(containername).gsub(/&/,'%26')}",@storageport,@storagescheme)
       raise NonEmptyContainerException, "Container #{containername} is not empty" if (response.code == "409")
       raise NoSuchContainerException, "Container #{containername} does not exist" unless (response.code == "204")
       true

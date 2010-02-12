@@ -63,7 +63,7 @@ module CloudFiles
     def populate
       # Get the size and object count
       response = self.connection.cfreq("HEAD",@storagehost,@storagepath+"/",@storageport,@storagescheme)
-      raise NoSuchContainerException, "Container #{@name} does not exist" unless (response.code == "204")
+      raise NoSuchContainerException, "Container #{@name} does not exist" unless (response.code =~ /^20/)
       @bytes = response["x-container-bytes-used"].to_i
       @count = response["x-container-object-count"].to_i
 
@@ -213,7 +213,7 @@ module CloudFiles
     #   => false
     def object_exists?(objectname)
       response = self.connection.cfreq("HEAD",@storagehost,"#{@storagepath}/#{URI.encode(objectname).gsub(/&/,'%26')}",@storageport,@storagescheme)
-      return (response.code == "204")? true : false
+      return (response.code =~ /^20/)? true : false
     end
 
     # Creates a new CloudFiles::StorageObject in the current container. 
@@ -239,7 +239,7 @@ module CloudFiles
     def delete_object(objectname)
       response = self.connection.cfreq("DELETE",@storagehost,"#{@storagepath}/#{URI.encode(objectname).gsub(/&/,'%26')}",@storageport,@storagescheme)
       raise NoSuchObjectException, "Object #{objectname} does not exist" if (response.code == "404")
-      raise InvalidResponseException, "Invalid response code #{response.code}" unless (response.code == "204")
+      raise InvalidResponseException, "Invalid response code #{response.code}" unless (response.code =~ /^20/)
       true
     end
 

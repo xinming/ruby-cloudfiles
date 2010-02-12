@@ -47,7 +47,7 @@ module CloudFiles
     # class is initialized, but it can be called again if the data needs to be updated.
     def populate
       response = self.container.connection.cfreq("HEAD",@storagehost,@storagepath,@storageport,@storagescheme)
-      raise NoSuchObjectException, "Object #{@name} does not exist" if (response.code != "204")
+      raise NoSuchObjectException, "Object #{@name} does not exist" unless (response.code =~ /^20/)
       @bytes = response["content-length"]
       @last_modified = Time.parse(response["last-modified"])
       @etag = response["etag"]

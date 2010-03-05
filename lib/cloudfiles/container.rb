@@ -133,8 +133,8 @@ module CloudFiles
     # if the request fails.
     def objects(params = {})
       paramarr = []
-      paramarr << ["limit=#{URI.encode(params[:limit].to_i).gsub(/&/,'%26')}"] if params[:limit]
-      paramarr << ["offset=#{URI.encode(params[:offset].to_i).gsub(/&/,'%26')}"] if params[:offset]
+      paramarr << ["limit=#{URI.encode(params[:limit].to_i.to_s).gsub(/&/,'%26')}"] if params[:limit]
+      paramarr << ["offset=#{URI.encode(params[:offset].to_i.to_s).gsub(/&/,'%26')}"] if params[:offset]
       paramarr << ["prefix=#{URI.encode(params[:prefix]).gsub(/&/,'%26')}"] if params[:prefix]
       paramarr << ["path=#{URI.encode(params[:path]).gsub(/&/,'%26')}"] if params[:path]
       paramstr = (paramarr.size > 0)? paramarr.join("&") : "" ;

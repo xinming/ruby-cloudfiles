@@ -35,7 +35,7 @@ class CloudfilesContainerTest < Test::Unit::TestCase
     assert_equal @container.cdn_enabled, true
     assert_equal @container.public?, true
     assert_equal @container.cdn_url, 'http://cdn.test.example/container'
-    assert_equal @container.cdn_ttl, '86400'
+    assert_equal @container.cdn_ttl, 86400
   end
   
   def test_to_s

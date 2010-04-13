@@ -45,6 +45,10 @@ module CloudFiles
     # The total number of containers under this connection
     attr_reader :count
     
+    # Optional proxy variables
+    attr_reader :proxy_host
+    attr_reader :proxy_port
+    
     # Creates a new CloudFiles::Connection object.  Uses CloudFiles::Authentication to perform the login for the connection.
     # The authuser is the Rackspace Cloud username, the authkey is the Rackspace Cloud API key.
     #
@@ -60,11 +64,22 @@ module CloudFiles
     # This will likely be the base class for most operations.
     #
     #   cf = CloudFiles::Connection.new(MY_USERNAME, MY_API_KEY)
-    def initialize(authuser,authkey,retry_auth = true,snet=false) 
-      @authuser = authuser
-      @authkey = authkey
-      @retry_auth = retry_auth
-      @snet = (ENV['RACKSPACE_SERVICENET'] || snet) ? true : false
+    def initialize(*args)
+      if args[0].is_a?(Hash)
+        options = args[0]
+        @authuser = options[:username] ||( raise AuthenticationException, "Must supply a :username")
+        @authkey = options[:api_key] || (raise AuthenticationException, "Must supply an :api_key")
+        @retry_auth = options[:retry_auth] || true
+        @snet = ENV['RACKSPACE_SERVICENET'] || options[:snet]
+        @proxy_host = options[:proxy_host]
+        @proxy_port = options[:proxy_port]
+      elsif args[0].is_a?(String)
+        print "WARNING: The argument to CloudFiles::Connection.new should be a hash of options.  Passing multiple parameters is deprecated and will be removed in a future release.\n"
+        @authuser = args[0] ||( raise AuthenticationException, "Must supply a :username")
+        @authkey = args[1] || (raise AuthenticationException, "Must supply an :api_key")
+        @retry_auth = args[2] || true
+        @snet = (ENV['RACKSPACE_SERVICENET'] || args[3]) ? true : false
+      end
       @authok = false
       @http = {}
       CloudFiles::Authentication.new(self)
@@ -279,7 +294,7 @@ module CloudFiles
     def start_http(server,path,port,scheme,headers) # :nodoc:
       if (@http[server].nil?)
         begin
-          @http[server] = Net::HTTP.new(server,port)
+          @http[server] = Net::HTTP::Proxy(self.proxy_host, self.proxy_port).new(server,port)
           if scheme == "https"
             @http[server].use_ssl = true
             @http[server].verify_mode = OpenSSL::SSL::VERIFY_NONE

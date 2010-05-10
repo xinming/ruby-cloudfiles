@@ -4,6 +4,16 @@
 
 This is a Ruby interface into the Rackspace[http://rackspace.com/] {Cloud Files}[http://www.rackspacecloud.com/cloud_hosting_products/files] service. Cloud Files is reliable, scalable and affordable web-based storage hosting for backing up and archiving all your static content.  Cloud Files is the first and only cloud service that leverages a tier one CDN provider to create such an easy and complete storage-to-delivery solution for media content.
 
+== Upgrade Gotchas
+
+As of gem version 1.4.8, the connection method has changed from positional arguments to a hash of options.  This is the new style:
+
+   cf = CloudFiles::Connection.new(:username => "MY_USERNAME", :api_key => "MY_API_KEY")
+   
+This is the old style, which still works but is deprecated:
+
+   cf = CloudFiles::Connection.new("MY_USERNAME","MY_API_KEY")
+
 == Installation
 
 This source is available on Github[http://github.com/rackspace/ruby-cloudfiles/] and the gem is available on Gemcutter[http://gemcutter.org/].  To install it, do
@@ -25,7 +35,7 @@ See the class definitions for documentation on specific methods and operations.
   require 'cloudfiles'
 
   # Log into the Cloud Files system
-  cf = CloudFiles::Connection.new(USERNAME, API_KEY)
+  cf = CloudFiles::Connection.new(:username => "MY_USERNAME", :api_key => "MY_API_KEY")
 
   # Get a listing of all containers under this account
   cf.containers

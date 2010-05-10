@@ -62,8 +62,15 @@ module CloudFiles
     # the public network, and the bandwidth is not billed.
     #
     # This will likely be the base class for most operations.
+    # 
+    # With gem 1.4.8, the connection style has changed.  It is now a hash of arguments.  Note that the proxy options are currently only
+    # supported in the new style.
     #
-    #   cf = CloudFiles::Connection.new(MY_USERNAME, MY_API_KEY)
+    #   cf = CloudFiles::Connection.new(:username => "MY_USERNAME", :api_key => "MY_API_KEY", :retry_auth => true, :snet => false, :proxy_host => "localhost", :proxy_port => "1234")
+    #
+    # The old style (positional arguments) is deprecated and will be removed at some point in the future.
+    # 
+    #   cf = CloudFiles::Connection.new(MY_USERNAME, MY_API_KEY, RETRY_AUTH, USE_SNET)
     def initialize(*args)
       if args[0].is_a?(Hash)
         options = args[0]
@@ -74,9 +81,8 @@ module CloudFiles
         @proxy_host = options[:proxy_host]
         @proxy_port = options[:proxy_port]
       elsif args[0].is_a?(String)
-        print "WARNING: The argument to CloudFiles::Connection.new should be a hash of options.  Passing multiple parameters is deprecated and will be removed in a future release.\n"
-        @authuser = args[0] ||( raise AuthenticationException, "Must supply a :username")
-        @authkey = args[1] || (raise AuthenticationException, "Must supply an :api_key")
+        @authuser = args[0] ||( raise AuthenticationException, "Must supply the username as the first argument")
+        @authkey = args[1] || (raise AuthenticationException, "Must supply the API key as the second argument")
         @retry_auth = args[2] || true
         @snet = (ENV['RACKSPACE_SERVICENET'] || args[3]) ? true : false
       end

@@ -262,12 +262,6 @@ module CloudFiles
         ttl = options
         options = {:ttl => ttl}
       end
-      if options[:ttl] < 3600
-        options[:ttl] = 3600
-      end
-      if options[:ttl] > 259200
-        options[:ttl] = 259200
-      end
       
       response = self.connection.cfreq("PUT",@cdnmgmthost,@cdnmgmtpath,@cdnmgmtport,@cdnmgmtscheme)
       raise NoSuchContainerException, "Container #{@name} does not exist" unless (response.code == "201" || response.code == "202")

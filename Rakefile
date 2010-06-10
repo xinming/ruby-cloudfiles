@@ -6,7 +6,7 @@ begin
     gemspec.name = "cloudfiles"
     gemspec.summary = "A Ruby API into Rackspace Cloud Files"
     gemspec.description = "A Ruby version of the Rackspace Cloud Files API."
-    gemspec.email = "wade.minter@rackspace.com"
+    gemspec.email = "minter@lunenburg.org"
     gemspec.homepage = "http://www.rackspacecloud.com/cloud_hosting_products/files"
     gemspec.authors = ["H. Wade Minter", "Rackspace Hosting"]
     gemspec.add_dependency('mime-types', '>= 1.16')

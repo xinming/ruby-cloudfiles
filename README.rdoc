@@ -63,7 +63,7 @@ See the class definitions for documentation on specific methods and operations.
 
 Initial work by Major Hayden <major.hayden@rackspace.com>
 
-Subsequent work by H. Wade Minter <wade.minter@rackspace.com>
+Subsequent work by H. Wade Minter <minter@lunenburg.org>
 
 == License
 

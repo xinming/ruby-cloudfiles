@@ -4,7 +4,7 @@
 # ==== Connects Ruby Applications to Rackspace's {Cloud Files service}[http://www.rackspacecloud.com/cloud_hosting_products/files]
 # Initial work by Major Hayden <major.hayden@rackspace.com>
 # 
-# Subsequent work by H. Wade Minter <wade.minter@rackspace.com>
+# Subsequent work by H. Wade Minter <minter@lunenburg.org>
 #
 # See COPYING for license information.
 # Copyright (c) 2009, Rackspace US, Inc.

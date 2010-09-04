@@ -121,8 +121,8 @@ module CloudFiles
     #   container.objects                     #=> [ "dog", "cat", "donkey", "monkeydir/capuchin"]
     # Pass a limit argument to limit the list to a number of objects:
     #   container.objects(:limit => 1)                  #=> [ "dog" ]
-    # Pass an offset with or without a limit to start the list at a certain object:
-    #   container.objects(:limit => 1, :offset => 2)                #=> [ "donkey" ]
+    # Pass an marker with or without a limit to start the list at a certain object:
+    #   container.objects(:limit => 1, :marker => 2)                #=> [ "donkey" ]
     # Pass a prefix to search for objects that start with a certain string:
     #   container.objects(:prefix => "do")       #=> [ "dog", "donkey" ]
     # Only search within a certain pseudo-filesystem path:
@@ -132,9 +132,10 @@ module CloudFiles
     # Returns an empty array if no object exist in the container.  Throws an InvalidResponseException
     # if the request fails.
     def objects(params = {})
+      params[:marker] = params[:offset]
       paramarr = []
       paramarr << ["limit=#{URI.encode(params[:limit].to_s).gsub(/&/,'%26')}"] if params[:limit]
-      paramarr << ["offset=#{URI.encode(params[:offset].to_s).gsub(/&/,'%26')}"] if params[:offset]
+      paramarr << ["marker=#{URI.encode(params[:marker].to_s).gsub(/&/,'%26')}"] if params[:marker]
       paramarr << ["prefix=#{URI.encode(params[:prefix]).gsub(/&/,'%26')}"] if params[:prefix]
       paramarr << ["path=#{URI.encode(params[:path]).gsub(/&/,'%26')}"] if params[:path]
       paramstr = (paramarr.size > 0)? paramarr.join("&") : "" ;
@@ -162,10 +163,11 @@ module CloudFiles
     #                   :bytes=>"22"}
     #      }
     def objects_detail(params = {})
+      params[:marker] = params[:offset]
       paramarr = []
       paramarr << ["format=xml"]
       paramarr << ["limit=#{URI.encode(params[:limit].to_s).gsub(/&/,'%26')}"] if params[:limit]
-      paramarr << ["offset=#{URI.encode(params[:offset].to_s).gsub(/&/,'%26')}"] if params[:offset]
+      paramarr << ["marker=#{URI.encode(params[:marker].to_s).gsub(/&/,'%26')}"] if params[:marker]
       paramarr << ["prefix=#{URI.encode(params[:prefix]).gsub(/&/,'%26')}"] if params[:prefix]
       paramarr << ["path=#{URI.encode(params[:path]).gsub(/&/,'%26')}"] if params[:path]
       paramstr = (paramarr.size > 0)? paramarr.join("&") : "" ;

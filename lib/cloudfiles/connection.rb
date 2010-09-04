@@ -167,7 +167,7 @@ module CloudFiles
     def containers_detail(limit=0,marker="")
       paramarr = []
       paramarr << ["limit=#{URI.encode(limit.to_s).gsub(/&/,'%26')}"] if limit.to_i > 0
-      paramarr << ["offset=#{URI.encode(marker.to_s).gsub(/&/,'%26')}"] unless marker.to_s.empty?
+      paramarr << ["marker=#{URI.encode(marker.to_s).gsub(/&/,'%26')}"] unless marker.to_s.empty?
       paramstr = (paramarr.size > 0)? paramarr.join("&") : "" ;
       response = cfreq("GET",@storagehost,"#{@storagepath}?format=xml&#{paramstr}",@storageport,@storagescheme)
       return {} if (response.code == "204")

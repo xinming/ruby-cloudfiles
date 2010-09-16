@@ -11,6 +11,9 @@ module CloudFiles
 
     # Authentication username provided when the CloudFiles class was instantiated
     attr_reader :authuser
+    
+    # API host to authenticate to
+    attr_reader :authurl
 
     # Hostname of the CDN management server
     attr_accessor :cdnmgmthost
@@ -61,12 +64,15 @@ module CloudFiles
     # This is useful if you are using the library on a Rackspace-hosted system, as it provides faster speeds, keeps traffic off of
     # the public network, and the bandwidth is not billed.
     #
+    # If you need to connect to a Cloud Files installation that is NOT the standard Rackspace one, set the :authurl option to the URL 
+    # of your authentication endpoint.  The default is https://auth.api.rackspacecloud.com/v1.0
+    #
     # This will likely be the base class for most operations.
     # 
     # With gem 1.4.8, the connection style has changed.  It is now a hash of arguments.  Note that the proxy options are currently only
     # supported in the new style.
     #
-    #   cf = CloudFiles::Connection.new(:username => "MY_USERNAME", :api_key => "MY_API_KEY", :retry_auth => true, :snet => false, :proxy_host => "localhost", :proxy_port => "1234")
+    #   cf = CloudFiles::Connection.new(:username => "MY_USERNAME", :api_key => "MY_API_KEY", :authurl => "https://auth.api.rackspacecloud.com/v1.0", :retry_auth => true, :snet => false, :proxy_host => "localhost", :proxy_port => "1234")
     #
     # The old style (positional arguments) is deprecated and will be removed at some point in the future.
     # 
@@ -76,6 +82,7 @@ module CloudFiles
         options = args[0]
         @authuser = options[:username] ||( raise AuthenticationException, "Must supply a :username")
         @authkey = options[:api_key] || (raise AuthenticationException, "Must supply an :api_key")
+        @authurl = options[:authurl] || "https://auth.api.rackspacecloud.com/v1.0"
         @retry_auth = options[:retry_auth] || true
         @snet = ENV['RACKSPACE_SERVICENET'] || options[:snet]
         @proxy_host = options[:proxy_host]

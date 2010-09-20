@@ -118,11 +118,11 @@ module CloudFiles
 
     # Gathers a list of all available objects in the current container and returns an array of object names.  
     #   container = cf.container("My Container")
-    #   container.objects                     #=> [ "dog", "cat", "donkey", "monkeydir/capuchin"]
+    #   container.objects                     #=> [ "cat", "dog", "donkey", "monkeydir", "monkeydir/capuchin"]
     # Pass a limit argument to limit the list to a number of objects:
-    #   container.objects(:limit => 1)                  #=> [ "dog" ]
+    #   container.objects(:limit => 1)                  #=> [ "cat" ]
     # Pass an marker with or without a limit to start the list at a certain object:
-    #   container.objects(:limit => 1, :marker => 2)                #=> [ "donkey" ]
+    #   container.objects(:limit => 1, :marker => 'dog')                #=> [ "donkey" ]
     # Pass a prefix to search for objects that start with a certain string:
     #   container.objects(:prefix => "do")       #=> [ "dog", "donkey" ]
     # Only search within a certain pseudo-filesystem path:

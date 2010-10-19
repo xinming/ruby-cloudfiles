@@ -232,6 +232,22 @@ class CloudfilesConnectionTest < Test::Unit::TestCase
     assert_equal containers.first, 'foo'
   end
   
+  def test_containers_with_limit
+    build_net_http_object_with_cfreq_expectations({:body => "foo", :code => '200'},
+                                                  {:path => includes('limit=1')})
+    containers = @connection.containers(1)
+    assert_equal containers.size, 1
+    assert_equal containers.first, 'foo'
+  end
+
+  def test_containers_with_marker
+    build_net_http_object_with_cfreq_expectations({:body => "boo", :code => '200'},
+                                                  {:path => includes('marker=baz')})
+    containers = @connection.containers(0, 'baz')
+    assert_equal containers.size, 1
+    assert_equal containers.first, 'boo'
+  end
+
   def test_no_containers_yet
     build_net_http_object
     containers = @connection.containers
@@ -270,17 +286,25 @@ class CloudfilesConnectionTest < Test::Unit::TestCase
     
   private
   
-  def build_net_http_object(args={:code => '204' })
+  def build_net_http_object(args={:code => '204' }, cfreq_expectations={})
     args[:response] = {} unless args[:response]
     response = {'x-cdn-management-url' => 'http://cdn.example.com/path', 'x-storage-url' => 'http://cdn.example.com/storage', 'authtoken' => 'dummy_token'}.merge(args[:response])
     response.stubs(:code).returns(args[:code])
     response.stubs(:body).returns args[:body] || nil
-    server = mock()
-    server.stubs(:verify_mode= => true)
-    server.stubs(:start => true)
-    server.stubs(:use_ssl=).returns(true)
-    server.stubs(:request).returns(response)
-    Net::HTTP.stubs(:new).returns(server)
+
+    if !cfreq_expectations.empty?
+      parameter_expectations = [anything(), anything(), anything(), anything(), anything(), anything(), anything(), anything()]
+      parameter_expectations[0] = cfreq_expectations[:method] if cfreq_expectations[:method]
+      parameter_expectations[2] = cfreq_expectations[:path] if cfreq_expectations[:path]
+      
+      @connection.expects(:cfreq).with(*parameter_expectations).returns(response)
+    else  
+      @connection.stubs(:cfreq).returns(response)
+    end
+
   end
-  
+
+  def build_net_http_object_with_cfreq_expectations(args={:code => '204' }, cfreq_expectations={})
+    build_net_http_object(args, cfreq_expectations)
+  end
 end

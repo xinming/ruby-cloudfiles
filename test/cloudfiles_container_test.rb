@@ -149,18 +149,77 @@ class CloudfilesContainerTest < Test::Unit::TestCase
     assert_equal objects.first, 'foo'
   end
   
-  def test_fetch_object_detail
-    body = %{<?xml version="1.0" encoding="UTF-8"?>
-    <container name="video">
-    <object><name>kisscam.mov</name><hash>96efd5a0d78b74cfe2a911c479b98ddd</hash><bytes>9196332</bytes><content_type>video/quicktime</content_type><last_modified>2008-12-18T10:34:43.867648</last_modified></object>
-    <object><name>penaltybox.mov</name><hash>d2a4c0c24d8a7b4e935bee23080e0685</hash><bytes>24944966</bytes><content_type>video/quicktime</content_type><last_modified>2008-12-18T10:35:19.273927</last_modified></object>
-    </container>
-    }
-    build_net_http_object(:code => '200', :body => body)
+  def test_fetch_objects_with_limit
+    build_net_http_object_with_cfreq_expectations({:code => '200', :body => "foo"},
+                                                  {:path => includes("limit=1")})
+    objects = @container.objects(:limit => 1)
+    assert_equal objects.class, Array
+    assert_equal objects.size, 1
+    assert_equal objects.first, 'foo'
+  end
+
+  def test_fetch_objects_with_marker
+    build_net_http_object_with_cfreq_expectations({:code => '200', :body => "bar"},
+                                                  {:path => includes("marker=foo")})
+    objects = @container.objects(:marker => 'foo')
+    assert_equal objects.class, Array
+    assert_equal objects.size, 1
+    assert_equal objects.first, 'bar'
+  end
+
+  def test_fetch_objects_with_deprecated_offset_param
+    build_net_http_object_with_cfreq_expectations({:code => '200', :body => "bar"},
+                                                  {:path => includes("marker=foo")})
+    objects = @container.objects(:offset => 'foo')
+    assert_equal objects.class, Array
+    assert_equal objects.size, 1
+    assert_equal objects.first, 'bar'
+  end
+  
+  def object_detail_body(skip_kisscam=false)
+    lines = ['<?xml version="1.0" encoding="UTF-8"?>',
+             '<container name="video">']
+    unless skip_kisscam
+      lines << '<object><name>kisscam.mov</name><hash>96efd5a0d78b74cfe2a911c479b98ddd</hash><bytes>9196332</bytes><content_type>video/quicktime</content_type><last_modified>2008-12-18T10:34:43.867648</last_modified></object>
+>'
+    end
+    lines << '<object><name>penaltybox.mov</name><hash>d2a4c0c24d8a7b4e935bee23080e0685</hash><bytes>24944966</bytes><content_type>video/quicktime</content_type><last_modified>2008-12-18T10:35:19.273927</last_modified></object>'
+    lines << '</container>'
+
+    lines.join("\n\n")
+  end
+  
+  def test_fetch_objects_detail
+    build_net_http_object(:code => '200', :body => object_detail_body)
     details = @container.objects_detail
     assert_equal details.size, 2
     assert_equal details['kisscam.mov'][:bytes], '9196332'
   end
+  
+  def test_fetch_objects_details_with_limit
+    build_net_http_object_with_cfreq_expectations({:code => '200', :body => object_detail_body},
+                                                  {:path => includes("limit=2")})
+    details = @container.objects_detail(:limit => 2)
+    assert_equal details.size, 2
+    assert_equal details['kisscam.mov'][:bytes], '9196332'
+  end
+
+  def test_fetch_objects_detail_with_marker
+    build_net_http_object_with_cfreq_expectations({:code => '200', :body => object_detail_body(true)},
+                                                  {:path => includes("marker=kisscam.mov")})
+    details = @container.objects_detail(:marker => 'kisscam.mov')
+    assert_equal details.size, 1
+    assert_equal details['penaltybox.mov'][:bytes], '24944966'
+  end
+
+  def test_fetch_objects_detail_with_deprecated_offset_param
+    build_net_http_object_with_cfreq_expectations({:code => '200', :body => object_detail_body(true)},
+                                                  {:path => includes("marker=kisscam.mov")})
+    details = @container.objects_detail(:offset => 'kisscam.mov')
+    assert_equal details.size, 1
+    assert_equal details['penaltybox.mov'][:bytes], '24944966'
+  end
+  
   
   def test_fetch_object_detail_empty
     build_net_http_object
@@ -182,17 +241,31 @@ class CloudfilesContainerTest < Test::Unit::TestCase
   
   private
   
-  def build_net_http_object(args={:code => '204' })
+  def build_net_http_object(args={:code => '204' }, cfreq_expectations={})
     CloudFiles::Container.any_instance.stubs(:populate).returns(true)
     connection = stub(:storagehost => 'test.storage.example', :storagepath => '/dummy/path', :storageport => 443, :storagescheme => 'https', :cdnmgmthost => 'cdm.test.example', :cdnmgmtpath => '/dummy/path', :cdnmgmtport => 443, :cdnmgmtscheme => 'https')
     args[:response] = {} unless args[:response]
     response = {'x-cdn-management-url' => 'http://cdn.example.com/path', 'x-storage-url' => 'http://cdn.example.com/storage', 'authtoken' => 'dummy_token', 'last-modified' => Time.now.to_s}.merge(args[:response])
     response.stubs(:code).returns(args[:code])
     response.stubs(:body).returns args[:body] || nil
-    connection.stubs(:cfreq => response)
+    
+    if !cfreq_expectations.empty?
+      #cfreq(method,server,path,port,scheme,headers = {},data = nil,attempts = 0,&block)
+      
+      parameter_expectations = [anything(), anything(), anything(), anything(), anything(), anything(), anything(), anything()]
+      parameter_expectations[0] = cfreq_expectations[:method] if cfreq_expectations[:method]
+      parameter_expectations[2] = cfreq_expectations[:path] if cfreq_expectations[:path]
+      
+      connection.expects(:cfreq).with(*parameter_expectations).returns(response)
+    else  
+      connection.stubs(:cfreq => response)
+    end
+    
     @container = CloudFiles::Container.new(connection, 'test_container')
     @container.stubs(:connection).returns(connection)
   end
   
-  
+  def build_net_http_object_with_cfreq_expectations(args={:code => '204'}, cfreq_expectations={})
+    build_net_http_object(args, cfreq_expectations)
+  end
 end

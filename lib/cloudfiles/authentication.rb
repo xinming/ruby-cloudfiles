@@ -14,7 +14,7 @@ module CloudFiles
       path = parsed_authurl.path
       hdrhash = { "X-Auth-User" => connection.authuser, "X-Auth-Key" => connection.authkey }
       begin
-        server             = get_server
+        server             = get_server(connection, parsed_authurl)
         server.use_ssl     = true
         server.verify_mode = OpenSSL::SSL::VERIFY_NONE
         server.start

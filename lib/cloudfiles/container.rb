@@ -132,7 +132,7 @@ module CloudFiles
     # Returns an empty array if no object exist in the container.  Throws an InvalidResponseException
     # if the request fails.
     def objects(params = {})
-      params[:marker] = params[:offset]
+      params[:marker] ||= params[:offset]
       paramarr = []
       paramarr << ["limit=#{URI.encode(params[:limit].to_s).gsub(/&/,'%26')}"] if params[:limit]
       paramarr << ["marker=#{URI.encode(params[:marker].to_s).gsub(/&/,'%26')}"] if params[:marker]
@@ -163,7 +163,7 @@ module CloudFiles
     #                   :bytes=>"22"}
     #      }
     def objects_detail(params = {})
-      params[:marker] = params[:offset]
+      params[:marker] ||= params[:offset]
       paramarr = []
       paramarr << ["format=xml"]
       paramarr << ["limit=#{URI.encode(params[:limit].to_s).gsub(/&/,'%26')}"] if params[:limit]

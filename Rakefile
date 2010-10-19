@@ -10,6 +10,7 @@ begin
     gemspec.homepage = "http://www.rackspacecloud.com/cloud_hosting_products/files"
     gemspec.authors = ["H. Wade Minter", "Rackspace Hosting"]
     gemspec.add_dependency('mime-types', '>= 1.16')
+    gemspec.add_development_dependency "mocha", "~> 0.9.8"
   end
   Jeweler::GemcutterTasks.new
 rescue LoadError

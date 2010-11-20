@@ -92,6 +92,7 @@ module CloudFiles
         @authkey = args[1] || (raise AuthenticationException, "Must supply the API key as the second argument")
         @retry_auth = args[2] || true
         @snet = (ENV['RACKSPACE_SERVICENET'] || args[3]) ? true : false
+        @authurl = "https://auth.api.rackspacecloud.com/v1.0"
       end
       @authok = false
       @http = {}

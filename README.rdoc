@@ -47,6 +47,10 @@ See the class definitions for documentation on specific methods and operations.
   # See how many objects are under this container
   container.count
   => 3
+  
+  # Upload a file
+  object = container.create_object 'filename.txt', false
+  object.write file
 
   # List the objects
   container.objects

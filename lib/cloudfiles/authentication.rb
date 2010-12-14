@@ -15,18 +15,23 @@ module CloudFiles
       hdrhash = { "X-Auth-User" => connection.authuser, "X-Auth-Key" => connection.authkey }
       begin
         server             = get_server(connection, parsed_authurl)
-        server.use_ssl     = true
-        server.verify_mode = OpenSSL::SSL::VERIFY_NONE
+
+        if parsed_authurl.scheme == "https"
+          server.use_ssl     = true
+          server.verify_mode = OpenSSL::SSL::VERIFY_NONE
+        end
         server.start
       rescue
         raise ConnectionException, "Unable to connect to #{server}"
       end
       response = server.get(path,hdrhash)
       if (response.code == "204")
-        connection.cdnmgmthost   = URI.parse(response["x-cdn-management-url"]).host
-        connection.cdnmgmtpath   = URI.parse(response["x-cdn-management-url"]).path
-        connection.cdnmgmtport   = URI.parse(response["x-cdn-management-url"]).port
-        connection.cdnmgmtscheme = URI.parse(response["x-cdn-management-url"]).scheme
+        if response["x-cdn-management-url"]
+          connection.cdnmgmthost   = URI.parse(response["x-cdn-management-url"]).host
+          connection.cdnmgmtpath   = URI.parse(response["x-cdn-management-url"]).path
+          connection.cdnmgmtport   = URI.parse(response["x-cdn-management-url"]).port
+          connection.cdnmgmtscheme = URI.parse(response["x-cdn-management-url"]).scheme
+        end
         connection.storagehost   = set_snet(connection,URI.parse(response["x-storage-url"]).host)
         connection.storagepath   = URI.parse(response["x-storage-url"]).path
         connection.storageport   = URI.parse(response["x-storage-url"]).port

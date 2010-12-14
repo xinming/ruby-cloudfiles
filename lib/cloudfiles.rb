@@ -16,6 +16,8 @@
 #
 # The CloudFiles class is the base class.  Not much of note happens here.
 # To create a new CloudFiles connection, use the CloudFiles::Connection.new('user_name', 'api_key') method.
+$US_AUTHURL = 'https://auth.api.rackspacecloud.com/v1.0'
+$UK_AUTHURL = 'https://lon.auth.api.rackspacecloud.com/v1.0'
 module CloudFiles
 
   VERSION = IO.read(File.dirname(__FILE__) + '/../VERSION')

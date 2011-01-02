@@ -33,15 +33,15 @@ class CloudfilesAuthenticationTest < Test::Unit::TestCase
     server.stubs(:get).returns(response)
     CloudFiles::Authentication.any_instance.stubs(:get_server).returns(server)
     @connection = stub(:authuser => 'bad_user', :authkey => 'bad_key', :authok= => true, :authtoken= => true,  :authurl => 'https://auth.api.rackspacecloud.com/v1.0')
-    assert_raises(AuthenticationException) do
+    assert_raises(CloudFiles::Exception::Authentication) do
       result = CloudFiles::Authentication.new(@connection)
     end
   end
     
   def test_bad_hostname
-    Net::HTTP.stubs(:new).raises(ConnectionException)
+    Net::HTTP.stubs(:new).raises(CloudFiles::Exception::Connection)
     @connection = stub(:authuser => 'bad_user', :authkey => 'bad_key', :authok= => true, :authtoken= => true, :authurl => 'https://auth.api.rackspacecloud.com/v1.0')
-    assert_raises(ConnectionException) do
+    assert_raises(CloudFiles::Exception::Connection) do
       result = CloudFiles::Authentication.new(@connection)
     end
   end

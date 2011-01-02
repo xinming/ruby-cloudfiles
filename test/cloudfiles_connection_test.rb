@@ -83,8 +83,8 @@ class CloudfilesConnectionTest < Test::Unit::TestCase
   end
   
   def test_net_http_raises_connection_exception
-    Net::HTTP.expects(:new).raises(ConnectionException)
-    assert_raises(ConnectionException) do
+    Net::HTTP.expects(:new).raises(CloudFiles::Exception::Connection)
+    assert_raises(CloudFiles::Exception::Connection) do
       response = @connection.cfreq("GET", "test.server.example", "/dummypath", "80", "http")
     end
   end
@@ -119,7 +119,7 @@ class CloudfilesConnectionTest < Test::Unit::TestCase
     server.stubs(:finish).returns(true)
     server.stubs(:request).raises(EOFError)
     Net::HTTP.stubs(:new).returns(server)
-    assert_raises(ConnectionException) do
+    assert_raises(CloudFiles::Exception::Connection) do
       response = @connection.cfreq("GET", "test.server.example", "/dummypath", "80", "http")
     end
   end
@@ -133,7 +133,7 @@ class CloudfilesConnectionTest < Test::Unit::TestCase
   
   def test_get_info_fails
     build_net_http_object(:response => {'x-account-bytes-used' => '9999', 'x-account-container-count' => '5'}, :code => '999')
-    assert_raises(InvalidResponseException) do
+    assert_raises(CloudFiles::Exception::InvalidResponse) do
       @connection.get_info
     end
   end
@@ -154,7 +154,7 @@ class CloudfilesConnectionTest < Test::Unit::TestCase
   
   def test_public_containers_exception
     build_net_http_object(:code => '999')
-    assert_raises(InvalidResponseException) do
+    assert_raises(CloudFiles::Exception::InvalidResponse) do
       public_containers = @connection.public_containers
     end
   end
@@ -167,14 +167,14 @@ class CloudfilesConnectionTest < Test::Unit::TestCase
   
   def test_delete_nonempty_container
     build_net_http_object(:code => '409')
-    assert_raises(NonEmptyContainerException) do
+    assert_raises(CloudFiles::Exception::NonEmptyContainer) do
       response = @connection.delete_container("not_empty")
     end
   end
   
   def test_delete_unknown_container
     build_net_http_object(:code => '999')
-    assert_raises(NoSuchContainerException) do
+    assert_raises(CloudFiles::Exception::NoSuchContainer) do
       response = @connection.delete_container("not_empty")
     end
   end
@@ -188,7 +188,7 @@ class CloudfilesConnectionTest < Test::Unit::TestCase
   
   def test_create_container_with_invalid_name
     CloudFiles::Container.stubs(:new)
-    assert_raise(SyntaxException) do
+    assert_raise(CloudFiles::Exception::Syntax) do
       container = @connection.create_container('a'*300)
     end
   end
@@ -196,7 +196,7 @@ class CloudfilesConnectionTest < Test::Unit::TestCase
   def test_create_container_name_filter
     CloudFiles::Container.any_instance.stubs(:populate)
     build_net_http_object(:code => '201')
-    assert_raises(SyntaxException) do 
+    assert_raises(CloudFiles::Exception::Syntax) do 
       container = @connection.create_container('this/has/bad?characters')
     end
   end
@@ -219,9 +219,9 @@ class CloudfilesConnectionTest < Test::Unit::TestCase
   end
   
   def test_fetch_nonexistent_container
-    CloudFiles::Container.any_instance.stubs(:populate).raises(NoSuchContainerException)
+    CloudFiles::Container.any_instance.stubs(:populate).raises(CloudFiles::Exception::NoSuchContainer)
     build_net_http_object
-    assert_raise(NoSuchContainerException) do
+    assert_raise(CloudFiles::Exception::NoSuchContainer) do
       container = @connection.container('bad_container')
     end
   end
@@ -258,7 +258,7 @@ class CloudfilesConnectionTest < Test::Unit::TestCase
   
   def test_containers_bad_result
     build_net_http_object(:code => '999')
-    assert_raises(InvalidResponseException) do
+    assert_raises(CloudFiles::Exception::InvalidResponse) do
       containers = @connection.containers
     end
   end
@@ -280,7 +280,7 @@ class CloudfilesConnectionTest < Test::Unit::TestCase
   
   def test_containers_detail_bad_response
     build_net_http_object(:code => '999')
-    assert_raises(InvalidResponseException) do
+    assert_raises(CloudFiles::Exception::InvalidResponse) do
       details = @connection.containers_detail
     end
   end

@@ -22,11 +22,11 @@ module CloudFiles
     attr_reader :content_type
 
     # Builds a new CloudFiles::StorageObject in the current container.  If force_exist is set, the object must exist or a
-    # NoSuchObjectException will be raised.  If not, an "empty" CloudFiles::StorageObject will be returned, ready for data
+    # CloudFiles::Exception::NoSuchObject Exception will be raised.  If not, an "empty" CloudFiles::StorageObject will be returned, ready for data
     # via CloudFiles::StorageObject.write
     def initialize(container,objectname,force_exists=false,make_path=false) 
       if objectname.match(/\?/)
-        raise SyntaxException, "Object #{objectname} contains an invalid character in the name (? not allowed)"
+        raise CloudFiles::Exception::Syntax, "Object #{objectname} contains an invalid character in the name (? not allowed)"
       end
       @container = container
       @containername = container.name
@@ -39,7 +39,7 @@ module CloudFiles
       if container.object_exists?(objectname)
         populate
       else
-        raise NoSuchObjectException, "Object #{@name} does not exist" if force_exists
+        raise CloudFiles::Exception::NoSuchObject, "Object #{@name} does not exist" if force_exists
       end
     end
     
@@ -47,7 +47,7 @@ module CloudFiles
     # class is initialized, but it can be called again if the data needs to be updated.
     def populate
       response = self.container.connection.cfreq("HEAD",@storagehost,@storagepath,@storageport,@storagescheme)
-      raise NoSuchObjectException, "Object #{@name} does not exist" unless (response.code =~ /^20/)
+      raise CloudFiles::Exception::NoSuchObject, "Object #{@name} does not exist" unless (response.code =~ /^20/)
       @bytes = response["content-length"]
       @last_modified = Time.parse(response["last-modified"])
       @etag = response["etag"]
@@ -73,7 +73,7 @@ module CloudFiles
         headers['Range'] = range
       end
       response = self.container.connection.cfreq("GET",@storagehost,@storagepath,@storageport,@storagescheme,headers)
-      raise NoSuchObjectException, "Object #{@name} does not exist" unless (response.code =~ /^20/)
+      raise CloudFiles::Exception::NoSuchObject, "Object #{@name} does not exist" unless (response.code =~ /^20/)
       response.body
     end
 
@@ -96,7 +96,7 @@ module CloudFiles
         headers['Range'] = range
       end
       self.container.connection.cfreq("GET",@storagehost,@storagepath,@storageport,@storagescheme,headers,nil) do |response|
-        raise NoSuchObjectException, "Object #{@name} does not exist" unless (response.code == "200")
+        raise CloudFiles::Exception::NoSuchObject, "Object #{@name} does not exist" unless (response.code == "200")
         response.read_body(&block)
       end
     end
@@ -121,8 +121,8 @@ module CloudFiles
       headers = {}
       metadatahash.each{|key, value| headers['X-Object-Meta-' + key.to_s.capitalize] = value.to_s}
       response = self.container.connection.cfreq("POST",@storagehost,@storagepath,@storageport,@storagescheme,headers)
-      raise NoSuchObjectException, "Object #{@name} does not exist" if (response.code == "404")
-      raise InvalidResponseException, "Invalid response code #{response.code}" unless (response.code == "202")
+      raise CloudFiles::Exception::NoSuchObject, "Object #{@name} does not exist" if (response.code == "404")
+      raise CloudFiles::Exception::InvalidResponse, "Invalid response code #{response.code}" unless (response.code == "202")
       true
     end
     
@@ -133,7 +133,7 @@ module CloudFiles
     # IO object for the data, such as: object.write(open('/path/to/file.mp3'))
     #
     # You can compute your own MD5 sum and send it in the "ETag" header.  If you provide yours, it will be compared to
-    # the MD5 sum on the server side.  If they do not match, the server will return a 422 status code and a MisMatchedChecksumException
+    # the MD5 sum on the server side.  If they do not match, the server will return a 422 status code and a CloudFiles::Exception::MisMatchedChecksum Exception
     # will be raised.  If you do not provide an MD5 sum as the ETag, one will be computed on the server side.
     #
     # Updates the container cache and returns true on success, raises exceptions if stuff breaks.
@@ -155,7 +155,7 @@ module CloudFiles
     #  object.write(nil,{'header' => 'value})
     
     def write(data=nil,headers={})
-      raise SyntaxException, "No data or header updates supplied" if ((data.nil? && $stdin.tty?) and headers.empty?)
+      raise CloudFiles::Exception::Syntax, "No data or header updates supplied" if ((data.nil? && $stdin.tty?) and headers.empty?)
       if headers['Content-Type'].nil?
         type = MIME::Types.type_for(self.name).first.to_s
         if type.empty?
@@ -168,9 +168,9 @@ module CloudFiles
       data = $stdin if (data.nil? && $stdin.tty? == false)
       response = self.container.connection.cfreq("PUT",@storagehost,"#{@storagepath}",@storageport,@storagescheme,headers,data)
       code = response.code
-      raise InvalidResponseException, "Invalid content-length header sent" if (code == "412")
-      raise MisMatchedChecksumException, "Mismatched etag" if (code == "422")
-      raise InvalidResponseException, "Invalid response code #{code}" unless (code == "201")
+      raise CloudFiles::Exception::InvalidResponse, "Invalid content-length header sent" if (code == "412")
+      raise CloudFiles::Exception::MisMatchedChecksum, "Mismatched etag" if (code == "422")
+      raise CloudFiles::Exception::InvalidResponse, "Invalid response code #{code}" unless (code == "201")
       make_path(File.dirname(self.name)) if @make_path == true
       self.populate
       true

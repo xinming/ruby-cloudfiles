@@ -6,7 +6,7 @@ module CloudFiles
     # Performs an authentication to the Cloud Files servers.  Opens a new HTTP connection to the API server,
     # sends the credentials, and looks for a successful authentication.  If it succeeds, it sets the cdmmgmthost,
     # cdmmgmtpath, storagehost, storagepath, authtoken, and authok variables on the connection.  If it fails, it raises
-    # an AuthenticationException.
+    # an CloudFiles::Exception::Authentication exception.
     #
     # Should probably never be called directly.
     def initialize(connection)
@@ -22,7 +22,7 @@ module CloudFiles
         end
         server.start
       rescue
-        raise ConnectionException, "Unable to connect to #{server}"
+        raise CloudFiles::Exception::Connection, "Unable to connect to #{server}"
       end
       response = server.get(path,hdrhash)
       if (response.code == "204")
@@ -40,7 +40,7 @@ module CloudFiles
         connection.authok        = true
       else
         connection.authtoken = false
-        raise AuthenticationException, "Authentication failed"
+        raise CloudFiles::Exception::Authentication, "Authentication failed"
       end
       server.finish
     end

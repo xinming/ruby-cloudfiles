@@ -80,16 +80,16 @@ module CloudFiles
     def initialize(*args)
       if args[0].is_a?(Hash)
         options = args[0]
-        @authuser = options[:username] ||( raise AuthenticationException, "Must supply a :username")
-        @authkey = options[:api_key] || (raise AuthenticationException, "Must supply an :api_key")
+        @authuser = options[:username] ||( raise CloudFiles::Exception::Authentication, "Must supply a :username")
+        @authkey = options[:api_key] || (raise CloudFiles::Exception::Authentication, "Must supply an :api_key")
         @authurl = options[:authurl] || "https://auth.api.rackspacecloud.com/v1.0"
         @retry_auth = options[:retry_auth] || true
         @snet = ENV['RACKSPACE_SERVICENET'] || options[:snet]
         @proxy_host = options[:proxy_host]
         @proxy_port = options[:proxy_port]
       elsif args[0].is_a?(String)
-        @authuser = args[0] ||( raise AuthenticationException, "Must supply the username as the first argument")
-        @authkey = args[1] || (raise AuthenticationException, "Must supply the API key as the second argument")
+        @authuser = args[0] ||( raise CloudFiles::Exception::Authentication, "Must supply the username as the first argument")
+        @authkey = args[1] || (raise CloudFiles::Exception::Authentication, "Must supply the API key as the second argument")
         @retry_auth = args[2] || true
         @snet = (ENV['RACKSPACE_SERVICENET'] || args[3]) ? true : false
         @authurl = "https://auth.api.rackspacecloud.com/v1.0"
@@ -132,7 +132,7 @@ module CloudFiles
     #   => 42438527    
     def get_info
       response = cfreq("HEAD",@storagehost,@storagepath,@storageport,@storagescheme)
-      raise InvalidResponseException, "Unable to obtain account size" unless (response.code == "204")
+      raise CloudFiles::Exception::InvalidResponse, "Unable to obtain account size" unless (response.code == "204")
       @bytes = response["x-account-bytes-used"].to_i
       @count = response["x-account-container-count"].to_i
       {:bytes => @bytes, :count => @count}
@@ -157,7 +157,7 @@ module CloudFiles
       paramstr = (paramarr.size > 0)? paramarr.join("&") : "" ;
       response = cfreq("GET",@storagehost,"#{@storagepath}?#{paramstr}",@storageport,@storagescheme)
       return [] if (response.code == "204")
-      raise InvalidResponseException, "Invalid response code #{response.code}" unless (response.code == "200")
+      raise CloudFiles::Exception::InvalidResponse, "Invalid response code #{response.code}" unless (response.code == "200")
       CloudFiles.lines(response.body)
     end
     alias :list_containers :containers
@@ -179,7 +179,7 @@ module CloudFiles
       paramstr = (paramarr.size > 0)? paramarr.join("&") : "" ;
       response = cfreq("GET",@storagehost,"#{@storagepath}?format=xml&#{paramstr}",@storageport,@storagescheme)
       return {} if (response.code == "204")
-      raise InvalidResponseException, "Invalid response code #{response.code}" unless (response.code == "200")
+      raise CloudFiles::Exception::InvalidResponse, "Invalid response code #{response.code}" unless (response.code == "200")
       doc = REXML::Document.new(response.body)
       detailhash = {}
       doc.elements.each("account/container/") { |c|
@@ -215,10 +215,10 @@ module CloudFiles
     #   container = cf.create_container('bad/name')
     #   => SyntaxException: Container name cannot contain the characters '/' or '?'
     def create_container(containername)
-      raise SyntaxException, "Container name cannot contain the characters '/' or '?'" if containername.match(/[\/\?]/)
-      raise SyntaxException, "Container name is limited to 256 characters" if containername.length > 256
+      raise CloudFiles::Exception::Syntax, "Container name cannot contain the characters '/' or '?'" if containername.match(/[\/\?]/)
+      raise CloudFiles::Exception::Syntax, "Container name is limited to 256 characters" if containername.length > 256
       response = cfreq("PUT",@storagehost,"#{@storagepath}/#{URI.encode(containername).gsub(/&/,'%26')}",@storageport,@storagescheme)
-      raise InvalidResponseException, "Unable to create container #{containername}" unless (response.code == "201" || response.code == "202")
+      raise CloudFiles::Exception::InvalidResponse, "Unable to create container #{containername}" unless (response.code == "201" || response.code == "202")
       CloudFiles::Container.new(self,containername)
     end
 
@@ -235,8 +235,8 @@ module CloudFiles
     #   => NoSuchContainerException: Container nonexistent does not exist
     def delete_container(containername)
       response = cfreq("DELETE",@storagehost,"#{@storagepath}/#{URI.encode(containername).gsub(/&/,'%26')}",@storageport,@storagescheme)
-      raise NonEmptyContainerException, "Container #{containername} is not empty" if (response.code == "409")
-      raise NoSuchContainerException, "Container #{containername} does not exist" unless (response.code == "204")
+      raise CloudFiles::Exception::NonEmptyContainer, "Container #{containername} is not empty" if (response.code == "409")
+      raise CloudFiles::Exception::NoSuchContainer, "Container #{containername} does not exist" unless (response.code == "204")
       true
     end
 
@@ -253,7 +253,7 @@ module CloudFiles
       paramstr = enabled_only == true ? "enabled_only=true" : ""
       response = cfreq("GET",@cdnmgmthost,"#{@cdnmgmtpath}?#{paramstr}",@cdnmgmtport,@cdnmgmtscheme)
       return [] if (response.code == "204")
-      raise InvalidResponseException, "Invalid response code #{response.code}" unless (response.code == "200")
+      raise CloudFiles::Exception::InvalidResponse, "Invalid response code #{response.code}" unless (response.code == "200")
       CloudFiles.lines(response.body)
     end
 
@@ -277,17 +277,17 @@ module CloudFiles
         request.content_length = 0
       end
       response = @http[server].request(request,&block)
-      raise ExpiredAuthTokenException if response.code == "401"
+      raise CloudFiles::Exception::ExpiredAuthToken if response.code == "401"
       response
     rescue Errno::EPIPE, Timeout::Error, Errno::EINVAL, EOFError
       # Server closed the connection, retry
-      raise ConnectionException, "Unable to reconnect to #{server} after #{count} attempts" if attempts >= 5
+      raise CloudFiles::Exception::Connection, "Unable to reconnect to #{server} after #{count} attempts" if attempts >= 5
       attempts += 1
       @http[server].finish
       start_http(server,path,port,scheme,headers)
       retry
     rescue ExpiredAuthTokenException
-      raise ConnectionException, "Authentication token expired and you have requested not to retry" if @retry_auth == false
+      raise CloudFiles::Exception::Connection, "Authentication token expired and you have requested not to retry" if @retry_auth == false
       CloudFiles::Authentication.new(self)
       retry
     end
@@ -315,7 +315,7 @@ module CloudFiles
           end
           @http[server].start
         rescue
-          raise ConnectionException, "Unable to connect to #{server}"
+          raise CloudFiles::Exception::Connection, "Unable to connect to #{server}"
         end
       end
     end

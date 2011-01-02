@@ -34,6 +34,7 @@ module CloudFiles
   end
 
   $:.unshift(File.dirname(__FILE__))
+  require 'cloudfiles/exception'
   require 'cloudfiles/authentication'
   require 'cloudfiles/connection'
   require 'cloudfiles/container'

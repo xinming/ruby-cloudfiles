@@ -21,7 +21,7 @@ class CloudfilesStorageObjectTest < Test::Unit::TestCase
     response.stubs(:code).returns('204')
     connection.stubs(:cfreq => response)
     container = CloudFiles::Container.new(connection, 'test_container')
-    assert_raises SyntaxException do
+    assert_raises CloudFiles::Exception::Syntax do
       @object = CloudFiles::StorageObject.new(container, 'test_object?')
     end
   end
@@ -49,7 +49,7 @@ class CloudfilesStorageObjectTest < Test::Unit::TestCase
   
   def test_data_fails
     build_net_http_object(:code => '999', :body => 'This is bad data')
-    assert_raise(NoSuchObjectException) do
+    assert_raise(CloudFiles::Exception::NoSuchObject) do
       @object.data
     end
   end
@@ -78,7 +78,7 @@ class CloudfilesStorageObjectTest < Test::Unit::TestCase
   def data_stream_fails
     build_net_http_object(:code => '999', :body => 'This is bad data')
     data = ""
-    assert_raise(NoSuchObjectException) do
+    assert_raise(CloudFiles::Exception::NoSuchObject) do
       @object.data_stream { |chunk|
         data += chunk
       }
@@ -95,14 +95,14 @@ class CloudfilesStorageObjectTest < Test::Unit::TestCase
   
   def test_set_metadata_invalid_object
     build_net_http_object(:code => '404')
-    assert_raise(NoSuchObjectException) do
+    assert_raise(CloudFiles::Exception::NoSuchObject) do
       @object.set_metadata({'Foo' =>'bar'})
     end
   end
   
   def test_set_metadata_fails
     build_net_http_object(:code => '999')
-    assert_raise(InvalidResponseException) do
+    assert_raise(CloudFiles::Exception::InvalidResponse) do
       @object.set_metadata({'Foo' =>'bar'})
     end
   end
@@ -163,28 +163,28 @@ class CloudfilesStorageObjectTest < Test::Unit::TestCase
   
   def test_write_with_no_data_dies
     build_net_http_object
-    assert_raise(SyntaxException) do
+    assert_raise(CloudFiles::Exception::Syntax) do
       @object.write
     end
   end
   
   def test_write_with_invalid_content_length_dies
     build_net_http_object(:code => '412')
-    assert_raise(InvalidResponseException) do
+    assert_raise(CloudFiles::Exception::InvalidResponse) do
       @object.write('Test Data')
     end
   end
   
   def test_write_with_mismatched_md5_dies
     build_net_http_object(:code => '422')
-    assert_raise(MisMatchedChecksumException) do
+    assert_raise(CloudFiles::Exception::MisMatchedChecksum) do
       @object.write('Test Data')
     end
   end
   
   def test_write_with_invalid_response_dies
     build_net_http_object(:code => '999')
-    assert_raise(InvalidResponseException) do
+    assert_raise(CloudFiles::Exception::InvalidResponse) do
       @object.write('Test Data')
     end
   end

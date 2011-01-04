@@ -21,7 +21,7 @@ class CloudfilesContainerTest < Test::Unit::TestCase
     response = {'x-container-bytes-used' => '42', 'x-container-object-count' => '5'}
     response.stubs(:code).returns('999')
     connection.stubs(:cfreq => response)
-    assert_raise(NoSuchContainerException) do
+    assert_raise(CloudFiles::Exception::NoSuchContainer) do
       @container = CloudFiles::Container.new(connection, 'test_container')
     end
   end
@@ -53,7 +53,7 @@ class CloudfilesContainerTest < Test::Unit::TestCase
   
   def test_make_private_fails
     build_net_http_object(:code => '999')
-    assert_raises(NoSuchContainerException) do
+    assert_raises(CloudFiles::Exception::NoSuchContainer) do
       @container.make_private
     end
   end
@@ -67,7 +67,7 @@ class CloudfilesContainerTest < Test::Unit::TestCase
   
   def test_make_public_fails
     build_net_http_object(:code => '999')
-    assert_raises(NoSuchContainerException) do
+    assert_raises(CloudFiles::Exception::NoSuchContainer) do
       @container.make_public
     end
   end
@@ -130,14 +130,14 @@ class CloudfilesContainerTest < Test::Unit::TestCase
   
   def test_delete_invalid_object_fails
     build_net_http_object(:code => '404')
-    assert_raise(NoSuchObjectException) do
+    assert_raise(CloudFiles::Exception::NoSuchObject) do
       @container.delete_object('nonexistent_object')
     end
   end
   
   def test_delete_invalid_response_code_fails
     build_net_http_object(:code => '999')
-    assert_raise(InvalidResponseException) do
+    assert_raise(CloudFiles::Exception::InvalidResponse) do
       @container.delete_object('broken_object')
     end
   end
@@ -230,7 +230,7 @@ class CloudfilesContainerTest < Test::Unit::TestCase
   
   def test_fetch_object_detail_error
     build_net_http_object(:code => '999')
-    assert_raise(InvalidResponseException) do
+    assert_raise(CloudFiles::Exception::InvalidResponse) do
       details = @container.objects_detail
     end
   end

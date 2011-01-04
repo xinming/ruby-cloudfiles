@@ -31,7 +31,7 @@ module CloudFiles
     attr_reader :referrer_acl
 
     # Retrieves an existing CloudFiles::Container object tied to the current CloudFiles::Connection.  If the requested
-    # container does not exist, it will raise a NoSuchContainerException.  
+    # container does not exist, it will raise a CloudFiles::Exception::NoSuchContainer Exception.  
     # 
     # Will likely not be called directly, instead use connection.container('container_name') to retrieve the object.
     def initialize(connection,name)
@@ -63,7 +63,7 @@ module CloudFiles
     def populate
       # Get the size and object count
       response = self.connection.cfreq("HEAD",@storagehost,@storagepath+"/",@storageport,@storagescheme)
-      raise NoSuchContainerException, "Container #{@name} does not exist" unless (response.code =~ /^20/)
+      raise CloudFiles::Exception::NoSuchContainer, "Container #{@name} does not exist" unless (response.code =~ /^20/)
       @bytes = response["x-container-bytes-used"].to_i
       @count = response["x-container-object-count"].to_i
 
@@ -95,7 +95,7 @@ module CloudFiles
     # to a “.CDN_ACCESS_LOGS” container in the form of “container_name.YYYYMMDDHH-XXXX.gz”.
     def log_retention=(value)
       response = self.connection.cfreq("POST",@cdnmgmthost,@cdnmgmtpath,@cdnmgmtport,@cdnmgmtscheme,{"x-log-retention" => value.to_s.capitalize})
-      raise InvalidResponseException, "Invalid response code #{response.code}" unless (response.code == "201" or response.code == "202")
+      raise CloudFiles::Exception::InvalidResponse, "Invalid response code #{response.code}" unless (response.code == "201" or response.code == "202")
       return true 
     end
       
@@ -141,7 +141,7 @@ module CloudFiles
       paramstr = (paramarr.size > 0)? paramarr.join("&") : "" ;
       response = self.connection.cfreq("GET",@storagehost,"#{@storagepath}?#{paramstr}",@storageport,@storagescheme)
       return [] if (response.code == "204")
-      raise InvalidResponseException, "Invalid response code #{response.code}" unless (response.code == "200")
+      raise CloudFiles::Exception::InvalidResponse, "Invalid response code #{response.code}" unless (response.code == "200")
       return CloudFiles.lines(response.body)
     end
     alias :list_objects :objects
@@ -173,7 +173,7 @@ module CloudFiles
       paramstr = (paramarr.size > 0)? paramarr.join("&") : "" ;
       response = self.connection.cfreq("GET",@storagehost,"#{@storagepath}?#{paramstr}",@storageport,@storagescheme)
       return {} if (response.code == "204")
-      raise InvalidResponseException, "Invalid response code #{response.code}" unless (response.code == "200")
+      raise CloudFiles::Exception::InvalidResponse, "Invalid response code #{response.code}" unless (response.code == "200")
       doc = REXML::Document.new(response.body)
       detailhash = {}
       doc.elements.each("container/object") { |o|
@@ -240,8 +240,8 @@ module CloudFiles
     #   => NoSuchObjectException: Object nonexistent_file.txt does not exist
     def delete_object(objectname)
       response = self.connection.cfreq("DELETE",@storagehost,"#{@storagepath}/#{URI.encode(objectname).gsub(/&/,'%26')}",@storageport,@storagescheme)
-      raise NoSuchObjectException, "Object #{objectname} does not exist" if (response.code == "404")
-      raise InvalidResponseException, "Invalid response code #{response.code}" unless (response.code =~ /^20/)
+      raise CloudFiles::Exception::NoSuchObject, "Object #{objectname} does not exist" if (response.code == "404")
+      raise CloudFiles::Exception::InvalidResponse, "Invalid response code #{response.code}" unless (response.code =~ /^20/)
       true
     end
 
@@ -266,13 +266,13 @@ module CloudFiles
       end
       
       response = self.connection.cfreq("PUT",@cdnmgmthost,@cdnmgmtpath,@cdnmgmtport,@cdnmgmtscheme)
-      raise NoSuchContainerException, "Container #{@name} does not exist" unless (response.code == "201" || response.code == "202")
+      raise CloudFiles::Exception::NoSuchContainer, "Container #{@name} does not exist" unless (response.code == "201" || response.code == "202")
 
       headers = { "X-TTL" => options[:ttl].to_s , "X-CDN-Enabled" => "True" }
       headers["X-User-Agent-ACL"] = options[:user_agent_acl] if options[:user_agent_acl]
       headers["X-Referrer-ACL"] = options[:referrer_acl] if options[:referrer_acl]
       response = self.connection.cfreq("POST",@cdnmgmthost,@cdnmgmtpath,@cdnmgmtport,@cdnmgmtscheme,headers)
-      raise NoSuchContainerException, "Container #{@name} does not exist" unless (response.code == "201" || response.code == "202")
+      raise CloudFiles::Exception::NoSuchContainer, "Container #{@name} does not exist" unless (response.code == "201" || response.code == "202")
       populate
       true
     end
@@ -287,7 +287,7 @@ module CloudFiles
     def make_private
       headers = { "X-CDN-Enabled" => "False" }
       response = self.connection.cfreq("POST",@cdnmgmthost,@cdnmgmtpath,@cdnmgmtport,@cdnmgmtscheme,headers)
-      raise NoSuchContainerException, "Container #{@name} does not exist" unless (response.code == "201" || response.code == "202")
+      raise CloudFiles::Exception::NoSuchContainer, "Container #{@name} does not exist" unless (response.code == "201" || response.code == "202")
       populate
       true
     end

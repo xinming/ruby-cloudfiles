@@ -10,13 +10,13 @@ module CloudFiles
     #
     # Should probably never be called directly.
     def initialize(connection)
-      parsed_authurl = URI.parse(connection.authurl)
-      path = parsed_authurl.path
+      parsed_auth_url = URI.parse(connection.auth_url)
+      path = parsed_auth_url.path
       hdrhash = { "X-Auth-User" => connection.authuser, "X-Auth-Key" => connection.authkey }
       begin
-        server             = get_server(connection, parsed_authurl)
+        server             = get_server(connection, parsed_auth_url)
 
-        if parsed_authurl.scheme == "https"
+        if parsed_auth_url.scheme == "https"
           server.use_ssl     = true
           server.verify_mode = OpenSSL::SSL::VERIFY_NONE
         end
@@ -47,8 +47,8 @@ module CloudFiles
     
     private
     
-    def get_server(connection, parsed_authurl)
-      Net::HTTP::Proxy(connection.proxy_host, connection.proxy_port).new(parsed_authurl.host,parsed_authurl.port)
+    def get_server(connection, parsed_auth_url)
+      Net::HTTP::Proxy(connection.proxy_host, connection.proxy_port).new(parsed_auth_url.host,parsed_auth_url.port)
     end
     
     def set_snet(connection,hostname)

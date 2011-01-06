@@ -10,7 +10,7 @@ class CloudfilesAuthenticationTest < Test::Unit::TestCase
     server = mock(:use_ssl= => true, :verify_mode= => true, :start => true, :finish => true)
     server.stubs(:get).returns(response)
     CloudFiles::Authentication.any_instance.stubs(:get_server).returns(server)
-    @connection = stub(:authuser => 'dummy_user', :authkey => 'dummy_key', :cdnmgmthost= => true, :cdnmgmtpath= => true, :cdnmgmtport= => true, :cdnmgmtscheme= => true, :storagehost= => true, :storagepath= => true, :storageport= => true, :storagescheme= => true, :authtoken= => true, :authok= => true, :snet? => false, :authurl => 'https://auth.api.rackspacecloud.com/v1.0')
+    @connection = stub(:authuser => 'dummy_user', :authkey => 'dummy_key', :cdnmgmthost= => true, :cdnmgmtpath= => true, :cdnmgmtport= => true, :cdnmgmtscheme= => true, :storagehost= => true, :storagepath= => true, :storageport= => true, :storagescheme= => true, :authtoken= => true, :authok= => true, :snet? => false, :auth_url => 'https://auth.api.rackspacecloud.com/v1.0')
     result = CloudFiles::Authentication.new(@connection)
     assert_equal result.class, CloudFiles::Authentication
   end
@@ -21,7 +21,7 @@ class CloudfilesAuthenticationTest < Test::Unit::TestCase
     server = mock(:use_ssl= => true, :verify_mode= => true, :start => true, :finish => true)
     server.stubs(:get).returns(response)
     CloudFiles::Authentication.any_instance.stubs(:get_server).returns(server)
-    @connection = stub(:authuser => 'dummy_user', :authkey => 'dummy_key', :cdnmgmthost= => true, :cdnmgmtpath= => true, :cdnmgmtport= => true, :cdnmgmtscheme= => true, :storagehost= => true, :storagepath= => true, :storageport= => true, :storagescheme= => true, :authtoken= => true, :authok= => true, :snet? => true, :authurl => 'https://auth.api.rackspacecloud.com/v1.0')
+    @connection = stub(:authuser => 'dummy_user', :authkey => 'dummy_key', :cdnmgmthost= => true, :cdnmgmtpath= => true, :cdnmgmtport= => true, :cdnmgmtscheme= => true, :storagehost= => true, :storagepath= => true, :storageport= => true, :storagescheme= => true, :authtoken= => true, :authok= => true, :snet? => true, :auth_url => 'https://auth.api.rackspacecloud.com/v1.0')
     result = CloudFiles::Authentication.new(@connection)
     assert_equal result.class, CloudFiles::Authentication
   end
@@ -32,7 +32,7 @@ class CloudfilesAuthenticationTest < Test::Unit::TestCase
     server = mock(:use_ssl= => true, :verify_mode= => true, :start => true)
     server.stubs(:get).returns(response)
     CloudFiles::Authentication.any_instance.stubs(:get_server).returns(server)
-    @connection = stub(:authuser => 'bad_user', :authkey => 'bad_key', :authok= => true, :authtoken= => true,  :authurl => 'https://auth.api.rackspacecloud.com/v1.0')
+    @connection = stub(:authuser => 'bad_user', :authkey => 'bad_key', :authok= => true, :authtoken= => true,  :auth_url => 'https://auth.api.rackspacecloud.com/v1.0')
     assert_raises(CloudFiles::Exception::Authentication) do
       result = CloudFiles::Authentication.new(@connection)
     end
@@ -40,7 +40,7 @@ class CloudfilesAuthenticationTest < Test::Unit::TestCase
     
   def test_bad_hostname
     Net::HTTP.stubs(:new).raises(CloudFiles::Exception::Connection)
-    @connection = stub(:authuser => 'bad_user', :authkey => 'bad_key', :authok= => true, :authtoken= => true, :authurl => 'https://auth.api.rackspacecloud.com/v1.0')
+    @connection = stub(:authuser => 'bad_user', :authkey => 'bad_key', :authok= => true, :authtoken= => true, :auth_url => 'https://auth.api.rackspacecloud.com/v1.0')
     assert_raises(CloudFiles::Exception::Connection) do
       result = CloudFiles::Authentication.new(@connection)
     end

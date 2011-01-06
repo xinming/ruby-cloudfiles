@@ -4,10 +4,10 @@
 # ==== Connects Ruby Applications to Rackspace's {Cloud Files service}[http://www.rackspacecloud.com/cloud_hosting_products/files]
 # Initial work by Major Hayden <major.hayden@rackspace.com>
 # 
-# Subsequent work by H. Wade Minter <minter@lunenburg.org>
+# Subsequent work by H. Wade Minter <minter@lunenburg.org> and Dan Prince <dan.prince@rackspace.com>
 #
 # See COPYING for license information.
-# Copyright (c) 2009, Rackspace US, Inc.
+# Copyright (c) 2011, Rackspace US, Inc.
 # ----
 # 
 # === Documentation & Examples
@@ -15,12 +15,12 @@
 # CloudFiles::Connection class.
 #
 # The CloudFiles class is the base class.  Not much of note happens here.
-# To create a new CloudFiles connection, use the CloudFiles::Connection.new('user_name', 'api_key') method.
+# To create a new CloudFiles connection, use the CloudFiles::Connection.new(:username => 'user_name', :api_key => 'api_key') method.
 
 module CloudFiles
   
-  AUTH_USA = "https://auth.api.rackspacecloud.com/v1"
-  AUTH_UK = "https://lon.auth.api.rackspacecloud.com/v1"
+  AUTH_USA = "https://auth.api.rackspacecloud.com/v1.0"
+  AUTH_UK = "https://lon.auth.api.rackspacecloud.com/v1.0"
 
   VERSION = IO.read(File.dirname(__FILE__) + '/../VERSION')
   require 'net/http'

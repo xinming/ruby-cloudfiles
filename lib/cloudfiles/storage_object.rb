@@ -1,7 +1,7 @@
 module CloudFiles
   class StorageObject
     # See COPYING for license information.
-    # Copyright (c) 2009, Rackspace US, Inc.
+    # Copyright (c) 2011, Rackspace US, Inc.
     
     # Name of the object corresponding to the instantiated object
     attr_reader :name

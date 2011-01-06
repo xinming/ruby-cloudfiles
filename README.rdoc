@@ -37,6 +37,9 @@ See the class definitions for documentation on specific methods and operations.
   # Log into the Cloud Files system
   cf = CloudFiles::Connection.new(:username => "MY_USERNAME", :api_key => "MY_API_KEY")
 
+  # Or, if you want to access the United Kingdom cloud installations, there's a handy constant:
+  cf = CloudFiles::Connection.new(:username => "MY_USERNAME", :api_key => "MY_API_KEY", :auth_url => CloudFiles::AUTH_UK)
+
   # Get a listing of all containers under this account
   cf.containers
   => ["backup", "Books", "cftest", "test", "video", "webpics"]
@@ -67,9 +70,9 @@ See the class definitions for documentation on specific methods and operations.
 
 Initial work by Major Hayden <major.hayden@rackspace.com>
 
-Subsequent work by H. Wade Minter <minter@lunenburg.org>
+Subsequent work by H. Wade Minter <minter@lunenburg.org> and Dan Prince <dan.prince@rackspace.com>
 
 == License
 
 See COPYING for license information.
-Copyright (c) 2009, Rackspace US, Inc.
+Copyright (c) 2011, Rackspace US, Inc.

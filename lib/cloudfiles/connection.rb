@@ -1,7 +1,7 @@
 module CloudFiles
   class Connection
     # See COPYING for license information.
-    # Copyright (c) 2009, Rackspace US, Inc.
+    # Copyright (c) 2011, Rackspace US, Inc.
     
     # Authentication key provided when the CloudFiles class was instantiated
     attr_reader :authkey
@@ -55,24 +55,27 @@ module CloudFiles
     # Creates a new CloudFiles::Connection object.  Uses CloudFiles::Authentication to perform the login for the connection.
     # The authuser is the Rackspace Cloud username, the authkey is the Rackspace Cloud API key.
     #
-    # Setting the optional retry_auth variable to false will cause an exception to be thrown if your authorization token expires.
+    # Setting the :retry_auth option to false will cause an exception to be thrown if your authorization token expires.
     # Otherwise, it will attempt to reauthenticate.
     #
-    # Setting the optional snet variable to true or setting an environment variable of RACKSPACE_SERVICENET to any value will cause 
-    # storage URLs to be returned with a prefix pointing them to the internal Rackspace service network, instead of a public URL.  
+    # Setting the :snet option to true or setting an environment variable of RACKSPACE_SERVICENET to any value will cause 
+    # storage URLs to be returned with a prefix pointing them to the internal Rackspace service network, instead of a public URL.
     #
     # This is useful if you are using the library on a Rackspace-hosted system, as it provides faster speeds, keeps traffic off of
     # the public network, and the bandwidth is not billed.
     #
     # If you need to connect to a Cloud Files installation that is NOT the standard Rackspace one, set the :auth_url option to the URL 
-    # of your authentication endpoint.  The default is https://auth.api.rackspacecloud.com/v1.0
+    # of your authentication endpoint.  The old option name of :authurl is deprecated.  The default is CloudFiles::AUTH_USA (https://auth.api.rackspacecloud.com/v1.0)
+    #
+    # There are two predefined constants to represent the United States-based authentication endpoint and the United Kingdom-based endpoint:
+    # CloudFiles::AUTH_USA (the default) and CloudFiles::AUTH_UK - both can be passed to the :auth_url option to quickly choose one or the other.
     #
     # This will likely be the base class for most operations.
     # 
     # With gem 1.4.8, the connection style has changed.  It is now a hash of arguments.  Note that the proxy options are currently only
     # supported in the new style.
     #
-    #   cf = CloudFiles::Connection.new(:username => "MY_USERNAME", :api_key => "MY_API_KEY", :auth_url => "https://auth.api.rackspacecloud.com/v1.0", :retry_auth => true, :snet => false, :proxy_host => "localhost", :proxy_port => "1234")
+    #   cf = CloudFiles::Connection.new(:username => "MY_USERNAME", :api_key => "MY_API_KEY", :auth_url => CloudFiles::AUTH_UK, :retry_auth => true, :snet => false, :proxy_host => "localhost", :proxy_port => "1234")
     #
     # The old style (positional arguments) is deprecated and will be removed at some point in the future.
     # 

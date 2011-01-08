@@ -29,6 +29,7 @@ Gem::Specification.new do |s|
      "lib/cloudfiles/authentication.rb",
      "lib/cloudfiles/connection.rb",
      "lib/cloudfiles/container.rb",
+     "lib/cloudfiles/exception.rb",
      "lib/cloudfiles/storage_object.rb",
      "test/cf-testunit.rb",
      "test/cloudfiles_authentication_test.rb",

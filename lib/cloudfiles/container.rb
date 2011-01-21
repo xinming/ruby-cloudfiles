@@ -42,7 +42,7 @@ module CloudFiles
       @storageport = self.connection.storageport
       @storagescheme = self.connection.storagescheme
       @cdnmgmthost = self.connection.cdnmgmthost
-      @cdnmgmtpath = self.connection.cdnmgmtpath + "/" + URI.encode(@name).gsub(/&/,'%26')
+      @cdnmgmtpath = self.connection.cdnmgmtpath + "/" + URI.encode(@name).gsub(/&/,'%26') if self.connection.cdnmgmtpath
       @cdnmgmtport = self.connection.cdnmgmtport
       @cdnmgmtscheme = self.connection.cdnmgmtscheme
       populate

@@ -9,7 +9,7 @@ Gem::Specification.new do |s|
 
   s.required_rubygems_version = Gem::Requirement.new(">= 0") if s.respond_to? :required_rubygems_version=
   s.authors = ["H. Wade Minter", "Rackspace Hosting"]
-  s.date = %q{2010-11-19}
+  s.date = %q{2011-01-07}
   s.description = %q{A Ruby version of the Rackspace Cloud Files API.}
   s.email = %q{minter@lunenburg.org}
   s.extra_rdoc_files = [

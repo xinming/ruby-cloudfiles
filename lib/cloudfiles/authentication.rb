@@ -2,7 +2,7 @@ module CloudFiles
   class Authentication
     # See COPYING for license information.
     # Copyright (c) 2011, Rackspace US, Inc.
-    
+
     # Performs an authentication to the Cloud Files servers.  Opens a new HTTP connection to the API server,
     # sends the credentials, and looks for a successful authentication.  If it succeeds, it sets the cdmmgmthost,
     # cdmmgmtpath, storagehost, storagepath, authtoken, and authok variables on the connection.  If it fails, it raises
@@ -24,7 +24,7 @@ module CloudFiles
       rescue
         raise CloudFiles::Exception::Connection, "Unable to connect to #{server}"
       end
-      response = server.get(path,hdrhash)
+      response = server.get(path, hdrhash)
       if (response.code == "204")
         if response["x-cdn-management-url"]
           connection.cdnmgmthost   = URI.parse(response["x-cdn-management-url"]).host
@@ -32,7 +32,7 @@ module CloudFiles
           connection.cdnmgmtport   = URI.parse(response["x-cdn-management-url"]).port
           connection.cdnmgmtscheme = URI.parse(response["x-cdn-management-url"]).scheme
         end
-        connection.storagehost   = set_snet(connection,URI.parse(response["x-storage-url"]).host)
+        connection.storagehost   = set_snet(connection, URI.parse(response["x-storage-url"]).host)
         connection.storagepath   = URI.parse(response["x-storage-url"]).path
         connection.storageport   = URI.parse(response["x-storage-url"]).port
         connection.storagescheme = URI.parse(response["x-storage-url"]).scheme
@@ -44,19 +44,19 @@ module CloudFiles
       end
       server.finish
     end
-    
+
     private
-    
-    def get_server(connection, parsed_auth_url)
-      Net::HTTP::Proxy(connection.proxy_host, connection.proxy_port).new(parsed_auth_url.host,parsed_auth_url.port)
-    end
-    
-    def set_snet(connection,hostname)
-      if connection.snet?
-        "snet-#{hostname}"
-      else
-        hostname
+
+      def get_server(connection, parsed_auth_url)
+        Net::HTTP::Proxy(connection.proxy_host, connection.proxy_port).new(parsed_auth_url.host, parsed_auth_url.port)
       end
-    end
+
+      def set_snet(connection, hostname)
+        if connection.snet?
+          "snet-#{hostname}"
+        else
+          hostname
+        end
+      end
   end
 end

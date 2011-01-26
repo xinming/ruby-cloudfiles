@@ -2,13 +2,13 @@ module CloudFiles
   class StorageObject
     # See COPYING for license information.
     # Copyright (c) 2011, Rackspace US, Inc.
-    
+
     # Name of the object corresponding to the instantiated object
     attr_reader :name
 
     # Size of the object (in bytes)
     attr_reader :bytes
-    
+
     # The parent CloudFiles::Container object
     attr_reader :container
 
@@ -24,7 +24,7 @@ module CloudFiles
     # Builds a new CloudFiles::StorageObject in the current container.  If force_exist is set, the object must exist or a
     # CloudFiles::Exception::NoSuchObject Exception will be raised.  If not, an "empty" CloudFiles::StorageObject will be returned, ready for data
     # via CloudFiles::StorageObject.write
-    def initialize(container,objectname,force_exists=false,make_path=false) 
+    def initialize(container, objectname, force_exists = false, make_path = false)
       if objectname.match(/\?/)
         raise CloudFiles::Exception::Syntax, "Object #{objectname} contains an invalid character in the name (? not allowed)"
       end
@@ -33,7 +33,7 @@ module CloudFiles
       @name = objectname
       @make_path = make_path
       @storagehost = self.container.connection.storagehost
-      @storagepath = self.container.connection.storagepath+"/#{URI.encode(@containername).gsub(/&/,'%26')}/#{URI.encode(@name).gsub(/&/,'%26')}"
+      @storagepath = self.container.connection.storagepath + "/#{URI.encode(@containername).gsub(/&/, '%26')}/#{URI.encode(@name).gsub(/&/, '%26')}"
       @storageport = self.container.connection.storageport
       @storagescheme = self.container.connection.storagescheme
       if container.object_exists?(objectname)
@@ -42,11 +42,11 @@ module CloudFiles
         raise CloudFiles::Exception::NoSuchObject, "Object #{@name} does not exist" if force_exists
       end
     end
-    
-    # Caches data about the CloudFiles::StorageObject for fast retrieval.  This method is automatically called when the 
+
+    # Caches data about the CloudFiles::StorageObject for fast retrieval.  This method is automatically called when the
     # class is initialized, but it can be called again if the data needs to be updated.
     def populate
-      response = self.container.connection.cfreq("HEAD",@storagehost,@storagepath,@storageport,@storagescheme)
+      response = self.container.connection.cfreq("HEAD", @storagehost, @storagepath, @storageport, @storagescheme)
       raise CloudFiles::Exception::NoSuchObject, "Object #{@name} does not exist" unless (response.code =~ /^20/)
       @bytes = response["content-length"]
       @last_modified = Time.parse(response["last-modified"])
@@ -64,20 +64,20 @@ module CloudFiles
     #
     # If the optional size and range arguments are provided, the call will return the number of bytes provided by
     # size, starting from the offset provided in offset.
-    # 
+    #
     #   object.data
     #   => "This is the text stored in the file"
-    def data(size=-1,offset=0,headers = {})
+    def data(size = -1, offset = 0, headers = {})
       if size.to_i > 0
         range = sprintf("bytes=%d-%d", offset.to_i, (offset.to_i + size.to_i) - 1)
         headers['Range'] = range
       end
-      response = self.container.connection.cfreq("GET",@storagehost,@storagepath,@storageport,@storagescheme,headers)
+      response = self.container.connection.cfreq("GET", @storagehost, @storagepath, @storageport, @storagescheme, headers)
       raise CloudFiles::Exception::NoSuchObject, "Object #{@name} does not exist" unless (response.code =~ /^20/)
       response.body
     end
 
-    # Retrieves the data from an object and returns a stream that must be passed to a block.  Throws a 
+    # Retrieves the data from an object and returns a stream that must be passed to a block.  Throws a
     # NoSuchObjectException if the object doesn't exist.
     #
     # If the optional size and range arguments are provided, the call will return the number of bytes provided by
@@ -87,15 +87,15 @@ module CloudFiles
     #   object.data_stream do |chunk|
     #     data += chunk
     #   end
-    #  
+    #
     #   data
     #   => "This is the text stored in the file"
-    def data_stream(size=-1,offset=0,headers = {},&block)
+    def data_stream(size = -1, offset = 0, headers = {}, &block)
       if size.to_i > 0
         range = sprintf("bytes=%d-%d", offset.to_i, (offset.to_i + size.to_i) - 1)
         headers['Range'] = range
       end
-      self.container.connection.cfreq("GET",@storagehost,@storagepath,@storageport,@storagescheme,headers,nil) do |response|
+      self.container.connection.cfreq("GET", @storagehost, @storagepath, @storageport, @storagescheme, headers, nil) do |response|
         raise CloudFiles::Exception::NoSuchObject, "Object #{@name} does not exist" unless (response.code == "200")
         response.read_body(&block)
       end
@@ -108,28 +108,28 @@ module CloudFiles
     #    => {"ruby"=>"cool", "foo"=>"bar"}
     def metadata
       metahash = {}
-      @metadata.each{|key, value| metahash[key.gsub(/x-object-meta-/,'').gsub(/\+\-/, ' ')] = URI.decode(value).gsub(/\+\-/, ' ')}
+      @metadata.each{|key, value| metahash[key.gsub(/x-object-meta-/, '').gsub(/\+\-/, ' ')] = URI.decode(value).gsub(/\+\-/, ' ')}
       metahash
     end
-    
+
     # Sets the metadata for an object.  By passing a hash as an argument, you can set the metadata for an object.
     # However, setting metadata will overwrite any existing metadata for the object.
-    # 
+    #
     # Throws NoSuchObjectException if the object doesn't exist.  Throws InvalidResponseException if the request
     # fails.
     def set_metadata(metadatahash)
       headers = {}
       metadatahash.each{|key, value| headers['X-Object-Meta-' + key.to_s.capitalize] = value.to_s}
-      response = self.container.connection.cfreq("POST",@storagehost,@storagepath,@storageport,@storagescheme,headers)
+      response = self.container.connection.cfreq("POST", @storagehost, @storagepath, @storageport, @storagescheme, headers)
       raise CloudFiles::Exception::NoSuchObject, "Object #{@name} does not exist" if (response.code == "404")
       raise CloudFiles::Exception::InvalidResponse, "Invalid response code #{response.code}" unless (response.code == "202")
       true
     end
-    
+
     # Takes supplied data and writes it to the object, saving it.  You can supply an optional hash of headers, including
     # Content-Type and ETag, that will be applied to the object.
     #
-    # If you would rather stream the data in chunks, instead of reading it all into memory at once, you can pass an 
+    # If you would rather stream the data in chunks, instead of reading it all into memory at once, you can pass an
     # IO object for the data, such as: object.write(open('/path/to/file.mp3'))
     #
     # You can compute your own MD5 sum and send it in the "ETag" header.  If you provide yours, it will be compared to
@@ -153,8 +153,8 @@ module CloudFiles
     # with no data (or, if you need to pass headers)
     #
     #  object.write(nil,{'header' => 'value})
-    
-    def write(data=nil,headers={})
+
+    def write(data = nil, headers = {})
       raise CloudFiles::Exception::Syntax, "No data or header updates supplied" if ((data.nil? && $stdin.tty?) and headers.empty?)
       if headers['Content-Type'].nil?
         type = MIME::Types.type_for(self.name).first.to_s
@@ -166,7 +166,7 @@ module CloudFiles
       end
       # If we're taking data from standard input, send that IO object to cfreq
       data = $stdin if (data.nil? && $stdin.tty? == false)
-      response = self.container.connection.cfreq("PUT",@storagehost,"#{@storagepath}",@storageport,@storagescheme,headers,data)
+      response = self.container.connection.cfreq("PUT", @storagehost, "#{@storagepath}", @storageport, @storagescheme, headers, data)
       code = response.code
       raise CloudFiles::Exception::InvalidResponse, "Invalid content-length header sent" if (code == "412")
       raise CloudFiles::Exception::MisMatchedChecksum, "Mismatched etag" if (code == "422")
@@ -175,7 +175,7 @@ module CloudFiles
       self.populate
       true
     end
-    
+
     # A convenience method to stream data into an object from a local file (or anything that can be loaded by Ruby's open method)
     #
     # Throws an Errno::ENOENT if the file cannot be read.
@@ -200,7 +200,7 @@ module CloudFiles
 
     # A convenience method to stream data from an object into a local file
     #
-    # Throws an Errno::ENOENT if the file cannot be opened for writing due to a path error, 
+    # Throws an Errno::ENOENT if the file cannot be opened for writing due to a path error,
     # and Errno::EACCES if the file cannot be opened for writing due to permissions.
     #
     #   object.data
@@ -222,7 +222,7 @@ module CloudFiles
       end
       true
     end
-    
+
     # If the parent container is public (CDN-enabled), returns the CDN URL to this object.  Otherwise, return nil
     #
     #   public_object.public_url
@@ -231,26 +231,26 @@ module CloudFiles
     #   private_object.public_url
     #   => nil
     def public_url
-      self.container.public? ? self.container.cdn_url + "/#{URI.encode(@name).gsub(/&/,'%26')}" : nil
+      self.container.public? ? self.container.cdn_url + "/#{URI.encode(@name).gsub(/&/, '%26')}" : nil
     end
-    
+
     def to_s # :nodoc:
       @name
     end
-    
+
     private
-    
-    def make_path(path) # :nodoc:
-      if path == "." || path == "/"
-        return
-      else
-        unless self.container.object_exists?(path)
-          o = self.container.create_object(path)
-          o.write(nil,{'Content-Type' => 'application/directory'})
+
+      def make_path(path) # :nodoc:
+        if path == "." || path == "/"
+          return
+        else
+          unless self.container.object_exists?(path)
+            o = self.container.create_object(path)
+            o.write(nil, {'Content-Type' => 'application/directory'})
+          end
+          make_path(File.dirname(path))
         end
-        make_path(File.dirname(path))
       end
-    end
 
   end
 

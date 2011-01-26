@@ -33,7 +33,7 @@ module CloudFiles
       @name = objectname
       @make_path = make_path
       @storagehost = self.container.connection.storagehost
-      @storagepath = self.container.connection.storagepath + "/#{URI.encode(@containername).gsub(/&/, '%26')}/#{URI.encode(@name).gsub(/&/, '%26')}"
+      @storagepath = self.container.connection.storagepath + "/#{CloudFiles.escape @containername}/#{CloudFiles.escape @name}"
       @storageport = self.container.connection.storageport
       @storagescheme = self.container.connection.storagescheme
       if container.object_exists?(objectname)
@@ -108,7 +108,7 @@ module CloudFiles
     #    => {"ruby"=>"cool", "foo"=>"bar"}
     def metadata
       metahash = {}
-      @metadata.each{|key, value| metahash[key.gsub(/x-object-meta-/, '').gsub(/\+\-/, ' ')] = URI.decode(value).gsub(/\+\-/, ' ')}
+      @metadata.each{ |key, value| metahash[key.gsub(/x-object-meta-/, '').gsub(/\+\-/, ' ')] = URI.decode(value).gsub(/\+\-/, ' ') }
       metahash
     end
 
@@ -119,7 +119,7 @@ module CloudFiles
     # fails.
     def set_metadata(metadatahash)
       headers = {}
-      metadatahash.each{|key, value| headers['X-Object-Meta-' + key.to_s.capitalize] = value.to_s}
+      metadatahash.each{ |key, value| headers['X-Object-Meta-' + key.to_s.capitalize] = value.to_s }
       response = self.container.connection.cfreq("POST", @storagehost, @storagepath, @storageport, @storagescheme, headers)
       raise CloudFiles::Exception::NoSuchObject, "Object #{@name} does not exist" if (response.code == "404")
       raise CloudFiles::Exception::InvalidResponse, "Invalid response code #{response.code}" unless (response.code == "202")
@@ -231,7 +231,7 @@ module CloudFiles
     #   private_object.public_url
     #   => nil
     def public_url
-      self.container.public? ? self.container.cdn_url + "/#{URI.encode(@name).gsub(/&/, '%26')}" : nil
+      self.container.public? ? self.container.cdn_url + "/#{CloudFiles.escape @name}" : nil
     end
 
     def to_s # :nodoc:

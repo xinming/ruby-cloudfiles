@@ -38,11 +38,11 @@ module CloudFiles
       @connection = connection
       @name = name
       @storagehost = self.connection.storagehost
-      @storagepath = self.connection.storagepath + "/" + URI.encode(@name).gsub(/&/, '%26')
+      @storagepath = self.connection.storagepath + "/" + CloudFiles.escape(@name)
       @storageport = self.connection.storageport
       @storagescheme = self.connection.storagescheme
       @cdnmgmthost = self.connection.cdnmgmthost
-      @cdnmgmtpath = self.connection.cdnmgmtpath + "/" + URI.encode(@name).gsub(/&/, '%26') if self.connection.cdnmgmtpath
+      @cdnmgmtpath = self.connection.cdnmgmtpath + "/" + CloudFiles.escape(@name) if self.connection.cdnmgmtpath
       @cdnmgmtport = self.connection.cdnmgmtport
       @cdnmgmtscheme = self.connection.cdnmgmtscheme
       populate
@@ -138,7 +138,7 @@ module CloudFiles
       query = []
       params.each do |param, value|
         if [:limit, :marker, :prefix, :path, :delimiter].include? param
-          query << "#{param}=#{CGI.escape(value.to_s)}"
+          query << "#{param}=#{CloudFiles.escape(value.to_s)}"
         end
       end
       response = self.connection.cfreq("GET", @storagehost, "#{@storagepath}?#{query.join '&'}", @storageport, @storagescheme)
@@ -169,7 +169,7 @@ module CloudFiles
       query = ["format=xml"]
       params.each do |param, value|
         if [:limit, :marker, :prefix, :path, :delimiter].include? param
-          query << "#{param}=#{CGI.escape(value.to_s)}"
+          query << "#{param}=#{CloudFiles.escape(value.to_s)}"
         end
       end
       response = self.connection.cfreq("GET", @storagehost, "#{@storagepath}?#{query.join '&'}", @storageport, @storagescheme)
@@ -215,7 +215,7 @@ module CloudFiles
     #   container.object_exists?('badfile.txt')
     #   => false
     def object_exists?(objectname)
-      response = self.connection.cfreq("HEAD", @storagehost, "#{@storagepath}/#{URI.encode(objectname).gsub(/&/, '%26')}", @storageport, @storagescheme)
+      response = self.connection.cfreq("HEAD", @storagehost, "#{@storagepath}/#{CloudFiles.escape objectname}", @storageport, @storagescheme)
       return (response.code =~ /^20/)? true : false
     end
 
@@ -240,7 +240,7 @@ module CloudFiles
     #   container.delete_object('nonexistent_file.txt')
     #   => NoSuchObjectException: Object nonexistent_file.txt does not exist
     def delete_object(objectname)
-      response = self.connection.cfreq("DELETE", @storagehost, "#{@storagepath}/#{URI.encode(objectname).gsub(/&/, '%26')}", @storageport, @storagescheme)
+      response = self.connection.cfreq("DELETE", @storagehost, "#{@storagepath}/#{CloudFiles.escape objectname}", @storageport, @storagescheme)
       raise CloudFiles::Exception::NoSuchObject, "Object #{objectname} does not exist" if (response.code == "404")
       raise CloudFiles::Exception::InvalidResponse, "Invalid response code #{response.code}" unless (response.code =~ /^20/)
       true

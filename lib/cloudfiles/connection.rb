@@ -155,11 +155,10 @@ module CloudFiles
     #   cf.containers(2,'cftest')
     #   => ["test", "video"]
     def containers(limit = 0, marker = "")
-      paramarr = []
-      paramarr << ["limit=#{URI.encode(limit.to_s).gsub(/&/, '%26')}"] if limit.to_i > 0
-      paramarr << ["marker=#{URI.encode(marker.to_s).gsub(/&/, '%26')}"] unless marker.to_s.empty?
-      paramstr = (paramarr.size > 0)? paramarr.join("&") : "" ;
-      response = cfreq("GET", @storagehost, "#{@storagepath}?#{paramstr}", @storageport, @storagescheme)
+      query = []
+      query << "limit=#{CloudFiles.escape limit.to_s}" if limit.to_i > 0
+      query << "marker=#{CloudFiles.escape marker.to_s}" unless marker.to_s.empty?
+      response = cfreq("GET", @storagehost, "#{@storagepath}?#{query.join '&'}", @storageport, @storagescheme)
       return [] if (response.code == "204")
       raise CloudFiles::Exception::InvalidResponse, "Invalid response code #{response.code}" unless (response.code == "200")
       CloudFiles.lines(response.body)
@@ -177,11 +176,10 @@ module CloudFiles
     #   => { "container1" => { :bytes => "36543", :count => "146" },
     #        "container2" => { :bytes => "105943", :count => "25" } }
     def containers_detail(limit = 0, marker = "")
-      paramarr = []
-      paramarr << ["limit=#{URI.encode(limit.to_s).gsub(/&/, '%26')}"] if limit.to_i > 0
-      paramarr << ["marker=#{URI.encode(marker.to_s).gsub(/&/, '%26')}"] unless marker.to_s.empty?
-      paramstr = (paramarr.size > 0)? paramarr.join("&") : "" ;
-      response = cfreq("GET", @storagehost, "#{@storagepath}?format=xml&#{paramstr}", @storageport, @storagescheme)
+      query = ['format=xml']
+      query << "limit=#{CloudFiles.escape limit.to_s}" if limit.to_i > 0
+      query << "marker=#{CloudFiles.escape marker.to_s}" unless marker.to_s.empty?
+      response = cfreq("GET", @storagehost, "#{@storagepath}?#{query.join '&'}", @storageport, @storagescheme)
       return {} if (response.code == "204")
       raise CloudFiles::Exception::InvalidResponse, "Invalid response code #{response.code}" unless (response.code == "200")
       doc = REXML::Document.new(response.body)
@@ -202,7 +200,7 @@ module CloudFiles
     #   cf.container_exists?('bad_container')
     #   => false
     def container_exists?(containername)
-      response = cfreq("HEAD", @storagehost, "#{@storagepath}/#{URI.encode(containername).gsub(/&/, '%26')}", @storageport, @storagescheme)
+      response = cfreq("HEAD", @storagehost, "#{@storagepath}/#{CloudFiles.escape containername}", @storageport, @storagescheme)
       return (response.code == "204")? true : false ;
     end
 
@@ -221,7 +219,7 @@ module CloudFiles
     def create_container(containername)
       raise CloudFiles::Exception::Syntax, "Container name cannot contain the characters '/' or '?'" if containername.match(/[\/\?]/)
       raise CloudFiles::Exception::Syntax, "Container name is limited to 256 characters" if containername.length > 256
-      response = cfreq("PUT", @storagehost, "#{@storagepath}/#{URI.encode(containername).gsub(/&/, '%26')}", @storageport, @storagescheme)
+      response = cfreq("PUT", @storagehost, "#{@storagepath}/#{CloudFiles.escape containername}", @storageport, @storagescheme)
       raise CloudFiles::Exception::InvalidResponse, "Unable to create container #{containername}" unless (response.code == "201" || response.code == "202")
       CloudFiles::Container.new(self, containername)
     end
@@ -238,7 +236,7 @@ module CloudFiles
     #   cf.delete_container('nonexistent')
     #   => NoSuchContainerException: Container nonexistent does not exist
     def delete_container(containername)
-      response = cfreq("DELETE", @storagehost, "#{@storagepath}/#{URI.encode(containername).gsub(/&/, '%26')}", @storageport, @storagescheme)
+      response = cfreq("DELETE", @storagehost, "#{@storagepath}/#{CloudFiles.escape containername}", @storageport, @storagescheme)
       raise CloudFiles::Exception::NonEmptyContainer, "Container #{containername} is not empty" if (response.code == "409")
       raise CloudFiles::Exception::NoSuchContainer, "Container #{containername} does not exist" unless (response.code == "204")
       true

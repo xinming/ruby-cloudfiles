@@ -127,19 +127,21 @@ module CloudFiles
     #   container.objects(:prefix => "do")       #=> [ "dog", "donkey" ]
     # Only search within a certain pseudo-filesystem path:
     #   container.objects(:path => 'monkeydir')     #=> ["monkeydir/capuchin"]
+    # Only grab "virtual directories", based on a single-character delimiter (no "directory" objects required):
+    #   container.objects(:delimiter => '/')      #=> ["monkeydir"]
     # All arguments to this method are optional.
     # 
     # Returns an empty array if no object exist in the container.  Throws an InvalidResponseException
     # if the request fails.
     def objects(params = {})
-      params[:marker] ||= params[:offset]
-      paramarr = []
-      paramarr << ["limit=#{URI.encode(params[:limit].to_s).gsub(/&/,'%26')}"] if params[:limit]
-      paramarr << ["marker=#{URI.encode(params[:marker].to_s).gsub(/&/,'%26')}"] if params[:marker]
-      paramarr << ["prefix=#{URI.encode(params[:prefix]).gsub(/&/,'%26')}"] if params[:prefix]
-      paramarr << ["path=#{URI.encode(params[:path]).gsub(/&/,'%26')}"] if params[:path]
-      paramstr = (paramarr.size > 0)? paramarr.join("&") : "" ;
-      response = self.connection.cfreq("GET",@storagehost,"#{@storagepath}?#{paramstr}",@storageport,@storagescheme)
+      params[:marker] ||= params[:offset] unless params[:offset].nil?
+      query = []
+      params.each do |param, value|
+        if [:limit, :marker, :prefix, :path, :delimiter].include? param
+          query << "#{param}=#{CGI.escape(value.to_s)}"
+        end
+      end
+      response = self.connection.cfreq("GET",@storagehost,"#{@storagepath}?#{query.join '&'}",@storageport,@storagescheme)
       return [] if (response.code == "204")
       raise CloudFiles::Exception::InvalidResponse, "Invalid response code #{response.code}" unless (response.code == "200")
       return CloudFiles.lines(response.body)
@@ -151,7 +153,7 @@ module CloudFiles
     # parameter hash as an argument, in the same form as the objects method.
     # 
     # Returns a hash in the same format as the containers_detail from the CloudFiles class.
-    #
+    # 
     #   container.objects_detail
     #   => {"test.txt"=>{:content_type=>"application/octet-stream", 
     #                    :hash=>"e2a6fcb4771aa3509f6b27b6a97da55b", 
@@ -163,15 +165,14 @@ module CloudFiles
     #                   :bytes=>"22"}
     #      }
     def objects_detail(params = {})
-      params[:marker] ||= params[:offset]
-      paramarr = []
-      paramarr << ["format=xml"]
-      paramarr << ["limit=#{URI.encode(params[:limit].to_s).gsub(/&/,'%26')}"] if params[:limit]
-      paramarr << ["marker=#{URI.encode(params[:marker].to_s).gsub(/&/,'%26')}"] if params[:marker]
-      paramarr << ["prefix=#{URI.encode(params[:prefix]).gsub(/&/,'%26')}"] if params[:prefix]
-      paramarr << ["path=#{URI.encode(params[:path]).gsub(/&/,'%26')}"] if params[:path]
-      paramstr = (paramarr.size > 0)? paramarr.join("&") : "" ;
-      response = self.connection.cfreq("GET",@storagehost,"#{@storagepath}?#{paramstr}",@storageport,@storagescheme)
+      params[:marker] ||= params[:offset] unless params[:offset].nil?
+      query = ["format=xml"]
+      params.each do |param, value|
+        if [:limit, :marker, :prefix, :path, :delimiter].include? param
+          query << "#{param}=#{CGI.escape(value.to_s)}"
+        end
+      end
+      response = self.connection.cfreq("GET",@storagehost,"#{@storagepath}?#{query.join '&'}",@storageport,@storagescheme)
       return {} if (response.code == "204")
       raise CloudFiles::Exception::InvalidResponse, "Invalid response code #{response.code}" unless (response.code == "200")
       doc = REXML::Document.new(response.body)

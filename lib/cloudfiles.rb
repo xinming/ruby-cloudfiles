@@ -26,6 +26,7 @@ module CloudFiles
   require 'net/http'
   require 'net/https'
   require 'rexml/document'
+  require 'cgi'
   require 'uri'
   require 'digest/md5'
   require 'time'

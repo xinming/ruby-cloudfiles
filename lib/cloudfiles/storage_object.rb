@@ -233,6 +233,34 @@ module CloudFiles
     def public_url
       self.container.public? ? self.container.cdn_url + "/#{CloudFiles.escape @name}" : nil
     end
+    
+    # Copy this object to a new location (optionally in a new container)
+    #
+    # You must supply at least a path name for the new location, and optionally a container name (if not given, the current
+    # container name is used)
+    #
+    #    object.copy(:name => "images/funny/lolcat.jpg", :container => "pictures")
+    #
+    def copy(options)
+      new_container = options[:container] || self.container
+      new_container = new_container.is_a?(CloudFiles::Container) ? new_container.name : new_container
+      new_name = options[:name]
+      raise CloudFiles::Exception::Syntax, "You must provide a :name value giving the new location of this object" if new_name.nil?
+      new_name.sub!(/^\//,'')
+      headers = {'X-Copy-From' => "#{self.container.name}/#{self.name}"}
+      new_path = self.container.connection.storagepath + "/#{CloudFiles.escape new_container}/#{CloudFiles.escape new_name}"
+      response = self.container.connection.cfreq("PUT", @storagehost, new_path, @storageport, @storagescheme, headers)
+      code = response.code
+      raise CloudFiles::Exception::InvalidResponse, "Invalid response code #{response.code}" unless (response.code =~ /^20/)
+      true
+    end
+    
+    # Takes the same options as the copy method, only it does a copy followed by a delete on the original object.
+    def move(options)
+      self.copy(options)
+      self.container.delete_object(self.name)
+    end
+      
 
     def to_s # :nodoc:
       @name

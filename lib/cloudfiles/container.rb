@@ -6,29 +6,8 @@ module CloudFiles
     # Name of the container which corresponds to the instantiated container class
     attr_reader :name
 
-    # Size of the container (in bytes)
-    attr_reader :bytes
-
-    # Number of objects in the container
-    attr_reader :count
-
-    # True if container is public, false if container is private
-    attr_reader :cdn_enabled
-
-    # CDN container TTL (if container is public)
-    attr_reader :cdn_ttl
-
-    # CDN container URL (if container if public)
-    attr_reader :cdn_url
-
     # The parent CloudFiles::Connection object for this container
     attr_reader :connection
-
-    # The container ACL on the User Agent
-    attr_reader :user_agent_acl
-
-    # The container ACL on the site Referrer
-    attr_reader :referrer_acl
 
     # Retrieves an existing CloudFiles::Container object tied to the current CloudFiles::Connection.  If the requested
     # container does not exist, it will raise a CloudFiles::Exception::NoSuchContainer Exception.
@@ -45,12 +24,10 @@ module CloudFiles
       @cdnmgmtpath = self.connection.cdnmgmtpath + "/" + CloudFiles.escape(@name) if self.connection.cdnmgmtpath
       @cdnmgmtport = self.connection.cdnmgmtport
       @cdnmgmtscheme = self.connection.cdnmgmtscheme
-      populate
     end
 
-    # Retrieves data about the container and populates class variables.  It is automatically called
-    # when the Container class is instantiated.  If you need to refresh the variables, such as
-    # size, count, cdn_enabled, cdn_ttl, and cdn_url, this method can be called again.
+    # Refreshes data about the container and populates class variables. Items are otherwise
+    # loaded in a lazy loaded fashion.
     #
     #   container.count
     #   => 2
@@ -60,34 +37,80 @@ module CloudFiles
     #   container.populate
     #   container.count
     #   => 3
-    def populate
-      # Get the size and object count
-      response = self.connection.cfreq("HEAD", @storagehost, @storagepath + "/", @storageport, @storagescheme)
-      raise CloudFiles::Exception::NoSuchContainer, "Container #{@name} does not exist" unless (response.code =~ /^20/)
-      @bytes = response["x-container-bytes-used"].to_i
-      @count = response["x-container-object-count"].to_i
-
-      # Get the CDN-related details
-      response = self.connection.cfreq("HEAD", @cdnmgmthost, @cdnmgmtpath, @cdnmgmtport, @cdnmgmtscheme)
-      @cdn_enabled = ((response["x-cdn-enabled"] || "").downcase == "true") ? true : false
-      @cdn_ttl = @cdn_enabled ? response["x-ttl"].to_i : false
-      @cdn_url = @cdn_enabled ? response["x-cdn-uri"] : false
-      @user_agent_acl = response["x-user-agent-acl"]
-      @referrer_acl = response["x-referrer-acl"]
-      if @cdn_enabled
-        @cdn_log = response["x-log-retention"] == "False" ? false : true
-      else
-        @cdn_log = false
-      end
-
+    def refresh
+      @metadata = @cdn_metadata = nil
+      self.metadata
+      self.cdn_metadata
       true
     end
-    alias :refresh :populate
+    alias :populate :refresh
+
+    # Retrieves Metadata for the container
+    def metadata
+      @metadata ||= (
+        response = self.connection.cfreq("HEAD", @storagehost, @storagepath + "/", @storageport, @storagescheme)
+        raise CloudFiles::Exception::NoSuchContainer, "Container #{@name} does not exist" unless (response.code =~ /^20/)
+        {:bytes => response["x-container-bytes-used"].to_i, :count => response["x-container-object-count"].to_i}
+      )
+    end
+
+    # Retrieves CDN-Enabled Meta Data
+    def cdn_metadata
+      @cdn_metadata ||= (
+        response = self.connection.cfreq("HEAD", @cdnmgmthost, @cdnmgmtpath, @cdnmgmtport, @cdnmgmtscheme)
+        {
+          :cdn_enabled => ((response["x-cdn-enabled"] || "").downcase == "true") ? true : false,
+          :cdn_ttl => @cdn_enabled ? response["x-ttl"].to_i : nil,
+          :cdn_url => @cdn_enabled ? response["x-cdn-uri"] : nil,
+          :user_agent_acl => response["x-user-agent-acl"],
+          :referrer_acl => response["x-referrer-acl"],
+          :cdn_log => (@cdn_enabled and response["x-log-retention"] == "True") ? true : false
+        }
+      )
+    end
+
+    # Size of the container (in bytes)
+    def bytes
+      self.metadata[:bytes]
+    end
+
+    # Number of objects in the container
+    def count
+      self.metadata[:count]
+    end
+
+    # True if container is public, false if container is private
+    def cdn_enabled
+      self.cdn_metadata[:cdn_enabled]
+    end
+    alias :cdn_enabled? :cdn_enabled
+
+    # CDN container TTL (if container is public)
+    def cdn_ttl
+      self.cdn_metadata[:cdn_ttl]
+    end
+
+    # CDN container URL (if container if public)
+    def cdn_url
+      self.cdn_metadata[:cdn_url]
+    end
+
+    # The container ACL on the User Agent
+    def user_agent_acl
+      self.cdn_metadata[:user_agent_acl]
+    end
+
+    # The container ACL on the site Referrer
+    def referrer_acl
+      self.cdn_metadata[:referrer_acl]
+    end
 
     # Returns true if log retention is enabled on this container, false otherwise
-    def log_retention?
-      @cdn_log
+    def cdn_log
+      self.cdn_metadata[:cdn_log]
     end
+    alias :log_retention? :cdn_log
+    alias :cdn_log? :cdn_log
 
     # Change the log retention status for this container.  Values are true or false.
     #
@@ -274,7 +297,7 @@ module CloudFiles
       headers["X-Referrer-ACL"] = options[:referrer_acl] if options[:referrer_acl]
       response = self.connection.cfreq("POST", @cdnmgmthost, @cdnmgmtpath, @cdnmgmtport, @cdnmgmtscheme, headers)
       raise CloudFiles::Exception::NoSuchContainer, "Container #{@name} does not exist" unless (response.code == "201" || response.code == "202")
-      populate
+      refresh
       true
     end
 
@@ -289,7 +312,7 @@ module CloudFiles
       headers = { "X-CDN-Enabled" => "False" }
       response = self.connection.cfreq("POST", @cdnmgmthost, @cdnmgmtpath, @cdnmgmtport, @cdnmgmtscheme, headers)
       raise CloudFiles::Exception::NoSuchContainer, "Container #{@name} does not exist" unless (response.code == "201" || response.code == "202")
-      populate
+      refresh
       true
     end
 

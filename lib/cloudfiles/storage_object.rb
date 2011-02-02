@@ -5,21 +5,9 @@ module CloudFiles
 
     # Name of the object corresponding to the instantiated object
     attr_reader :name
-
-    # Size of the object (in bytes)
-    attr_reader :bytes
-
+    
     # The parent CloudFiles::Container object
     attr_reader :container
-
-    # Date of the object's last modification
-    attr_reader :last_modified
-
-    # ETag of the object data
-    attr_reader :etag
-
-    # Content type of the object data
-    attr_reader :content_type
 
     # Builds a new CloudFiles::StorageObject in the current container.  If force_exist is set, the object must exist or a
     # CloudFiles::Exception::NoSuchObject Exception will be raised.  If not, an "empty" CloudFiles::StorageObject will be returned, ready for data
@@ -36,28 +24,55 @@ module CloudFiles
       @storagepath = self.container.connection.storagepath + "/#{CloudFiles.escape @containername}/#{CloudFiles.escape @name}"
       @storageport = self.container.connection.storageport
       @storagescheme = self.container.connection.storagescheme
-      if container.object_exists?(objectname)
-        populate
-      else
-        raise CloudFiles::Exception::NoSuchObject, "Object #{@name} does not exist" if force_exists
+      if force_exists
+        raise CloudFiles::Exception::NoSuchObject, "Object #{@name} does not exist" unless container.object_exists?(objectname)
       end
     end
 
-    # Caches data about the CloudFiles::StorageObject for fast retrieval.  This method is automatically called when the
-    # class is initialized, but it can be called again if the data needs to be updated.
-    def populate
-      response = self.container.connection.cfreq("HEAD", @storagehost, @storagepath, @storageport, @storagescheme)
-      raise CloudFiles::Exception::NoSuchObject, "Object #{@name} does not exist" unless (response.code =~ /^20/)
-      @bytes = response["content-length"]
-      @last_modified = Time.parse(response["last-modified"])
-      @etag = response["etag"]
-      @content_type = response["content-type"]
-      resphash = {}
-      response.to_hash.select { |k,v| k.match(/^x-object-meta/) }.each { |x| resphash[x[0]] = x[1].to_s }
-      @metadata = resphash
+    # Refreshes the object metadata
+    def refresh
+      @object_metadata = nil
+      self.object_metadata
       true
     end
-    alias :refresh :populate
+    alias :populate :refresh
+
+    # Retrieves Metadata for the object
+    def object_metadata
+      @object_metadata ||= (
+        response = self.container.connection.cfreq("HEAD", @storagehost, @storagepath, @storageport, @storagescheme)
+        raise CloudFiles::Exception::NoSuchObject, "Object #{@name} does not exist" unless (response.code =~ /^20/)
+        resphash = {}
+        response.to_hash.select { |k,v| k.match(/^x-object-meta/) }.each { |x| resphash[x[0]] = x[1].to_s }
+        {
+          :bytes => response["content-length"],
+          :last_modified => Time.parse(response["last-modified"]),
+          :etag => response["etag"],
+          :content_type => response["content-type"],
+          :metadata => resphash
+        }
+      )
+    end
+
+    # Size of the object (in bytes)
+    def bytes
+      self.object_metadata[:bytes]
+    end
+
+    # Date of the object's last modification
+    def last_modified
+      self.object_metadata[:last_modified]
+    end
+
+    # ETag of the object data
+    def etag
+      self.object_metadata[:etag]
+    end
+
+    # Content type of the object data
+    def content_type
+      self.object_metadata[:content_type]
+    end
 
     # Retrieves the data from an object and stores the data in memory.  The data is returned as a string.
     # Throws a NoSuchObjectException if the object doesn't exist.
@@ -108,7 +123,7 @@ module CloudFiles
     #    => {"ruby"=>"cool", "foo"=>"bar"}
     def metadata
       metahash = {}
-      @metadata.each{ |key, value| metahash[key.gsub(/x-object-meta-/, '').gsub(/\+\-/, ' ')] = URI.decode(value).gsub(/\+\-/, ' ') }
+      self.object_metadata[:metadata].each{ |key, value| metahash[key.gsub(/x-object-meta-/, '').gsub(/\+\-/, ' ')] = URI.decode(value).gsub(/\+\-/, ' ') }
       metahash
     end
 
@@ -172,7 +187,7 @@ module CloudFiles
       raise CloudFiles::Exception::MisMatchedChecksum, "Mismatched etag" if (code == "422")
       raise CloudFiles::Exception::InvalidResponse, "Invalid response code #{code}" unless (code == "201")
       make_path(File.dirname(self.name)) if @make_path == true
-      self.populate
+      self.refresh
       true
     end
 

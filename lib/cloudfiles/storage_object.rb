@@ -242,8 +242,7 @@ module CloudFiles
     #    object.copy(:name => "images/funny/lolcat.jpg", :container => "pictures")
     #
     def copy(options)
-      new_container = options[:container] || self.container
-      new_container = new_container.is_a?(CloudFiles::Container) ? new_container.name : new_container
+      new_container = options[:container] || self.container.name
       new_name = options[:name]
       raise CloudFiles::Exception::Syntax, "You must provide a :name value giving the new location of this object" if new_name.nil?
       new_name.sub!(/^\//,'')

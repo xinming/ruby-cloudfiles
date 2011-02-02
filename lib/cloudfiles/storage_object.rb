@@ -32,7 +32,6 @@ module CloudFiles
     # Refreshes the object metadata
     def refresh
       @object_metadata = nil
-      self.object_metadata
       true
     end
     alias :populate :refresh

@@ -39,8 +39,6 @@ module CloudFiles
     #   => 3
     def refresh
       @metadata = @cdn_metadata = nil
-      self.metadata
-      self.cdn_metadata
       true
     end
     alias :populate :refresh

@@ -250,28 +250,35 @@ module CloudFiles
     
     # Copy this object to a new location (optionally in a new container)
     #
-    # You must supply at least a path name for the new location, and optionally a container name (if not given, the current
-    # container name is used)
+    # You must supply either a name for the new object or a container name, or both. If a :name is supplied without a :container, 
+    # the object is copied within the current container. If the :container is specified with no :name, then the object is copied
+    # to the new container with its current name.
     #
     #    object.copy(:name => "images/funny/lolcat.jpg", :container => "pictures")
     #
-    def copy(options)
+    # Returns the new CloudFiles::StorageObject for the copied item.
+    def copy(options = {})
+      raise CloudFiles::Exception::Syntax, "You must either provide the :container or the :name for this operation" unless (options[:container] || options[:name])
       new_container = options[:container] || self.container.name
-      new_name = options[:name]
-      raise CloudFiles::Exception::Syntax, "You must provide a :name value giving the new location of this object" if new_name.nil?
+      new_name = options[:name] || self.name
       new_name.sub!(/^\//,'')
       headers = {'X-Copy-From' => "#{self.container.name}/#{self.name}"}
       new_path = self.container.connection.storagepath + "/#{CloudFiles.escape new_container}/#{CloudFiles.escape new_name}"
       response = self.container.connection.cfreq("PUT", @storagehost, new_path, @storageport, @storagescheme, headers)
       code = response.code
       raise CloudFiles::Exception::InvalidResponse, "Invalid response code #{response.code}" unless (response.code =~ /^20/)
-      true
+      return CloudFiles::Container.new(self.container.connection, new_container).object(new_name)
     end
     
     # Takes the same options as the copy method, only it does a copy followed by a delete on the original object.
-    def move(options)
-      self.copy(options)
+    #
+    # Returns the new CloudFiles::StorageObject for the moved item. You should not attempt to use the old object after doing
+    # a move.
+    def move(options = {})
+      new_object = self.copy(options)
       self.container.delete_object(self.name)
+      self.freeze
+      return new_object
     end
       
 

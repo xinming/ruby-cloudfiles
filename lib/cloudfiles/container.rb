@@ -56,13 +56,14 @@ module CloudFiles
     def cdn_metadata
       @cdn_metadata ||= (
         response = self.connection.cfreq("HEAD", @cdnmgmthost, @cdnmgmtpath, @cdnmgmtport, @cdnmgmtscheme)
+        cdn_enabled = ((response["x-cdn-enabled"] || "").downcase == "true") ? true : false
         {
-          :cdn_enabled => ((response["x-cdn-enabled"] || "").downcase == "true") ? true : false,
-          :cdn_ttl => @cdn_enabled ? response["x-ttl"].to_i : nil,
-          :cdn_url => @cdn_enabled ? response["x-cdn-uri"] : nil,
+          :cdn_enabled => cdn_enabled,
+          :cdn_ttl => cdn_enabled ? response["x-ttl"].to_i : nil,
+          :cdn_url => cdn_enabled ? response["x-cdn-uri"] : nil,
           :user_agent_acl => response["x-user-agent-acl"],
           :referrer_acl => response["x-referrer-acl"],
-          :cdn_log => (@cdn_enabled and response["x-log-retention"] == "True") ? true : false
+          :cdn_log => (cdn_enabled and response["x-log-retention"] == "True") ? true : false
         }
       )
     end
@@ -77,11 +78,20 @@ module CloudFiles
       self.metadata[:count]
     end
 
-    # True if container is public, false if container is private
+    # Returns true if the container is public and CDN-enabled.  Returns false otherwise.
+    #
+    # Aliased as container.public?
+    #
+    #   public_container.cdn_enabled?
+    #   => true
+    #
+    #   private_container.public?
+    #   => false
     def cdn_enabled
       self.cdn_metadata[:cdn_enabled]
     end
     alias :cdn_enabled? :cdn_enabled
+    alias :public? :cdn_enabled
 
     # CDN container TTL (if container is public)
     def cdn_ttl
@@ -205,17 +215,6 @@ module CloudFiles
       return detailhash
     end
     alias :list_objects_info :objects_detail
-
-    # Returns true if the container is public and CDN-enabled.  Returns false otherwise.
-    #
-    #   public_container.public?
-    #   => true
-    #
-    #   private_container.public?
-    #   => false
-    def public?
-      return @cdn_enabled
-    end
 
     # Returns true if a container is empty and returns false otherwise.
     #

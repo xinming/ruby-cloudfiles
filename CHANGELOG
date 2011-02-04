@@ -1,0 +1,11 @@
+================================================================================
+ 1.4.1 (2011/02/04)
+================================================================================
+  o Configurable :auth_url support for OpenStack Swift and non-US deployments. Add constants for Cloud Servers USA and UK. (Chmouel Boudjnah, Dan Prince)
+  o Moved exceptions under the CloudFiles::Exception scope
+  o Added support for configurable path delimiters (Corey Ward)
+  o Improvements in path escaping (Corey Ward)
+  o Support for the new COPY method on objects, via storage_object.copy and storage_object.move
+  o Reduced the number of API calls for loading metadata (Edmund Salvacion)
+  o Allow setting of content_type on more operations (suggestion by Bo Benson)
+  

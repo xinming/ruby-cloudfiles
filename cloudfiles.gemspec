@@ -23,6 +23,8 @@ Gem::Specification.new do |s|
      "Rakefile",
      "TODO",
      "VERSION",
+     "CHANGELOG",
+     "CONTRIBUTORS"
      "cloudfiles.gemspec",
      "lib/cloudfiles.rb",
      "lib/cloudfiles/authentication.rb",

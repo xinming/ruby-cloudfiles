@@ -40,7 +40,7 @@ class CloudfilesAuthenticationTest < Test::Unit::TestCase
     
   def test_bad_hostname
     Net::HTTP.stubs(:new).raises(CloudFiles::Exception::Connection)
-    @connection = stub(:authuser => 'bad_user', :authkey => 'bad_key', :authok= => true, :authtoken= => true, :auth_url => 'https://auth.api.rackspacecloud.com/v1.0')
+    @connection = stub(:proxy_host => nil, :proxy_port => nil, :authuser => 'bad_user', :authkey => 'bad_key', :authok= => true, :authtoken= => true, :auth_url => 'https://auth.api.rackspacecloud.com/v1.0')
     assert_raises(CloudFiles::Exception::Connection) do
       result = CloudFiles::Authentication.new(@connection)
     end

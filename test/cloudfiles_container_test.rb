@@ -4,7 +4,7 @@ require 'test_helper'
 class CloudfilesContainerTest < Test::Unit::TestCase
   
   def test_object_creation
-    connection = mock(:storagehost => 'test.storage.example', :storagepath => '/dummy/path', :storageport => 443, :storagescheme => 'https', :cdnmgmthost => 'cdm.test.example', :cdnmgmtpath => '/dummy/path', :cdnmgmtport => 443, :cdnmgmtscheme => 'https')
+    connection = stub(:storagehost => 'test.storage.example', :storagepath => '/dummy/path', :storageport => 443, :storagescheme => 'https', :cdnmgmthost => 'cdm.test.example', :cdnmgmtpath => '/dummy/path', :cdnmgmtport => 443, :cdnmgmtscheme => 'https')
     response = {'x-container-bytes-used' => '42', 'x-container-object-count' => '5'}
     response.stubs(:code).returns('204')
     connection.stubs(:cfreq => response)
@@ -12,12 +12,12 @@ class CloudfilesContainerTest < Test::Unit::TestCase
     assert_equal @container.name, 'test_container'
     assert_equal @container.class, CloudFiles::Container
     assert_equal @container.public?, false
-    assert_equal @container.cdn_url, false
-    assert_equal @container.cdn_ttl, false
+    assert_equal @container.cdn_url, nil
+    assert_equal @container.cdn_ttl, nil
   end
   
   def test_object_creation_no_such_container
-    connection = mock(:storagehost => 'test.storage.example', :storagepath => '/dummy/path', :storageport => 443, :storagescheme => 'https', :cdnmgmthost => 'cdm.test.example', :cdnmgmtpath => '/dummy/path', :cdnmgmtport => 443, :cdnmgmtscheme => 'https')
+    connection = stub(:storagehost => 'test.storage.example', :storagepath => '/dummy/path', :storageport => 443, :storagescheme => 'https', :cdnmgmthost => 'cdm.test.example', :cdnmgmtpath => '/dummy/path', :cdnmgmtport => 443, :cdnmgmtscheme => 'https')
     response = {'x-container-bytes-used' => '42', 'x-container-object-count' => '5'}
     response.stubs(:code).returns('999')
     connection.stubs(:cfreq => response)
@@ -27,7 +27,7 @@ class CloudfilesContainerTest < Test::Unit::TestCase
   end
   
   def test_object_creation_with_cdn
-    connection = mock(:storagehost => 'test.storage.example', :storagepath => '/dummy/path', :storageport => 443, :storagescheme => 'https', :cdnmgmthost => 'cdm.test.example', :cdnmgmtpath => '/dummy/path', :cdnmgmtport => 443, :cdnmgmtscheme => 'https')
+    connection = stub(:storagehost => 'test.storage.example', :storagepath => '/dummy/path', :storageport => 443, :storagescheme => 'https', :cdnmgmthost => 'cdm.test.example', :cdnmgmtpath => '/dummy/path', :cdnmgmtport => 443, :cdnmgmtscheme => 'https')
     response = {'x-container-bytes-used' => '42', 'x-container-object-count' => '5', 'x-cdn-enabled' => 'True', 'x-cdn-uri' => 'http://cdn.test.example/container', 'x-ttl' => '86400'}
     response.stubs(:code).returns('204')
     connection.stubs(:cfreq => response)
@@ -73,7 +73,7 @@ class CloudfilesContainerTest < Test::Unit::TestCase
   end
   
   def test_empty_is_false
-    connection = mock(:storagehost => 'test.storage.example', :storagepath => '/dummy/path', :storageport => 443, :storagescheme => 'https', :cdnmgmthost => 'cdm.test.example', :cdnmgmtpath => '/dummy/path', :cdnmgmtport => 443, :cdnmgmtscheme => 'https')
+    connection = stub(:storagehost => 'test.storage.example', :storagepath => '/dummy/path', :storageport => 443, :storagescheme => 'https', :cdnmgmthost => 'cdm.test.example', :cdnmgmtpath => '/dummy/path', :cdnmgmtport => 443, :cdnmgmtscheme => 'https')
     response = {'x-container-bytes-used' => '42', 'x-container-object-count' => '5'}
     response.stubs(:code).returns('204')
     connection.stubs(:cfreq => response)
@@ -82,7 +82,7 @@ class CloudfilesContainerTest < Test::Unit::TestCase
   end
   
   def test_empty_is_true
-    connection = mock(:storagehost => 'test.storage.example', :storagepath => '/dummy/path', :storageport => 443, :storagescheme => 'https', :cdnmgmthost => 'cdm.test.example', :cdnmgmtpath => '/dummy/path', :cdnmgmtport => 443, :cdnmgmtscheme => 'https')
+    connection = stub(:storagehost => 'test.storage.example', :storagepath => '/dummy/path', :storageport => 443, :storagescheme => 'https', :cdnmgmthost => 'cdm.test.example', :cdnmgmtpath => '/dummy/path', :cdnmgmtport => 443, :cdnmgmtscheme => 'https')
     response = {'x-container-bytes-used' => '0', 'x-container-object-count' => '0'}
     response.stubs(:code).returns('204')
     connection.stubs(:cfreq => response)
@@ -91,7 +91,7 @@ class CloudfilesContainerTest < Test::Unit::TestCase
   end
   
   def test_log_retention_is_true
-    connection = mock(:storagehost => 'test.storage.example', :storagepath => '/dummy/path', :storageport => 443, :storagescheme => 'https', :cdnmgmthost => 'cdm.test.example', :cdnmgmtpath => '/dummy/path', :cdnmgmtport => 443, :cdnmgmtscheme => 'https')
+    connection = stub(:storagehost => 'test.storage.example', :storagepath => '/dummy/path', :storageport => 443, :storagescheme => 'https', :cdnmgmthost => 'cdm.test.example', :cdnmgmtpath => '/dummy/path', :cdnmgmtport => 443, :cdnmgmtscheme => 'https')
     response = {'x-container-bytes-used' => '0', 'x-container-object-count' => '0', 'x-cdn-enabled' => 'True', 'x-log-retention' => 'True'}
     response.stubs(:code).returns('204')
     connection.stubs(:cfreq => response)
@@ -244,6 +244,7 @@ class CloudfilesContainerTest < Test::Unit::TestCase
   
   def build_net_http_object(args={:code => '204' }, cfreq_expectations={})
     CloudFiles::Container.any_instance.stubs(:populate).returns(true)
+    CloudFiles::Container.any_instance.stubs(:metadata).returns({})
     connection = stub(:storagehost => 'test.storage.example', :storagepath => '/dummy/path', :storageport => 443, :storagescheme => 'https', :cdnmgmthost => 'cdm.test.example', :cdnmgmtpath => '/dummy/path', :cdnmgmtport => 443, :cdnmgmtscheme => 'https')
     args[:response] = {} unless args[:response]
     response = {'x-cdn-management-url' => 'http://cdn.example.com/path', 'x-storage-url' => 'http://cdn.example.com/storage', 'authtoken' => 'dummy_token', 'last-modified' => Time.now.to_s}.merge(args[:response])

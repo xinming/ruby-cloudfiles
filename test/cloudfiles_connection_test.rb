@@ -118,6 +118,7 @@ class CloudfilesConnectionTest < Test::Unit::TestCase
     server = stub(:use_ssl= => true, :verify_mode= => true, :start => true)
     server.stubs(:finish).returns(true)
     server.stubs(:request).raises(EOFError)
+    CloudFiles::Connection.any_instance.stubs(:get_info).returns({:bytes => @bytes, :count => @count})
     Net::HTTP.stubs(:new).returns(server)
     assert_raises(CloudFiles::Exception::Connection) do
       response = @connection.cfreq("GET", "test.server.example", "/dummypath", "80", "http")
@@ -219,7 +220,7 @@ class CloudfilesConnectionTest < Test::Unit::TestCase
   end
   
   def test_fetch_nonexistent_container
-    CloudFiles::Container.any_instance.stubs(:populate).raises(CloudFiles::Exception::NoSuchContainer)
+    CloudFiles::Container.any_instance.stubs(:metadata).raises(CloudFiles::Exception::NoSuchContainer)
     build_net_http_object
     assert_raise(CloudFiles::Exception::NoSuchContainer) do
       container = @connection.container('bad_container')

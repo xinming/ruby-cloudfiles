@@ -184,7 +184,7 @@ module CloudFiles
       code = response.code
       raise CloudFiles::Exception::InvalidResponse, "Invalid content-length header sent" if (code == "412")
       raise CloudFiles::Exception::MisMatchedChecksum, "Mismatched etag" if (code == "422")
-      raise CloudFiles::Exception::InvalidResponse, "Invalid response code #{code}" unless (code == "201")
+      raise CloudFiles::Exception::InvalidResponse, "Invalid response code #{code}" unless (code =~ /^20./)
       make_path(File.dirname(self.name)) if @make_path == true
       self.refresh
       true

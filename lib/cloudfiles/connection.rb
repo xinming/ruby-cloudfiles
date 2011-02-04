@@ -42,12 +42,6 @@ module CloudFiles
     # Instance variable that is set when authorization succeeds
     attr_accessor :authok
 
-    # The total size in bytes under this connection
-    attr_reader :bytes
-
-    # The total number of containers under this connection
-    attr_reader :count
-
     # Optional proxy variables
     attr_reader :proxy_host
     attr_reader :proxy_port
@@ -140,6 +134,16 @@ module CloudFiles
       @bytes = response["x-account-bytes-used"].to_i
       @count = response["x-account-container-count"].to_i
       {:bytes => @bytes, :count => @count}
+    end
+    
+    # The total size in bytes under this connection
+    def bytes
+      get_info[:bytes]
+    end
+    
+    # The total number of containers under this connection
+    def count
+      get_info[:count]
     end
 
     # Gathers a list of the containers that exist for the account and returns the list of container names

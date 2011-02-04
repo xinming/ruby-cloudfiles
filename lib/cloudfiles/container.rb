@@ -24,6 +24,9 @@ module CloudFiles
       @cdnmgmtpath = self.connection.cdnmgmtpath + "/" + CloudFiles.escape(@name) if self.connection.cdnmgmtpath
       @cdnmgmtport = self.connection.cdnmgmtport
       @cdnmgmtscheme = self.connection.cdnmgmtscheme
+      # Load the metadata now, so we'll get a CloudFiles::Exception::NoSuchContainer exception should the container
+      # not exist.
+      self.metadata
     end
 
     # Refreshes data about the container and populates class variables. Items are otherwise
@@ -224,7 +227,7 @@ module CloudFiles
     #   full_container.empty?
     #   => false
     def empty?
-      return (@count.to_i == 0)? true : false
+      return (metadata[:count].to_i == 0)? true : false
     end
 
     # Returns true if object exists and returns false otherwise.

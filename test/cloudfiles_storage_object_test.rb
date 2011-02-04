@@ -192,6 +192,7 @@ class CloudfilesStorageObjectTest < Test::Unit::TestCase
   private
   
   def build_net_http_object(args={:code => '204' })
+    CloudFiles::Container.any_instance.stubs(:metadata).returns({})
     CloudFiles::Container.any_instance.stubs(:populate).returns(true)
     connection = stub(:storagehost => 'test.storage.example', :storagepath => '/dummy/path', :storageport => 443, :storagescheme => 'https', :cdnmgmthost => 'cdm.test.example', :cdnmgmtpath => '/dummy/path', :cdnmgmtport => 443, :cdnmgmtscheme => 'https')
     args[:response] = {} unless args[:response]

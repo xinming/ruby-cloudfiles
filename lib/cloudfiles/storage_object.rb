@@ -192,6 +192,8 @@ module CloudFiles
 
     # A convenience method to stream data into an object from a local file (or anything that can be loaded by Ruby's open method)
     #
+    # You can provide an optional hash of headers, in case you want to do something like set the Content-Type manually.
+    #
     # Throws an Errno::ENOENT if the file cannot be read.
     #
     #   object.data
@@ -200,14 +202,16 @@ module CloudFiles
     #   object.load_from_filename("/tmp/file.txt")
     #   => true
     #
+    #   object.load_from_filename("/home/rackspace/myfile.tmp", 'Content-Type' => 'text/plain')
+    #
     #   object.data
     #   => "This data was in the file /tmp/file.txt"
     #
     #   object.load_from_filename("/tmp/nonexistent.txt")
     #   => Errno::ENOENT: No such file or directory - /tmp/nonexistent.txt
-    def load_from_filename(filename)
+    def load_from_filename(filename, headers = {})
       f = open(filename)
-      self.write(f)
+      self.write(f, headers)
       f.close
       true
     end
@@ -256,13 +260,21 @@ module CloudFiles
     #
     #    object.copy(:name => "images/funny/lolcat.jpg", :container => "pictures")
     #
+    # You may also supply a hash of headers in the :headers option. From there, you can set things like Content-Type, or other
+    # headers as available in the API document.
+    #
+    #    object.copy(:name => 'newfile.tmp', :headers => {'Content-Type' => 'text/plain'})
+    #
     # Returns the new CloudFiles::StorageObject for the copied item.
     def copy(options = {})
       raise CloudFiles::Exception::Syntax, "You must either provide the :container or the :name for this operation" unless (options[:container] || options[:name])
       new_container = options[:container] || self.container.name
       new_name = options[:name] || self.name
+      new_headers = options[:headers] || {}
+      raise CloudFiles::Exception::Syntax, "The :headers option must be a hash" unless new_headers.is_a?(Hash)
       new_name.sub!(/^\//,'')
-      headers = {'X-Copy-From' => "#{self.container.name}/#{self.name}"}
+      headers = {'X-Copy-From' => "#{self.container.name}/#{self.name}", 'Content-Type' => self.content_type.sub(/;.+/, '')}.merge(new_headers)
+      # , 'Content-Type' => self.content_type
       new_path = self.container.connection.storagepath + "/#{CloudFiles.escape new_container}/#{CloudFiles.escape new_name}"
       response = self.container.connection.cfreq("PUT", @storagehost, new_path, @storageport, @storagescheme, headers)
       code = response.code

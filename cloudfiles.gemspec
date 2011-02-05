@@ -9,7 +9,7 @@ Gem::Specification.new do |s|
 
   s.required_rubygems_version = Gem::Requirement.new(">= 0") if s.respond_to? :required_rubygems_version=
   s.authors = ["H. Wade Minter", "Rackspace Hosting"]
-  s.date = %q{2011-02-01}
+  s.date = %q{2011-02-05}
   s.description = %q{A Ruby version of the Rackspace Cloud Files API.}
   s.email = %q{minter@lunenburg.org}
   s.extra_rdoc_files = [
@@ -18,13 +18,13 @@ Gem::Specification.new do |s|
   ]
   s.files = [
     ".gitignore",
+     "CHANGELOG",
+     "CONTRIBUTORS",
      "COPYING",
      "README.rdoc",
      "Rakefile",
      "TODO",
      "VERSION",
-     "CHANGELOG",
-     "CONTRIBUTORS"
      "cloudfiles.gemspec",
      "lib/cloudfiles.rb",
      "lib/cloudfiles/authentication.rb",
@@ -42,7 +42,7 @@ Gem::Specification.new do |s|
   s.homepage = %q{http://www.rackspacecloud.com/cloud_hosting_products/files}
   s.rdoc_options = ["--charset=UTF-8"]
   s.require_paths = ["lib"]
-  s.rubygems_version = %q{1.3.7}
+  s.rubygems_version = %q{1.5.0}
   s.summary = %q{A Ruby API into Rackspace Cloud Files}
   s.test_files = [
     "test/cf-testunit.rb",
@@ -54,7 +54,6 @@ Gem::Specification.new do |s|
   ]
 
   if s.respond_to? :specification_version then
-    current_version = Gem::Specification::CURRENT_SPECIFICATION_VERSION
     s.specification_version = 3
 
     if Gem::Version.new(Gem::VERSION) >= Gem::Version.new('1.2.0') then

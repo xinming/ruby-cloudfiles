@@ -25,7 +25,7 @@ module CloudFiles
         raise CloudFiles::Exception::Connection, "Unable to connect to #{server}"
       end
       response = server.get(path, hdrhash)
-      if (response.code == "204")
+      if (response.code =~ /^20./)
         if response["x-cdn-management-url"]
           connection.cdnmgmthost   = URI.parse(response["x-cdn-management-url"]).host
           connection.cdnmgmtpath   = URI.parse(response["x-cdn-management-url"]).path

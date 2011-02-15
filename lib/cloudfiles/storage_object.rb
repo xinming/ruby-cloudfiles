@@ -21,7 +21,7 @@ module CloudFiles
       @name = objectname
       @make_path = make_path
       @storagehost = self.container.connection.storagehost
-      @storagepath = self.container.connection.storagepath + "/#{CloudFiles.escape @containername}/#{CloudFiles.escape @name}"
+      @storagepath = self.container.connection.storagepath + "/#{CloudFiles.escape @containername}/#{CloudFiles.escape @name, '/'}"
       @storageport = self.container.connection.storageport
       @storagescheme = self.container.connection.storagescheme
       if force_exists
@@ -249,7 +249,7 @@ module CloudFiles
     #   private_object.public_url
     #   => nil
     def public_url
-      self.container.public? ? self.container.cdn_url + "/#{CloudFiles.escape @name}" : nil
+      self.container.public? ? self.container.cdn_url + "/#{CloudFiles.escape @name, '/'}" : nil
     end
     
     # Copy this object to a new location (optionally in a new container)
@@ -275,7 +275,7 @@ module CloudFiles
       new_name.sub!(/^\//,'')
       headers = {'X-Copy-From' => "#{self.container.name}/#{self.name}", 'Content-Type' => self.content_type.sub(/;.+/, '')}.merge(new_headers)
       # , 'Content-Type' => self.content_type
-      new_path = self.container.connection.storagepath + "/#{CloudFiles.escape new_container}/#{CloudFiles.escape new_name}"
+      new_path = self.container.connection.storagepath + "/#{CloudFiles.escape new_container}/#{CloudFiles.escape new_name, '/'}"
       response = self.container.connection.cfreq("PUT", @storagehost, new_path, @storageport, @storagescheme, headers)
       code = response.code
       raise CloudFiles::Exception::InvalidResponse, "Invalid response code #{response.code}" unless (response.code =~ /^20/)

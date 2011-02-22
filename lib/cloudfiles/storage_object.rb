@@ -110,7 +110,7 @@ module CloudFiles
         headers['Range'] = range
       end
       self.container.connection.cfreq("GET", @storagehost, @storagepath, @storageport, @storagescheme, headers, nil) do |response|
-        raise CloudFiles::Exception::NoSuchObject, "Object #{@name} does not exist" unless (response.code == "200")
+        raise CloudFiles::Exception::NoSuchObject, "Object #{@name} does not exist. Response code #{response.code}" unless (response.code =~ /^20./)
         response.read_body(&block)
       end
     end

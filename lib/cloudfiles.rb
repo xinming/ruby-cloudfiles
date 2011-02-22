@@ -32,6 +32,7 @@ module CloudFiles
   require 'time'
   require 'rubygems'
   require 'mime/types'
+  require 'typhoeus'
 
   unless "".respond_to? :each_char
     require "jcode"

@@ -267,22 +267,23 @@ module CloudFiles
     def cfreq(method, server, path, port, scheme, headers = {}, data = nil, attempts = 0, &block) # :nodoc:
       start = Time.now
       headers['Transfer-Encoding'] = "chunked" if data.is_a?(IO)
-      hdrhash = headerprep(headers)
-      start_http(server, path, port, scheme, hdrhash)
-      request = Net::HTTP.const_get(method.to_s.capitalize).new(path, hdrhash)
       if data
-        if data.respond_to?(:read)
-          request.body_stream = data
-        else
-          request.body = data
-        end
         unless data.is_a?(IO)
-          request.content_length = data.respond_to?(:lstat) ? data.stat.size : data.size
+          headers['Content-Length'] = data.respond_to?(:lstat) ? data.stat.size : data.size
         end
       else
-        request.content_length = 0
+        headers['Content-Length'] = 0
       end
-      response = @http[server].request(request, &block)
+      hdrhash = headerprep(headers)
+      url = "#{scheme}://#{server}#{path}"
+      print "DEBUG: URL is #{url}, method is #{method}, headers are #{hdrhash.inspect}\n"
+      request = Typhoeus::Request.new(url,
+                                      :body          => data,
+                                      :method        => method.downcase.to_sym,
+                                      :headers       => hdrhash,
+                                      :verbose       => true)
+      
+      response = request.response
       raise CloudFiles::Exception::ExpiredAuthToken if response.code == "401"
       response
     rescue Errno::EPIPE, Timeout::Error, Errno::EINVAL, EOFError, IOError

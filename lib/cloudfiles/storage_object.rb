@@ -40,14 +40,14 @@ module CloudFiles
     def object_metadata
       @object_metadata ||= (
         response = self.container.connection.cfreq("HEAD", @storagehost, @storagepath, @storageport, @storagescheme)
-        raise CloudFiles::Exception::NoSuchObject, "Object #{@name} does not exist" unless (response.code =~ /^20/)
+        raise CloudFiles::Exception::NoSuchObject, "Object #{@name} does not exist" unless (response.code.to_s =~ /^20/)
         resphash = {}
         response.to_hash.select { |k,v| k.match(/^x-object-meta/) }.each { |x| resphash[x[0]] = x[1].to_s }
         {
-          :bytes => response["content-length"],
-          :last_modified => Time.parse(response["last-modified"]),
-          :etag => response["etag"],
-          :content_type => response["content-type"],
+          :bytes => response.headers_hash["content-length"],
+          :last_modified => Time.parse(response.headers_hash["last-modified"]),
+          :etag => response.headers_hash["etag"],
+          :content_type => response.headers_hash["content-type"],
           :metadata => resphash
         }
       )
@@ -87,7 +87,7 @@ module CloudFiles
         headers['Range'] = range
       end
       response = self.container.connection.cfreq("GET", @storagehost, @storagepath, @storageport, @storagescheme, headers)
-      raise CloudFiles::Exception::NoSuchObject, "Object #{@name} does not exist" unless (response.code =~ /^20/)
+      raise CloudFiles::Exception::NoSuchObject, "Object #{@name} does not exist" unless (response.code.to_s =~ /^20/)
       response.body
     end
 
@@ -110,7 +110,7 @@ module CloudFiles
         headers['Range'] = range
       end
       self.container.connection.cfreq("GET", @storagehost, @storagepath, @storageport, @storagescheme, headers, nil) do |response|
-        raise CloudFiles::Exception::NoSuchObject, "Object #{@name} does not exist. Response code #{response.code}" unless (response.code =~ /^20./)
+        raise CloudFiles::Exception::NoSuchObject, "Object #{@name} does not exist. Response code #{response.code}" unless (response.code.to_s =~ /^20./)
         response.read_body(&block)
       end
     end
@@ -135,8 +135,8 @@ module CloudFiles
       headers = {}
       metadatahash.each{ |key, value| headers['X-Object-Meta-' + key.to_s.capitalize] = value.to_s }
       response = self.container.connection.cfreq("POST", @storagehost, @storagepath, @storageport, @storagescheme, headers)
-      raise CloudFiles::Exception::NoSuchObject, "Object #{@name} does not exist" if (response.code == "404")
-      raise CloudFiles::Exception::InvalidResponse, "Invalid response code #{response.code}" unless (response.code == "202")
+      raise CloudFiles::Exception::NoSuchObject, "Object #{@name} does not exist" if (response.code.to_s == "404")
+      raise CloudFiles::Exception::InvalidResponse, "Invalid response.code.to_s #{response.code}" unless (response.code.to_s == "202")
       true
     end
 
@@ -184,7 +184,7 @@ module CloudFiles
       code = response.code
       raise CloudFiles::Exception::InvalidResponse, "Invalid content-length header sent" if (code == "412")
       raise CloudFiles::Exception::MisMatchedChecksum, "Mismatched etag" if (code == "422")
-      raise CloudFiles::Exception::InvalidResponse, "Invalid response code #{code}" unless (code =~ /^20./)
+      raise CloudFiles::Exception::InvalidResponse, "Invalid response.code.to_s #{code}" unless (code =~ /^20./)
       make_path(File.dirname(self.name)) if @make_path == true
       self.refresh
       true
@@ -278,7 +278,7 @@ module CloudFiles
       new_path = self.container.connection.storagepath + "/#{CloudFiles.escape new_container}/#{CloudFiles.escape new_name, '/'}"
       response = self.container.connection.cfreq("PUT", @storagehost, new_path, @storageport, @storagescheme, headers)
       code = response.code
-      raise CloudFiles::Exception::InvalidResponse, "Invalid response code #{response.code}" unless (response.code =~ /^20/)
+      raise CloudFiles::Exception::InvalidResponse, "Invalid response.code.to_s #{response.code}" unless (response.code.to_s =~ /^20/)
       return CloudFiles::Container.new(self.container.connection, new_container).object(new_name)
     end
     

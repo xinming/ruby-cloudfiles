@@ -130,9 +130,9 @@ module CloudFiles
     #   => 42438527
     def get_info
       response = cfreq("HEAD", @storagehost, @storagepath, @storageport, @storagescheme)
-      raise CloudFiles::Exception::InvalidResponse, "Unable to obtain account size" unless (response.code == "204")
-      @bytes = response["x-account-bytes-used"].to_i
-      @count = response["x-account-container-count"].to_i
+      raise CloudFiles::Exception::InvalidResponse, "Unable to obtain account size" unless (response.code.to_s == "204")
+      @bytes = response.headers_hash["x-account-bytes-used"].to_i
+      @count = response.headers_hash["x-account-container-count"].to_i
       {:bytes => @bytes, :count => @count}
     end
     
@@ -163,8 +163,8 @@ module CloudFiles
       query << "limit=#{CloudFiles.escape limit.to_s}" if limit.to_i > 0
       query << "marker=#{CloudFiles.escape marker.to_s}" unless marker.to_s.empty?
       response = cfreq("GET", @storagehost, "#{@storagepath}?#{query.join '&'}", @storageport, @storagescheme)
-      return [] if (response.code == "204")
-      raise CloudFiles::Exception::InvalidResponse, "Invalid response code #{response.code}" unless (response.code == "200")
+      return [] if (response.code.to_s == "204")
+      raise CloudFiles::Exception::InvalidResponse, "Invalid response.code.to_s #{response.code}" unless (response.code.to_s == "200")
       CloudFiles.lines(response.body)
     end
     alias :list_containers :containers
@@ -184,8 +184,8 @@ module CloudFiles
       query << "limit=#{CloudFiles.escape limit.to_s}" if limit.to_i > 0
       query << "marker=#{CloudFiles.escape marker.to_s}" unless marker.to_s.empty?
       response = cfreq("GET", @storagehost, "#{@storagepath}?#{query.join '&'}", @storageport, @storagescheme)
-      return {} if (response.code == "204")
-      raise CloudFiles::Exception::InvalidResponse, "Invalid response code #{response.code}" unless (response.code == "200")
+      return {} if (response.code.to_s == "204")
+      raise CloudFiles::Exception::InvalidResponse, "Invalid response.code.to_s #{response.code}" unless (response.code.to_s == "200")
       doc = REXML::Document.new(response.body)
       detailhash = {}
       doc.elements.each("account/container/") { |c|
@@ -205,7 +205,7 @@ module CloudFiles
     #   => false
     def container_exists?(containername)
       response = cfreq("HEAD", @storagehost, "#{@storagepath}/#{CloudFiles.escape containername}", @storageport, @storagescheme)
-      return (response.code == "204")? true : false ;
+      return (response.code.to_s == "204")? true : false ;
     end
 
     # Creates a new container and returns the CloudFiles::Container object.  Throws an InvalidResponseException if the
@@ -224,7 +224,7 @@ module CloudFiles
       raise CloudFiles::Exception::Syntax, "Container name cannot contain the characters '/' or '?'" if containername.match(/[\/\?]/)
       raise CloudFiles::Exception::Syntax, "Container name is limited to 256 characters" if containername.length > 256
       response = cfreq("PUT", @storagehost, "#{@storagepath}/#{CloudFiles.escape containername}", @storageport, @storagescheme)
-      raise CloudFiles::Exception::InvalidResponse, "Unable to create container #{containername}" unless (response.code == "201" || response.code == "202")
+      raise CloudFiles::Exception::InvalidResponse, "Unable to create container #{containername}" unless (response.code.to_s == "201" || response.code.to_s == "202")
       CloudFiles::Container.new(self, containername)
     end
 
@@ -241,8 +241,8 @@ module CloudFiles
     #   => NoSuchContainerException: Container nonexistent does not exist
     def delete_container(containername)
       response = cfreq("DELETE", @storagehost, "#{@storagepath}/#{CloudFiles.escape containername}", @storageport, @storagescheme)
-      raise CloudFiles::Exception::NonEmptyContainer, "Container #{containername} is not empty" if (response.code == "409")
-      raise CloudFiles::Exception::NoSuchContainer, "Container #{containername} does not exist" unless (response.code == "204")
+      raise CloudFiles::Exception::NonEmptyContainer, "Container #{containername} is not empty" if (response.code.to_s == "409")
+      raise CloudFiles::Exception::NoSuchContainer, "Container #{containername} does not exist" unless (response.code.to_s == "204")
       true
     end
 
@@ -258,8 +258,8 @@ module CloudFiles
     def public_containers(enabled_only = false)
       paramstr = enabled_only == true ? "enabled_only=true" : ""
       response = cfreq("GET", @cdnmgmthost, "#{@cdnmgmtpath}?#{paramstr}", @cdnmgmtport, @cdnmgmtscheme)
-      return [] if (response.code == "204")
-      raise CloudFiles::Exception::InvalidResponse, "Invalid response code #{response.code}" unless (response.code == "200")
+      return [] if (response.code.to_s == "204")
+      raise CloudFiles::Exception::InvalidResponse, "Invalid response.code.to_s #{response.code}" unless (response.code.to_s == "200")
       CloudFiles.lines(response.body)
     end
 
@@ -285,7 +285,7 @@ module CloudFiles
       CloudFiles.hydra.run
       
       response = request.response
-      raise CloudFiles::Exception::ExpiredAuthToken if response.code == "401"
+      raise CloudFiles::Exception::ExpiredAuthToken if response.code.to_s == "401"
       response
     rescue Errno::EPIPE, Timeout::Error, Errno::EINVAL, EOFError, IOError
       # Server closed the connection, retry

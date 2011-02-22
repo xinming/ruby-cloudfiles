@@ -21,7 +21,7 @@ module CloudFiles
 
   AUTH_USA = "https://auth.api.rackspacecloud.com/v1.0"
   AUTH_UK = "https://lon.auth.api.rackspacecloud.com/v1.0"
-
+  
   VERSION = IO.read(File.dirname(__FILE__) + '/../VERSION')
   require 'net/http'
   require 'net/https'
@@ -48,6 +48,10 @@ module CloudFiles
 
   def self.lines(str)
     (str.respond_to?(:lines) ? str.lines : str).to_a.map { |x| x.chomp }
+  end
+  
+  def self.hydra
+    @@hydra ||= Typhoeus::Hydra.new
   end
 
   # CGI.escape, but without special treatment on spaces

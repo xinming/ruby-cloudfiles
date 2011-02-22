@@ -276,12 +276,13 @@ module CloudFiles
       end
       hdrhash = headerprep(headers)
       url = "#{scheme}://#{server}#{path}"
-      print "DEBUG: URL is #{url}, method is #{method}, headers are #{hdrhash.inspect}\n"
       request = Typhoeus::Request.new(url,
                                       :body          => data,
                                       :method        => method.downcase.to_sym,
                                       :headers       => hdrhash,
                                       :verbose       => true)
+      CloudFiles.hydra.queue(request)
+      CloudFiles.hydra.run
       
       response = request.response
       raise CloudFiles::Exception::ExpiredAuthToken if response.code == "401"

@@ -1,5 +1,10 @@
 ================================================================================
- 1.4.1 (2011/02/04)
+ 1.4.13 (2011/02/22)
+================================================================================
+  o Catch an IOError (HTTP session not started) in cfreq and attempt a retry.
+
+================================================================================
+ 1.4.12 (2011/02/04)
 ================================================================================
   o Configurable :auth_url support for OpenStack Swift and non-US deployments. Add constants for Cloud Servers USA and UK. (Chmouel Boudjnah, Dan Prince)
   o Moved exceptions under the CloudFiles::Exception scope

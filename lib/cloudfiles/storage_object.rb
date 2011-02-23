@@ -181,10 +181,10 @@ module CloudFiles
       # If we're taking data from standard input, send that IO object to cfreq
       data = $stdin if (data.nil? && $stdin.tty? == false)
       response = self.container.connection.cfreq("PUT", @storagehost, "#{@storagepath}", @storageport, @storagescheme, headers, data)
-      code = response.code
+      code = response.code.to_s
       raise CloudFiles::Exception::InvalidResponse, "Invalid content-length header sent" if (code == "412")
       raise CloudFiles::Exception::MisMatchedChecksum, "Mismatched etag" if (code == "422")
-      raise CloudFiles::Exception::InvalidResponse, "Invalid response.code.to_s #{code}" unless (code =~ /^20./)
+      raise CloudFiles::Exception::InvalidResponse, "Invalid response.code #{code}" unless (code =~ /^20./)
       make_path(File.dirname(self.name)) if @make_path == true
       self.refresh
       true
@@ -277,7 +277,7 @@ module CloudFiles
       # , 'Content-Type' => self.content_type
       new_path = self.container.connection.storagepath + "/#{CloudFiles.escape new_container}/#{CloudFiles.escape new_name, '/'}"
       response = self.container.connection.cfreq("PUT", @storagehost, new_path, @storageport, @storagescheme, headers)
-      code = response.code
+      code = response.code.to_s
       raise CloudFiles::Exception::InvalidResponse, "Invalid response.code.to_s #{response.code}" unless (response.code.to_s =~ /^20/)
       return CloudFiles::Container.new(self.container.connection, new_container).object(new_name)
     end

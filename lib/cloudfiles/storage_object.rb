@@ -24,6 +24,10 @@ module CloudFiles
       @storagepath = self.container.connection.storagepath + "/#{CloudFiles.escape @containername}/#{CloudFiles.escape @name, '/'}"
       @storageport = self.container.connection.storageport
       @storagescheme = self.container.connection.storagescheme
+      @cdnmgmthost = self.container.connection.cdnmgmthost
+      @cdnmgmtpath = self.container.connection.cdnmgmtpath + "/#{CloudFiles.escape @containername}/#{CloudFiles.escape @name, '/'}"
+      @cdnmgmtport = self.container.connection.cdnmgmtport
+      @cdnmgmtscheme = self.container.connection.cdnmgmtscheme
       if force_exists
         raise CloudFiles::Exception::NoSuchObject, "Object #{@name} does not exist" unless container.object_exists?(objectname)
       end
@@ -188,6 +192,34 @@ module CloudFiles
       make_path(File.dirname(self.name)) if @make_path == true
       self.refresh
       true
+    end
+    # Purges CDN Edge Cache for all objects inside of this container
+    # 
+    # :email, An valid email address or comma seperated 
+    # list of emails to be notified once purge is complete .
+    #
+    #    obj.purge_from_cdn
+    #    => true
+    #
+    #  or 
+    #                                     
+    #   obj.purge_from_cdn("User@domain.com")
+    #   => true
+    #                                                
+    #  or
+    #                                                         
+    #   obj.purge_from_cdn("User@domain.com.User2@domainc.com)
+    #   => true
+    def purge_from_cdn(email=nil)                                                                  
+        if email
+            headers = {"X-Email" => email}
+            response = self.container.connection.cfreq("DELETE", @cdnmgmthost, @cdnmgmtpath, @cdnmgmtport, @cdnmgmtscheme, headers)
+            raise CloudFiles::Exception::Connection, "Error Unable to Purge Object: #{@name}" unless (response.code > "200" && response.code < "299")
+        else
+            response = self.container..connection.cfreq("DELETE", @cdnmgmthost, @cdnmgmtpath, @cdnmgmtport, @cdnmgmtscheme)
+            raise CloudFiles::Exception::Connection, "Error Unable to Purge Object: #{@name}" unless (response.code > "200" && response.code < "299")
+        end
+        true
     end
 
     # A convenience method to stream data into an object from a local file (or anything that can be loaded by Ruby's open method)

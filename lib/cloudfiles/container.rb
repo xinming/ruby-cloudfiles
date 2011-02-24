@@ -300,7 +300,7 @@ module CloudFiles
       refresh
       true
     end
-
+   
     # Makes a container private and returns true upon success.  Throws NoSuchContainerException
     # if the container doesn't exist or if the request fails.
     #
@@ -314,6 +314,35 @@ module CloudFiles
       raise CloudFiles::Exception::NoSuchContainer, "Container #{@name} does not exist" unless (response.code == "201" || response.code == "202")
       refresh
       true
+    end
+
+    # Purges CDN Edge Cache for all objects inside of this container
+    #
+    # :email, An valid email address or comma seperated 
+    #  list of emails to be notified once purge is complete .
+    #
+    #   container.purge_from_cdn
+    #   => true
+    #
+    #  or 
+    #   
+    #   container.purge_from_cdn("User@domain.com")
+    #   => true
+    #
+    #  or
+    #
+    #   container.purge_from_cdn("User@domain.com.User2@domainc.com)
+    #   => true
+    def purge_from_cdn(email=nil)
+        if email
+            headers = {"X-Email" => email}
+            response = self.connection.cfreq("DELETE", @cdnmgmthost, @cdnmgmtpath, @cdnmgmtport, @cdnmgmtscheme, headers)
+            raise CloudFiles::Exception::Connection, "Error Unable to Purge Container: #{@name}" unless (response.code > "200" && response.code < "299")
+        else
+            response = self.connection.cfreq("DELETE", @cdnmgmthost, @cdnmgmtpath, @cdnmgmtport, @cdnmgmtscheme, headers)
+            raise CloudFiles::Exception::Connection, "Error Unable to Purge Container: #{@name}" unless (response.code > "200" && response.code < "299")
+        true
+        end
     end
 
     def to_s # :nodoc:

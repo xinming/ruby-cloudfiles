@@ -280,7 +280,8 @@ module CloudFiles
                                       :body          => data,
                                       :method        => method.downcase.to_sym,
                                       :headers       => hdrhash,
-                                      :verbose       => true)
+                                      :user_agent    => "CloudFiles Ruby API #{VERSION}",
+                                      :verbose       => ENV['CLOUDFILES_VERBOSE'] ? true : false)
       CloudFiles.hydra.queue(request)
       CloudFiles.hydra.run
       
@@ -308,7 +309,6 @@ module CloudFiles
       default_headers["X-Auth-Token"] = @authtoken if (authok? && @account.nil?)
       default_headers["X-Storage-Token"] = @authtoken if (authok? && !@account.nil?)
       default_headers["Connection"] = "Keep-Alive"
-      default_headers["User-Agent"] = "CloudFiles Ruby API #{VERSION}"
       default_headers.merge(headers)
     end
 

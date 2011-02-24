@@ -14,7 +14,7 @@ module CloudFiles
         :method => :get,
         :headers => { "X-Auth-User" => connection.authuser, "X-Auth-Key" => connection.authkey },
         :disable_ssl_peer_verification => true,
-        :verbose => true)
+        :verbose => ENV['CLOUDFILES_VERBOSE'] ? true : false)
       CloudFiles.hydra.queue(request)
       CloudFiles.hydra.run
       response = request.response

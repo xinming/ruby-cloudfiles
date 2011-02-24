@@ -339,7 +339,7 @@ module CloudFiles
             response = self.connection.cfreq("DELETE", @cdnmgmthost, @cdnmgmtpath, @cdnmgmtport, @cdnmgmtscheme, headers)
             raise CloudFiles::Exception::Connection, "Error Unable to Purge Container: #{@name}" unless (response.code > "200" && response.code < "299")
         else
-            response = self.connection.cfreq("DELETE", @cdnmgmthost, @cdnmgmtpath, @cdnmgmtport, @cdnmgmtscheme, headers)
+            response = self.connection.cfreq("DELETE", @cdnmgmthost, @cdnmgmtpath, @cdnmgmtport, @cdnmgmtscheme)
             raise CloudFiles::Exception::Connection, "Error Unable to Purge Container: #{@name}" unless (response.code > "200" && response.code < "299")
         true
         end

@@ -292,7 +292,11 @@ module CloudFiles
       # Server closed the connection, retry
       raise CloudFiles::Exception::Connection, "Unable to reconnect to #{server} after #{count} attempts" if attempts >= 5
       attempts += 1
-      @http[server].finish
+      begin
+        @http[server].finish
+      rescue
+        nil
+      end
       start_http(server, path, port, scheme, headers)
       retry
     rescue ExpiredAuthTokenException

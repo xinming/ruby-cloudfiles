@@ -23,8 +23,6 @@ module CloudFiles
   AUTH_UK = "https://lon.auth.api.rackspacecloud.com/v1.0"
   
   VERSION = IO.read(File.dirname(__FILE__) + '/../VERSION').chomp
-  require 'net/http'
-  require 'net/https'
   require 'rexml/document'
   require 'cgi'
   require 'uri'

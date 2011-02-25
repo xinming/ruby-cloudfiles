@@ -208,16 +208,16 @@ module CloudFiles
     #                                                
     #  or
     #                                                         
-    #   obj.purge_from_cdn("User@domain.com.User2@domainc.com)
+    #   obj.purge_from_cdn("User@domain.com, User2@domain.com")
     #   => true
     def purge_from_cdn(email=nil)                                                                  
         if email
             headers = {"X-Purge-Email" => email}
             response = self.container.connection.cfreq("DELETE", @cdnmgmthost, @cdnmgmtpath, @cdnmgmtport, @cdnmgmtscheme, headers)
-            raise CloudFiles::Exception::Connection, "Error Unable to Purge Object: #{@name}" unless (response.code > "200" && response.code < "299")
+            raise CloudFiles::Exception::Connection, "Error Unable to Purge Object: #{@name}" unless (response.code.to_s =~ /^20.$/)
         else
             response = self.container..connection.cfreq("DELETE", @cdnmgmthost, @cdnmgmtpath, @cdnmgmtport, @cdnmgmtscheme)
-            raise CloudFiles::Exception::Connection, "Error Unable to Purge Object: #{@name}" unless (response.code > "200" && response.code < "299")
+            raise CloudFiles::Exception::Connection, "Error Unable to Purge Object: #{@name}" unless (response.code.to_s =~ /^20.$/)
         end
         true
     end

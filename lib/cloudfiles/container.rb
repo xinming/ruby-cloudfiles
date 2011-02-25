@@ -331,7 +331,7 @@ module CloudFiles
     #
     #  or
     #
-    #   container.purge_from_cdn("User@domain.com.User2@domainc.com)
+    #   container.purge_from_cdn("User@domain.com, User2@domain.com")
     #   => true
     def purge_from_cdn(email=nil)
         if email

@@ -214,10 +214,10 @@ module CloudFiles
         if email
             headers = {"X-Purge-Email" => email}
             response = self.container.connection.cfreq("DELETE", @cdnmgmthost, @cdnmgmtpath, @cdnmgmtport, @cdnmgmtscheme, headers)
-            raise CloudFiles::Exception::Connection, "Error Unable to Purge Object: #{@name}" unless (response.code > "200" && response.code < "299")
+            raise CloudFiles::Exception::Connection, "Error Unable to Purge Object: #{@name}" unless (response.code.to_s =~ /^20.$/)
         else
             response = self.container..connection.cfreq("DELETE", @cdnmgmthost, @cdnmgmtpath, @cdnmgmtport, @cdnmgmtscheme)
-            raise CloudFiles::Exception::Connection, "Error Unable to Purge Object: #{@name}" unless (response.code > "200" && response.code < "299")
+            raise CloudFiles::Exception::Connection, "Error Unable to Purge Object: #{@name}" unless (response.code.to_s =~ /^20.$/)
         end
         true
     end

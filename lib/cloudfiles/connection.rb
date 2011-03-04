@@ -288,7 +288,7 @@ module CloudFiles
       response = request.response
       raise CloudFiles::Exception::ExpiredAuthToken if response.code.to_s == "401"
       response
-    rescue Errno::EPIPE, Timeout::Error, Errno::EINVAL, EOFError, IOError
+    rescue Errno::EPIPE, Errno::EINVAL, EOFError, IOError
       # Server closed the connection, retry
       raise CloudFiles::Exception::Connection, "Unable to reconnect to #{server} after #{count} attempts" if attempts >= 5
       attempts += 1

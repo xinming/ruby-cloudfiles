@@ -46,9 +46,9 @@ module CloudFiles
         response = self.container.connection.cfreq("HEAD", @storagehost, @storagepath, @storageport, @storagescheme)
         raise CloudFiles::Exception::NoSuchObject, "Object #{@name} does not exist" unless (response.code.to_s =~ /^20/)
         resphash = {}
-        response.to_hash.select { |k,v| k.match(/^x-object-meta/) }.each { |x| resphash[x[0]] = x[1].to_s }
+        response.headers_hash.select { |k,v| k.match(/^x-object-meta/) }.each { |x| resphash[x[0]] = x[1].to_s }
         {
-          :bytes => response.headers_hash["content-length"],
+          :bytes => response.headers_hash["content-length"].to_i,
           :last_modified => Time.parse(response.headers_hash["last-modified"]),
           :etag => response.headers_hash["etag"],
           :content_type => response.headers_hash["content-type"],
@@ -243,7 +243,7 @@ module CloudFiles
     #   => Errno::ENOENT: No such file or directory - /tmp/nonexistent.txt
     def load_from_filename(filename, headers = {})
       f = open(filename)
-      self.write(f, headers)
+      self.write(f.read, headers)
       f.close
       true
     end

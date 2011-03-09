@@ -283,6 +283,18 @@ module CloudFiles
     def public_url
       self.container.public? ? self.container.cdn_url + "/#{CloudFiles.escape @name, '/'}" : nil
     end
+
+        # If the parent container is public (CDN-enabled), returns the SSL CDN URL to this object.  Otherwise, return nil
+    #
+    #   public_object.public_ssl_url
+    #   => "https://c0001234.cdn.cloudfiles.rackspacecloud.com/myfile.jpg"
+    #
+    #   private_object.public_ssl_url
+    #   => nil
+    def public_ssl_url
+      self.container.public? ? self.container.cdn_ssl_url + "/#{CloudFiles.escape @name, '/'}" : nil
+    end
+
     
     # Copy this object to a new location (optionally in a new container)
     #

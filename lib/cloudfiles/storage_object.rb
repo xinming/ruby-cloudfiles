@@ -287,7 +287,7 @@ module CloudFiles
         # If the parent container is public (CDN-enabled), returns the SSL CDN URL to this object.  Otherwise, return nil
     #
     #   public_object.public_ssl_url
-    #   => "https://c0001234.cdn.cloudfiles.rackspacecloud.com/myfile.jpg"
+    #   => "https://c61.ssl.cf0.rackcdn.com/myfile.jpg"
     #
     #   private_object.public_ssl_url
     #   => nil

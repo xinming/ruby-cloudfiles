@@ -5,11 +5,11 @@
 
 Gem::Specification.new do |s|
   s.name = %q{cloudfiles}
-  s.version = "1.4.14"
+  s.version = "1.4.15"
 
   s.required_rubygems_version = Gem::Requirement.new(">= 0") if s.respond_to? :required_rubygems_version=
   s.authors = ["H. Wade Minter", "Rackspace Hosting"]
-  s.date = %q{2011-03-04}
+  s.date = %q{2011-03-10}
   s.description = %q{A Ruby version of the Rackspace Cloud Files API.}
   s.email = %q{minter@lunenburg.org}
   s.extra_rdoc_files = [

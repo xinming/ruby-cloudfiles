@@ -240,6 +240,14 @@ class CloudfilesContainerTest < Test::Unit::TestCase
     assert(@container.log_retention='false')
   end
   
+  def test_purge_from_cdn_succeeds
+    build_net_http_object
+    assert_nothing_raised do
+      @container.purge_from_cdn
+      @container.purge_from_cdn("small.fox@hole.org")
+    end
+  end
+  
   private
   
   def build_net_http_object(args={:code => '204' }, cfreq_expectations={})

@@ -161,6 +161,14 @@ class CloudfilesStorageObjectTest < Test::Unit::TestCase
     end
   end
   
+  def test_purge_from_cdn_succeeds
+    build_net_http_object
+    assert_nothing_raised do
+      @object.purge_from_cdn
+      @object.purge_from_cdn("small.fox@hole.org")
+    end
+  end
+  
   def test_write_with_no_data_dies
     build_net_http_object
     assert_raise(CloudFiles::Exception::Syntax) do

@@ -15,6 +15,17 @@ class CloudfilesContainerTest < Test::Unit::TestCase
     assert_equal @container.cdn_url, nil
     assert_equal @container.cdn_ttl, nil
   end
+
+  def test_object_creation_with_no_cdn_available
+    connection = stub(:storagehost => 'test.storage.example', :storagepath => '/dummy/path', :storageport => 443, :storagescheme => 'https', :cdnmgmthost => 'cdm.test.example', :cdnmgmtpath => '/dummy/path', :cdnmgmtport => 443, :cdnmgmtscheme => 'https', :cdn_available? => false)
+    response = {'x-container-bytes-used' => '42', 'x-container-object-count' => '5'}
+    response.stubs(:code).returns('204')
+    connection.stubs(:cfreq => response)
+    @container = CloudFiles::Container.new(connection, 'test_container')
+    assert_equal 'test_container', @container.name
+    assert_equal CloudFiles::Container, @container.class
+    assert_equal false, @container.public?
+  end
   
   def test_object_creation_no_such_container
     connection = stub(:storagehost => 'test.storage.example', :storagepath => '/dummy/path', :storageport => 443, :storagescheme => 'https', :cdnmgmthost => 'cdm.test.example', :cdnmgmtpath => '/dummy/path', :cdnmgmtport => 443, :cdnmgmtscheme => 'https', :cdn_available? => true)

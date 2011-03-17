@@ -99,7 +99,7 @@ module CloudFiles
     #   private_container.public?
     #   => false
     def cdn_enabled
-      self.cdn_metadata[:cdn_enabled]
+      cdn_available? && self.cdn_metadata[:cdn_enabled]
     end
     alias :cdn_enabled? :cdn_enabled
     alias :public? :cdn_enabled

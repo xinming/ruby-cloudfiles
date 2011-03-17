@@ -14,6 +14,18 @@ class CloudfilesStorageObjectTest < Test::Unit::TestCase
     assert_equal @object.class, CloudFiles::StorageObject
     assert_equal @object.to_s, 'test_object'
   end
+
+  def test_object_creation_with_no_cdn_available
+    connection = stub(:storagehost => 'test.storage.example', :storagepath => '/dummy/path', :storageport => 443, :storagescheme => 'https', :cdnmgmthost => 'cdm.test.example', :cdnmgmtpath => '/dummy/path', :cdnmgmtport => 443, :cdnmgmtscheme => 'https', :cdn_available? => false)
+    response = {'x-container-bytes-used' => '42', 'x-container-object-count' => '5', 'last-modified' => Time.now.to_s}
+    response.stubs(:code).returns('204')
+    connection.stubs(:cfreq => response)
+    container = CloudFiles::Container.new(connection, 'test_container')
+    @object = CloudFiles::StorageObject.new(container, 'test_object')
+    assert_equal @object.name, 'test_object'
+    assert_equal @object.class, CloudFiles::StorageObject
+    assert_equal @object.to_s, 'test_object'
+  end
   
   def test_object_creation_with_invalid_name
     connection = stub(:storagehost => 'test.storage.example', :storagepath => '/dummy/path', :storageport => 443, :storagescheme => 'https', :cdnmgmthost => 'cdm.test.example', :cdnmgmtpath => '/dummy/path', :cdnmgmtport => 443, :cdnmgmtscheme => 'https', :cdn_available? => true)

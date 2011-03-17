@@ -24,10 +24,12 @@ module CloudFiles
       @storagepath = self.container.connection.storagepath + "/#{CloudFiles.escape @containername}/#{CloudFiles.escape @name, '/'}"
       @storageport = self.container.connection.storageport
       @storagescheme = self.container.connection.storagescheme
-      @cdnmgmthost = self.container.connection.cdnmgmthost
-      @cdnmgmtpath = self.container.connection.cdnmgmtpath + "/#{CloudFiles.escape @containername}/#{CloudFiles.escape @name, '/'}"
-      @cdnmgmtport = self.container.connection.cdnmgmtport
-      @cdnmgmtscheme = self.container.connection.cdnmgmtscheme
+      if self.container.connection.cdn_available?
+        @cdnmgmthost = self.container.connection.cdnmgmthost
+        @cdnmgmtpath = self.container.connection.cdnmgmtpath + "/#{CloudFiles.escape @containername}/#{CloudFiles.escape @name, '/'}"
+        @cdnmgmtport = self.container.connection.cdnmgmtport
+        @cdnmgmtscheme = self.container.connection.cdnmgmtscheme
+      end
       if force_exists
         raise CloudFiles::Exception::NoSuchObject, "Object #{@name} does not exist" unless container.object_exists?(objectname)
       end
@@ -210,16 +212,17 @@ module CloudFiles
     #                                                         
     #   obj.purge_from_cdn("User@domain.com, User2@domain.com")
     #   => true
-    def purge_from_cdn(email=nil)                                                                  
-        if email
-            headers = {"X-Purge-Email" => email}
-            response = self.container.connection.cfreq("DELETE", @cdnmgmthost, @cdnmgmtpath, @cdnmgmtport, @cdnmgmtscheme, headers)
-            raise CloudFiles::Exception::Connection, "Error Unable to Purge Object: #{@name}" unless (response.code.to_s =~ /^20.$/)
-        else
-            response = self.container.connection.cfreq("DELETE", @cdnmgmthost, @cdnmgmtpath, @cdnmgmtport, @cdnmgmtscheme)
-            raise CloudFiles::Exception::Connection, "Error Unable to Purge Object: #{@name}" unless (response.code.to_s =~ /^20.$/)
-        end
-        true
+    def purge_from_cdn(email=nil)
+      raise Exception::CDNNotAvailable unless cdn_available?
+      if email
+          headers = {"X-Purge-Email" => email}
+          response = self.container.connection.cfreq("DELETE", @cdnmgmthost, @cdnmgmtpath, @cdnmgmtport, @cdnmgmtscheme, headers)
+          raise CloudFiles::Exception::Connection, "Error Unable to Purge Object: #{@name}" unless (response.code.to_s =~ /^20.$/)
+      else
+          response = self.container.connection.cfreq("DELETE", @cdnmgmthost, @cdnmgmtpath, @cdnmgmtport, @cdnmgmtscheme)
+          raise CloudFiles::Exception::Connection, "Error Unable to Purge Object: #{@name}" unless (response.code.to_s =~ /^20.$/)
+      end
+      true
     end
 
     # A convenience method to stream data into an object from a local file (or anything that can be loaded by Ruby's open method)
@@ -343,6 +346,10 @@ module CloudFiles
     end
 
     private
+
+      def cdn_available?
+        @cdn_available ||= self.container.connection.cdn_available?
+      end
 
       def make_path(path) # :nodoc:
         if path == "." || path == "/"

@@ -15,6 +15,10 @@ module CloudFiles
     # API host to authenticate to
     attr_reader :auth_url
 
+    # Set at auth to see if a CDN is available for use
+    attr_accessor :cdn_available
+    alias :cdn_available? :cdn_available
+
     # Hostname of the CDN management server
     attr_accessor :cdnmgmthost
 

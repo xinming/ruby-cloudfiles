@@ -27,6 +27,7 @@ module CloudFiles
       response = server.get(path, hdrhash)
       if (response.code =~ /^20./)
         if response["x-cdn-management-url"]
+          connection.cdn_available = true
           connection.cdnmgmthost   = URI.parse(response["x-cdn-management-url"]).host
           connection.cdnmgmtpath   = URI.parse(response["x-cdn-management-url"]).path
           connection.cdnmgmtport   = URI.parse(response["x-cdn-management-url"]).port

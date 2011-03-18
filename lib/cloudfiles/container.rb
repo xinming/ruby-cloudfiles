@@ -28,9 +28,9 @@ module CloudFiles
       end
       # Load the metadata now, so we'll get a CloudFiles::Exception::NoSuchContainer exception should the container
       # not exist.
-      self.metadata
+      self.container_metadata
     end
-
+    
     # Refreshes data about the container and populates class variables. Items are otherwise
     # loaded in a lazy loaded fashion.
     #
@@ -49,11 +49,13 @@ module CloudFiles
     alias :populate :refresh
 
     # Retrieves Metadata for the container
-    def metadata
+    def container_metadata
       @metadata ||= (
         response = self.connection.cfreq("HEAD", @storagehost, @storagepath + "/", @storageport, @storagescheme)
         raise CloudFiles::Exception::NoSuchContainer, "Container #{@name} does not exist" unless (response.code =~ /^20/)
-        {:bytes => response["x-container-bytes-used"].to_i, :count => response["x-container-object-count"].to_i}
+        resphash = {}
+        response.to_hash.select { |k,v| k.match(/^x-container-meta/) }.each { |x| resphash[x[0]] = x[1].to_s }
+        {:bytes => response["x-container-bytes-used"].to_i, :count => response["x-container-object-count"].to_i, :metadata => resphash}
       )
     end
 
@@ -78,7 +80,32 @@ module CloudFiles
         @cdn_metadata = {}
       end
     end
+    
+    # Returns the container's metadata as a nicely formatted hash, stripping off the X-Meta-Object- prefix that the system prepends to the
+    # key name.
+    #
+    #    object.metadata
+    #    => {"ruby"=>"cool", "foo"=>"bar"}
+    def metadata
+      metahash = {}
+      self.container_metadata[:metadata].each{ |key, value| metahash[key.gsub(/x-container-meta-/, '').gsub(/%20/, ' ')] = URI.decode(value).gsub(/\+\-/, ' ') }
+      metahash
+    end
 
+    # Sets the metadata for an object.  By passing a hash as an argument, you can set the metadata for an object.
+    # New calls to set metadata are additive.  To remove metadata, set the value of the key to nil.  
+    #
+    # Throws NoSuchObjectException if the container doesn't exist.  Throws InvalidResponseException if the request
+    # fails.
+    def set_metadata(metadatahash)
+      headers = {}
+      metadatahash.each{ |key, value| headers['X-Container-Meta-' + CloudFiles.escape(key.to_s.capitalize)] = value.to_s }
+      response = self.connection.cfreq("POST", @storagehost, @storagepath, @storageport, @storagescheme, headers)
+      raise CloudFiles::Exception::NoSuchObject, "Container #{@name} does not exist" if (response.code == "404")
+      raise CloudFiles::Exception::InvalidResponse, "Invalid response code #{response.code}" unless (response.code =~ /^20/)
+      true
+    end
+    
     # Size of the container (in bytes)
     def bytes
       self.metadata[:bytes]

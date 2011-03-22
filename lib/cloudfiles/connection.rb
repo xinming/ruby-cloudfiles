@@ -291,7 +291,7 @@ module CloudFiles
       response
     rescue Errno::EPIPE, Timeout::Error, Errno::EINVAL, EOFError, IOError
       # Server closed the connection, retry
-      raise CloudFiles::Exception::Connection, "Unable to reconnect to #{server} after #{count} attempts" if attempts >= 5
+      raise CloudFiles::Exception::Connection, "Unable to reconnect to #{server} after #{attempts} attempts" if attempts >= 5
       attempts += 1
       begin
         @http[server].finish

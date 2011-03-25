@@ -50,6 +50,7 @@ module CloudFiles
         resphash = {}
         response.to_hash.select { |k,v| k.match(/^x-object-meta/) }.each { |x| resphash[x[0]] = x[1].to_s }
         {
+          :manifest => response["x-object-manifest"],
           :bytes => response["content-length"],
           :last_modified => Time.parse(response["last-modified"]),
           :etag => response["etag"],
@@ -78,7 +79,11 @@ module CloudFiles
     def content_type
       self.object_metadata[:content_type]
     end
-
+ 
+    # Manifest for the object
+    def manifest
+      self.object_metadata[:manifest]
+    end
     # Retrieves the data from an object and stores the data in memory.  The data is returned as a string.
     # Throws a NoSuchObjectException if the object doesn't exist.
     #
@@ -145,6 +150,30 @@ module CloudFiles
       raise CloudFiles::Exception::InvalidResponse, "Invalid response code #{response.code}" unless (response.code == "202")
       true
     end
+    
+
+    # Returns the object's manifest.
+    #
+    #    object.manifest
+    #    => "container/prefix"
+    def manifest
+      self.object_metadata[:manifest]
+    end
+
+
+    # Sets the manifest for an object.  By passing a string as an argument, you can set the manifest for an object.
+    # However, setting manifest will overwrite any existing manifest for the object.
+    #
+    # Throws NoSuchObjectException if the object doesn't exist.  Throws InvalidResponseException if the request
+    # fails.
+    def set_manifest(manifest)
+      headers = {'X-Object-Manifest' => manifest}
+      response = self.container.connection.cfreq("POST", @storagehost, @storagepath, @storageport, @storagescheme, headers)
+      raise CloudFiles::Exception::NoSuchObject, "Object #{@name} does not exist" if (response.code == "404")
+      raise CloudFiles::Exception::InvalidResponse, "Invalid response code #{response.code}" unless (response.code == "202")
+      true
+    end
+
 
     # Takes supplied data and writes it to the object, saving it.  You can supply an optional hash of headers, including
     # Content-Type and ETag, that will be applied to the object.

@@ -80,10 +80,6 @@ module CloudFiles
       self.object_metadata[:content_type]
     end
  
-    # Manifest for the object
-    def manifest
-      self.object_metadata[:manifest]
-    end
     # Retrieves the data from an object and stores the data in memory.  The data is returned as a string.
     # Throws a NoSuchObjectException if the object doesn't exist.
     #
@@ -168,9 +164,9 @@ module CloudFiles
     # fails.
     def set_manifest(manifest)
       headers = {'X-Object-Manifest' => manifest}
-      response = self.container.connection.cfreq("POST", @storagehost, @storagepath, @storageport, @storagescheme, headers)
+      response = self.container.connection.cfreq("PUT", @storagehost, @storagepath, @storageport, @storagescheme, headers)
       raise CloudFiles::Exception::NoSuchObject, "Object #{@name} does not exist" if (response.code == "404")
-      raise CloudFiles::Exception::InvalidResponse, "Invalid response code #{response.code}" unless (response.code == "202")
+      raise CloudFiles::Exception::InvalidResponse, "Invalid response code #{response.code}" unless (response.code =~ /^20/)
       true
     end
 

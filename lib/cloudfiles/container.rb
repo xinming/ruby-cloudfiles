@@ -268,7 +268,7 @@ module CloudFiles
     #   full_container.empty?
     #   => false
     def empty?
-      return (metadata[:count].to_i == 0)? true : false
+      return (container_metadata[:count].to_i == 0)? true : false
     end
 
     # Returns true if object exists and returns false otherwise.

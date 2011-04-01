@@ -263,7 +263,8 @@ class CloudfilesContainerTest < Test::Unit::TestCase
   
   def build_net_http_object(args={:code => '204' }, cfreq_expectations={})
     CloudFiles::Container.any_instance.stubs(:populate).returns(true)
-    CloudFiles::Container.any_instance.stubs(:metadata).returns({})
+    CloudFiles::Container.any_instance.stubs(:metadata).returns()
+    CloudFiles::Container.any_instance.stubs(:container_metadata).returns({:bytes => 99, :count => 2})
     connection = stub(:storagehost => 'test.storage.example', :storagepath => '/dummy/path', :storageport => 443, :storagescheme => 'https', :cdnmgmthost => 'cdm.test.example', :cdnmgmtpath => '/dummy/path', :cdnmgmtport => 443, :cdnmgmtscheme => 'https', :cdn_available? => true)
     args[:response] = {} unless args[:response]
     response = {'x-cdn-management-url' => 'http://cdn.example.com/path', 'x-storage-url' => 'http://cdn.example.com/storage', 'authtoken' => 'dummy_token', 'last-modified' => Time.now.to_s}.merge(args[:response])

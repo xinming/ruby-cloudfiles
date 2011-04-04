@@ -54,7 +54,7 @@ module CloudFiles
         response = self.connection.cfreq("HEAD", @storagehost, @storagepath + "/", @storageport, @storagescheme)
         raise CloudFiles::Exception::NoSuchContainer, "Container #{@name} does not exist" unless (response.code.to_s =~ /^20/)
         resphash = {}
-        response.to_hash.select { |k,v| k.match(/^x-container-meta/) }.each { |x| resphash[x[0]] = x[1].to_s }
+        response.headers_hash.select { |k,v| k.match(/^x-container-meta/) }.each { |x| resphash[x[0]] = x[1].to_s }
         {:bytes => response["x-container-bytes-used"].to_i, :count => response["x-container-object-count"].to_i, :metadata => resphash}
       )
     end

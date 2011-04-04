@@ -24,10 +24,12 @@ module CloudFiles
       @storagepath = self.container.connection.storagepath + "/#{CloudFiles.escape @containername}/#{CloudFiles.escape @name, '/'}"
       @storageport = self.container.connection.storageport
       @storagescheme = self.container.connection.storagescheme
-      @cdnmgmthost = self.container.connection.cdnmgmthost
-      @cdnmgmtpath = self.container.connection.cdnmgmtpath + "/#{CloudFiles.escape @containername}/#{CloudFiles.escape @name, '/'}"
-      @cdnmgmtport = self.container.connection.cdnmgmtport
-      @cdnmgmtscheme = self.container.connection.cdnmgmtscheme
+      if self.container.connection.cdn_available?
+        @cdnmgmthost = self.container.connection.cdnmgmthost
+        @cdnmgmtpath = self.container.connection.cdnmgmtpath + "/#{CloudFiles.escape @containername}/#{CloudFiles.escape @name, '/'}"
+        @cdnmgmtport = self.container.connection.cdnmgmtport
+        @cdnmgmtscheme = self.container.connection.cdnmgmtscheme
+      end
       if force_exists
         raise CloudFiles::Exception::NoSuchObject, "Object #{@name} does not exist" unless container.object_exists?(objectname)
       end
@@ -48,10 +50,11 @@ module CloudFiles
         resphash = {}
         response.headers_hash.select { |k,v| k.match(/^x-object-meta/) }.each { |x| resphash[x[0]] = x[1].to_s }
         {
-          :bytes => response.headers_hash["content-length"].to_i,
-          :last_modified => Time.parse(response.headers_hash["last-modified"]),
-          :etag => response.headers_hash["etag"],
-          :content_type => response.headers_hash["content-type"],
+          :manifest => response["x-object-manifest"],
+          :bytes => response["content-length"],
+          :last_modified => Time.parse(response["last-modified"]),
+          :etag => response["etag"],
+          :content_type => response["content-type"],
           :metadata => resphash
         }
       )
@@ -76,7 +79,7 @@ module CloudFiles
     def content_type
       self.object_metadata[:content_type]
     end
-
+ 
     # Retrieves the data from an object and stores the data in memory.  The data is returned as a string.
     # Throws a NoSuchObjectException if the object doesn't exist.
     #
@@ -143,6 +146,30 @@ module CloudFiles
       raise CloudFiles::Exception::InvalidResponse, "Invalid response.code.to_s #{response.code}" unless (response.code.to_s == "202")
       true
     end
+    
+
+    # Returns the object's manifest.
+    #
+    #    object.manifest
+    #    => "container/prefix"
+    def manifest
+      self.object_metadata[:manifest]
+    end
+
+
+    # Sets the manifest for an object.  By passing a string as an argument, you can set the manifest for an object.
+    # However, setting manifest will overwrite any existing manifest for the object.
+    #
+    # Throws NoSuchObjectException if the object doesn't exist.  Throws InvalidResponseException if the request
+    # fails.
+    def set_manifest(manifest)
+      headers = {'X-Object-Manifest' => manifest}
+      response = self.container.connection.cfreq("PUT", @storagehost, @storagepath, @storageport, @storagescheme, headers)
+      raise CloudFiles::Exception::NoSuchObject, "Object #{@name} does not exist" if (response.code == "404")
+      raise CloudFiles::Exception::InvalidResponse, "Invalid response code #{response.code}" unless (response.code =~ /^20/)
+      true
+    end
+
 
     # Takes supplied data and writes it to the object, saving it.  You can supply an optional hash of headers, including
     # Content-Type and ETag, that will be applied to the object.
@@ -210,16 +237,17 @@ module CloudFiles
     #                                                         
     #   obj.purge_from_cdn("User@domain.com, User2@domain.com")
     #   => true
-    def purge_from_cdn(email=nil)                                                                  
-        if email
-            headers = {"X-Purge-Email" => email}
-            response = self.container.connection.cfreq("DELETE", @cdnmgmthost, @cdnmgmtpath, @cdnmgmtport, @cdnmgmtscheme, headers)
-            raise CloudFiles::Exception::Connection, "Error Unable to Purge Object: #{@name}" unless (response.code.to_s =~ /^20.$/)
-        else
-            response = self.container..connection.cfreq("DELETE", @cdnmgmthost, @cdnmgmtpath, @cdnmgmtport, @cdnmgmtscheme)
-            raise CloudFiles::Exception::Connection, "Error Unable to Purge Object: #{@name}" unless (response.code.to_s =~ /^20.$/)
-        end
-        true
+    def purge_from_cdn(email=nil)
+      raise Exception::CDNNotAvailable unless cdn_available?
+      if email
+          headers = {"X-Purge-Email" => email}
+          response = self.container.connection.cfreq("DELETE", @cdnmgmthost, @cdnmgmtpath, @cdnmgmtport, @cdnmgmtscheme, headers)
+          raise CloudFiles::Exception::Connection, "Error Unable to Purge Object: #{@name}" unless (response.code.to_s =~ /^20.$/)
+      else
+          response = self.container.connection.cfreq("DELETE", @cdnmgmthost, @cdnmgmtpath, @cdnmgmtport, @cdnmgmtscheme)
+          raise CloudFiles::Exception::Connection, "Error Unable to Purge Object: #{@name}" unless (response.code.to_s =~ /^20.$/)
+      end
+      true
     end
 
     # A convenience method to stream data into an object from a local file (or anything that can be loaded by Ruby's open method)
@@ -283,6 +311,18 @@ module CloudFiles
     def public_url
       self.container.public? ? self.container.cdn_url + "/#{CloudFiles.escape @name, '/'}" : nil
     end
+
+        # If the parent container is public (CDN-enabled), returns the SSL CDN URL to this object.  Otherwise, return nil
+    #
+    #   public_object.public_ssl_url
+    #   => "https://c61.ssl.cf0.rackcdn.com/myfile.jpg"
+    #
+    #   private_object.public_ssl_url
+    #   => nil
+    def public_ssl_url
+      self.container.public? ? self.container.cdn_ssl_url + "/#{CloudFiles.escape @name, '/'}" : nil
+    end
+
     
     # Copy this object to a new location (optionally in a new container)
     #
@@ -331,6 +371,10 @@ module CloudFiles
     end
 
     private
+
+      def cdn_available?
+        @cdn_available ||= self.container.connection.cdn_available?
+      end
 
       def make_path(path) # :nodoc:
         if path == "." || path == "/"

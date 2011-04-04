@@ -20,15 +20,17 @@ module CloudFiles
       @storagepath = self.connection.storagepath + "/" + CloudFiles.escape(@name)
       @storageport = self.connection.storageport
       @storagescheme = self.connection.storagescheme
-      @cdnmgmthost = self.connection.cdnmgmthost
-      @cdnmgmtpath = self.connection.cdnmgmtpath + "/" + CloudFiles.escape(@name) if self.connection.cdnmgmtpath
-      @cdnmgmtport = self.connection.cdnmgmtport
-      @cdnmgmtscheme = self.connection.cdnmgmtscheme
+      if self.connection.cdn_available?
+        @cdnmgmthost = self.connection.cdnmgmthost
+        @cdnmgmtpath = self.connection.cdnmgmtpath + "/" + CloudFiles.escape(@name) if self.connection.cdnmgmtpath
+        @cdnmgmtport = self.connection.cdnmgmtport
+        @cdnmgmtscheme = self.connection.cdnmgmtscheme
+      end
       # Load the metadata now, so we'll get a CloudFiles::Exception::NoSuchContainer exception should the container
       # not exist.
-      self.metadata
+      self.container_metadata
     end
-
+    
     # Refreshes data about the container and populates class variables. Items are otherwise
     # loaded in a lazy loaded fashion.
     #
@@ -47,30 +49,63 @@ module CloudFiles
     alias :populate :refresh
 
     # Retrieves Metadata for the container
-    def metadata
+    def container_metadata
       @metadata ||= (
         response = self.connection.cfreq("HEAD", @storagehost, @storagepath + "/", @storageport, @storagescheme)
         raise CloudFiles::Exception::NoSuchContainer, "Container #{@name} does not exist" unless (response.code.to_s =~ /^20/)
-        {:bytes => response.headers_hash["x-container-bytes-used"].to_i, :count => response.headers_hash["x-container-object-count"].to_i}
+        resphash = {}
+        response.to_hash.select { |k,v| k.match(/^x-container-meta/) }.each { |x| resphash[x[0]] = x[1].to_s }
+        {:bytes => response["x-container-bytes-used"].to_i, :count => response["x-container-object-count"].to_i, :metadata => resphash}
       )
     end
 
     # Retrieves CDN-Enabled Meta Data
     def cdn_metadata
-      @cdn_metadata ||= (
-        response = self.connection.cfreq("HEAD", @cdnmgmthost, @cdnmgmtpath, @cdnmgmtport, @cdnmgmtscheme)
-        cdn_enabled = ((response.headers_hash["x-cdn-enabled"] || "").downcase == "true") ? true : false
-        {
-          :cdn_enabled => cdn_enabled,
-          :cdn_ttl => cdn_enabled ? response.headers_hash["x-ttl"].to_i : nil,
-          :cdn_url => cdn_enabled ? response.headers_hash["x-cdn-uri"] : nil,
-          :user_agent_acl => response.headers_hash["x-user-agent-acl"],
-          :referrer_acl => response.headers_hash["x-referrer-acl"],
-          :cdn_log => (cdn_enabled and response.headers_hash["x-log-retention"] == "True") ? true : false
-        }
-      )
+      return @cdn_metadata if @cdn_metadata
+      if cdn_available?
+        @cdn_metadata = (
+          response = self.connection.cfreq("HEAD", @cdnmgmthost, @cdnmgmtpath, @cdnmgmtport, @cdnmgmtscheme)
+          cdn_enabled = ((response["x-cdn-enabled"] || "").downcase == "true") ? true : false
+          {
+            :cdn_enabled => cdn_enabled,
+            :cdn_ttl => cdn_enabled ? response["x-ttl"].to_i : nil,
+            :cdn_url => cdn_enabled ? response["x-cdn-uri"] : nil,
+            :cdn_ssl_url => cdn_enabled ? response["x-cdn-ssl-uri"] : nil,
+            :user_agent_acl => response["x-user-agent-acl"],
+            :referrer_acl => response["x-referrer-acl"],
+            :cdn_log => (cdn_enabled and response["x-log-retention"] == "True") ? true : false
+          }
+        )
+      else
+        @cdn_metadata = {}
+      end
+    end
+    
+    # Returns the container's metadata as a nicely formatted hash, stripping off the X-Meta-Object- prefix that the system prepends to the
+    # key name.
+    #
+    #    object.metadata
+    #    => {"ruby"=>"cool", "foo"=>"bar"}
+    def metadata
+      metahash = {}
+      self.container_metadata[:metadata].each{ |key, value| metahash[key.gsub(/x-container-meta-/, '').gsub(/%20/, ' ')] = URI.decode(value).gsub(/\+\-/, ' ') }
+      metahash
     end
 
+    # Sets the metadata for an object.  By passing a hash as an argument, you can set the metadata for an object.
+    # New calls to set metadata are additive.  To remove metadata, set the value of the key to nil.  
+    #
+    # Throws NoSuchObjectException if the container doesn't exist.  Throws InvalidResponseException if the request
+    # fails.
+    def set_metadata(metadatahash)
+      headers = {}
+      metadatahash.each{ |key, value| headers['X-Container-Meta-' + CloudFiles.escape(key.to_s.capitalize)] = value.to_s }
+      response = self.connection.cfreq("POST", @storagehost, @storagepath, @storageport, @storagescheme, headers)
+      raise CloudFiles::Exception::NoSuchObject, "Container #{@name} does not exist" if (response.code == "404")
+      raise CloudFiles::Exception::InvalidResponse, "Invalid response code #{response.code}" unless (response.code =~ /^20/)
+      true
+    end
+    
     # Size of the container (in bytes)
     def bytes
       self.metadata[:bytes]
@@ -91,7 +126,7 @@ module CloudFiles
     #   private_container.public?
     #   => false
     def cdn_enabled
-      self.cdn_metadata[:cdn_enabled]
+      cdn_available? && self.cdn_metadata[:cdn_enabled]
     end
     alias :cdn_enabled? :cdn_enabled
     alias :public? :cdn_enabled
@@ -101,9 +136,14 @@ module CloudFiles
       self.cdn_metadata[:cdn_ttl]
     end
 
-    # CDN container URL (if container if public)
+    # CDN container URL (if container is public)
     def cdn_url
       self.cdn_metadata[:cdn_url]
+    end
+
+    # CDN SSL container URL (if container is public)
+    def cdn_ssl_url
+      self.cdn_metadata[:cdn_ssl_url]
     end
 
     # The container ACL on the User Agent
@@ -128,6 +168,7 @@ module CloudFiles
     # These logs will be periodically (at unpredictable intervals) compressed and uploaded
     # to a “.CDN_ACCESS_LOGS” container in the form of “container_name.YYYYMMDDHH-XXXX.gz”.
     def log_retention=(value)
+      raise Exception::CDNNotAvailable unless cdn_available?
       response = self.connection.cfreq("POST", @cdnmgmthost, @cdnmgmtpath, @cdnmgmtport, @cdnmgmtscheme, {"x-log-retention" => value.to_s.capitalize})
       raise CloudFiles::Exception::InvalidResponse, "Invalid response.code.to_s #{response.code}" unless (response.code.to_s == "201" or response.code.to_s == "202")
       return true
@@ -227,7 +268,7 @@ module CloudFiles
     #   full_container.empty?
     #   => false
     def empty?
-      return (metadata[:count].to_i == 0)? true : false
+      return (container_metadata[:count].to_i == 0)? true : false
     end
 
     # Returns true if object exists and returns false otherwise.
@@ -283,6 +324,7 @@ module CloudFiles
     #   container.make_public(:ttl => 8900, :user_agent_acl => "/Mozilla/", :referrer_acl => "/^http://rackspace.com")
     #   => true
     def make_public(options = {:ttl => 86400})
+      raise Exception::CDNNotAvailable unless cdn_available?
       if options.is_a?(Fixnum)
         print "DEPRECATED: make_public takes a hash of options now, instead of a TTL number"
         ttl = options
@@ -309,6 +351,7 @@ module CloudFiles
     #   container.make_private
     #   => true
     def make_private
+      raise Exception::CDNNotAvailable unless cdn_available?
       headers = { "X-CDN-Enabled" => "False" }
       response = self.connection.cfreq("POST", @cdnmgmthost, @cdnmgmtpath, @cdnmgmtport, @cdnmgmtscheme, headers)
       raise CloudFiles::Exception::NoSuchContainer, "Container #{@name} does not exist" unless (response.code.to_s == "201" || response.code.to_s == "202")
@@ -334,19 +377,24 @@ module CloudFiles
     #   container.purge_from_cdn("User@domain.com, User2@domain.com")
     #   => true
     def purge_from_cdn(email=nil)
-        if email
-            headers = {"X-Purge-Email" => email}
-            response = self.connection.cfreq("DELETE", @cdnmgmthost, @cdnmgmtpath, @cdnmgmtport, @cdnmgmtscheme, headers)
-            raise CloudFiles::Exception::Connection, "Error Unable to Purge Container: #{@name}" unless (response.code > "200" && response.code < "299")
-        else
-            response = self.connection.cfreq("DELETE", @cdnmgmthost, @cdnmgmtpath, @cdnmgmtport, @cdnmgmtscheme)
-            raise CloudFiles::Exception::Connection, "Error Unable to Purge Container: #{@name}" unless (response.code > "200" && response.code < "299")
-        true
-        end
+      raise Exception::CDNNotAvailable unless cdn_available?
+      if email
+          headers = {"X-Purge-Email" => email}
+          response = self.connection.cfreq("DELETE", @cdnmgmthost, @cdnmgmtpath, @cdnmgmtport, @cdnmgmtscheme, headers)
+          raise CloudFiles::Exception::Connection, "Error Unable to Purge Container: #{@name}" unless (response.code > "200" && response.code < "299")
+      else
+          response = self.connection.cfreq("DELETE", @cdnmgmthost, @cdnmgmtpath, @cdnmgmtport, @cdnmgmtscheme)
+          raise CloudFiles::Exception::Connection, "Error Unable to Purge Container: #{@name}" unless (response.code > "200" && response.code < "299")
+      true
+      end
     end
 
     def to_s # :nodoc:
       @name
+    end
+
+    def cdn_available?
+      self.connection.cdn_available?
     end
 
   end

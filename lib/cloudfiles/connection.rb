@@ -15,6 +15,10 @@ module CloudFiles
     # API host to authenticate to
     attr_reader :auth_url
 
+    # Set at auth to see if a CDN is available for use
+    attr_accessor :cdn_available
+    alias :cdn_available? :cdn_available
+
     # Hostname of the CDN management server
     attr_accessor :cdnmgmthost
 
@@ -290,7 +294,7 @@ module CloudFiles
       response
     rescue Errno::EPIPE, Errno::EINVAL, EOFError, IOError
       # Server closed the connection, retry
-      raise CloudFiles::Exception::Connection, "Unable to reconnect to #{server} after #{count} attempts" if attempts >= 5
+      raise CloudFiles::Exception::Connection, "Unable to reconnect to #{server} after #{attempts} attempts" if attempts >= 5
       attempts += 1
       begin
         @http[server].finish

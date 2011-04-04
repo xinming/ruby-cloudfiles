@@ -58,7 +58,8 @@ module CloudFiles
     end
     class ExpiredAuthToken   < ExpiredAuthTokenException # :nodoc:
     end
+    class CDNNotAvailable    < StandardError
+    end
     
   end
 end
-    

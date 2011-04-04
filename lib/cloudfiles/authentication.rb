@@ -21,6 +21,7 @@ module CloudFiles
       headers = response.headers_hash
       if (response.code.to_s =~ /^20./)
         if headers["x-cdn-management-url"]
+          connection.cdn_available = true
           connection.cdnmgmthost   = URI.parse(headers["x-cdn-management-url"]).host
           connection.cdnmgmtpath   = URI.parse(headers["x-cdn-management-url"]).path
           connection.cdnmgmtport   = URI.parse(headers["x-cdn-management-url"]).port

@@ -220,7 +220,7 @@ class CloudfilesConnectionTest < Test::Unit::TestCase
   end
   
   def test_fetch_nonexistent_container
-    CloudFiles::Container.any_instance.stubs(:metadata).raises(CloudFiles::Exception::NoSuchContainer)
+    CloudFiles::Container.any_instance.stubs(:container_metadata).raises(CloudFiles::Exception::NoSuchContainer)
     build_net_http_object
     assert_raise(CloudFiles::Exception::NoSuchContainer) do
       container = @connection.container('bad_container')

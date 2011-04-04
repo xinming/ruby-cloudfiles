@@ -4,7 +4,19 @@ require 'test_helper'
 class CloudfilesStorageObjectTest < Test::Unit::TestCase
   
   def test_object_creation
-    connection = stub(:storagehost => 'test.storage.example', :storagepath => '/dummy/path', :storageport => 443, :storagescheme => 'https', :cdnmgmthost => 'cdm.test.example', :cdnmgmtpath => '/dummy/path', :cdnmgmtport => 443, :cdnmgmtscheme => 'https')
+    connection = stub(:storagehost => 'test.storage.example', :storagepath => '/dummy/path', :storageport => 443, :storagescheme => 'https', :cdnmgmthost => 'cdm.test.example', :cdnmgmtpath => '/dummy/path', :cdnmgmtport => 443, :cdnmgmtscheme => 'https', :cdn_available? => true)
+    response = {'x-container-bytes-used' => '42', 'x-container-object-count' => '5', 'last-modified' => Time.now.to_s}
+    response.stubs(:code).returns('204')
+    connection.stubs(:cfreq => response)
+    container = CloudFiles::Container.new(connection, 'test_container')
+    @object = CloudFiles::StorageObject.new(container, 'test_object')
+    assert_equal @object.name, 'test_object'
+    assert_equal @object.class, CloudFiles::StorageObject
+    assert_equal @object.to_s, 'test_object'
+  end
+
+  def test_object_creation_with_no_cdn_available
+    connection = stub(:storagehost => 'test.storage.example', :storagepath => '/dummy/path', :storageport => 443, :storagescheme => 'https', :cdnmgmthost => 'cdm.test.example', :cdnmgmtpath => '/dummy/path', :cdnmgmtport => 443, :cdnmgmtscheme => 'https', :cdn_available? => false)
     response = {'x-container-bytes-used' => '42', 'x-container-object-count' => '5', 'last-modified' => Time.now.to_s}
     response.stubs(:code).returns('204')
     connection.stubs(:cfreq => response)
@@ -16,7 +28,7 @@ class CloudfilesStorageObjectTest < Test::Unit::TestCase
   end
   
   def test_object_creation_with_invalid_name
-    connection = stub(:storagehost => 'test.storage.example', :storagepath => '/dummy/path', :storageport => 443, :storagescheme => 'https', :cdnmgmthost => 'cdm.test.example', :cdnmgmtpath => '/dummy/path', :cdnmgmtport => 443, :cdnmgmtscheme => 'https')
+    connection = stub(:storagehost => 'test.storage.example', :storagepath => '/dummy/path', :storageport => 443, :storagescheme => 'https', :cdnmgmthost => 'cdm.test.example', :cdnmgmtpath => '/dummy/path', :cdnmgmtport => 443, :cdnmgmtscheme => 'https', :cdn_available? => true)
     response = {'x-container-bytes-used' => '42', 'x-container-object-count' => '5', 'last-modified' => Time.now.to_s}
     response.stubs(:code).returns('204')
     connection.stubs(:cfreq => response)
@@ -108,7 +120,7 @@ class CloudfilesStorageObjectTest < Test::Unit::TestCase
   end
   
   def test_read_metadata_succeeds
-    connection = stub(:storagehost => 'test.storage.example', :storagepath => '/dummy/path', :storageport => 443, :storagescheme => 'https', :cdnmgmthost => 'cdm.test.example', :cdnmgmtpath => '/dummy/path', :cdnmgmtport => 443, :cdnmgmtscheme => 'https')
+    connection = stub(:storagehost => 'test.storage.example', :storagepath => '/dummy/path', :storageport => 443, :storagescheme => 'https', :cdnmgmthost => 'cdm.test.example', :cdnmgmtpath => '/dummy/path', :cdnmgmtport => 443, :cdnmgmtscheme => 'https', :cdn_available? => true)
     response = {'x-container-bytes-used' => '42', 'x-container-object-count' => '5', 'x-object-meta-foo' => 'Bar', 'last-modified' => Time.now.to_s}
     response.stubs(:code).returns('204')
     connection.stubs(:cfreq => response)
@@ -127,7 +139,7 @@ class CloudfilesStorageObjectTest < Test::Unit::TestCase
   end
   
   def test_write_with_make_path
-    connection = stub(:storagehost => 'test.storage.example', :storagepath => '/dummy/path', :storageport => 443, :storagescheme => 'https', :cdnmgmthost => 'cdm.test.example', :cdnmgmtpath => '/dummy/path', :cdnmgmtport => 443, :cdnmgmtscheme => 'https')
+    connection = stub(:storagehost => 'test.storage.example', :storagepath => '/dummy/path', :storageport => 443, :storagescheme => 'https', :cdnmgmthost => 'cdm.test.example', :cdnmgmtpath => '/dummy/path', :cdnmgmtport => 443, :cdnmgmtscheme => 'https', :cdn_available? => true)
     response = {'x-container-bytes-used' => '42', 'x-container-object-count' => '5', 'last-modified' => Time.now.to_s}
     response.stubs(:code).returns('204').then.returns('204').then.returns('201').then.returns('204')
     connection.stubs(:cfreq => response)
@@ -158,6 +170,14 @@ class CloudfilesStorageObjectTest < Test::Unit::TestCase
     build_net_http_object(:name => 'myfile.xml', :code => '201')
     assert_nothing_raised do
       @object.write("This is test data")
+    end
+  end
+  
+  def test_purge_from_cdn_succeeds
+    build_net_http_object
+    assert_nothing_raised do
+      @object.purge_from_cdn
+      @object.purge_from_cdn("small.fox@hole.org")
     end
   end
   
@@ -194,7 +214,8 @@ class CloudfilesStorageObjectTest < Test::Unit::TestCase
   def build_net_http_object(args={:code => '204' })
     CloudFiles::Container.any_instance.stubs(:metadata).returns({})
     CloudFiles::Container.any_instance.stubs(:populate).returns(true)
-    connection = stub(:storagehost => 'test.storage.example', :storagepath => '/dummy/path', :storageport => 443, :storagescheme => 'https', :cdnmgmthost => 'cdm.test.example', :cdnmgmtpath => '/dummy/path', :cdnmgmtport => 443, :cdnmgmtscheme => 'https')
+    CloudFiles::Container.any_instance.stubs(:container_metadata).returns({:bytes => 99, :count => 2})
+    connection = stub(:storagehost => 'test.storage.example', :storagepath => '/dummy/path', :storageport => 443, :storagescheme => 'https', :cdnmgmthost => 'cdm.test.example', :cdnmgmtpath => '/dummy/path', :cdnmgmtport => 443, :cdnmgmtscheme => 'https', :cdn_available? => true)
     args[:response] = {} unless args[:response]
     response = {'x-cdn-management-url' => 'http://cdn.example.com/path', 'x-storage-url' => 'http://cdn.example.com/storage', 'authtoken' => 'dummy_token', 'last-modified' => Time.now.to_s}.merge(args[:response])
     response.stubs(:code).returns(args[:code])

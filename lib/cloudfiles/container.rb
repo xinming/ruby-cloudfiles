@@ -55,7 +55,7 @@ module CloudFiles
         raise CloudFiles::Exception::NoSuchContainer, "Container #{@name} does not exist" unless (response.code.to_s =~ /^20/)
         resphash = {}
         response.headers_hash.select { |k,v| k.match(/^x-container-meta/) }.each { |x| resphash[x[0]] = x[1].to_s }
-        {:bytes => response["x-container-bytes-used"].to_i, :count => response["x-container-object-count"].to_i, :metadata => resphash}
+        {:bytes => response.headers_hash["x-container-bytes-used"].to_i, :count => response.headers_hash["x-container-object-count"].to_i, :metadata => resphash}
       )
     end
 
@@ -65,7 +65,7 @@ module CloudFiles
       if cdn_available?
         @cdn_metadata = (
           response = self.connection.cfreq("HEAD", @cdnmgmthost, @cdnmgmtpath, @cdnmgmtport, @cdnmgmtscheme)
-          cdn_enabled = ((response["x-cdn-enabled"] || "").downcase == "true") ? true : false
+          cdn_enabled = ((response.headers_hash["x-cdn-enabled"] || "").downcase == "true") ? true : false
           {
             :cdn_enabled => cdn_enabled,
             :cdn_ttl => cdn_enabled ? response["x-ttl"].to_i : nil,

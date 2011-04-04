@@ -50,11 +50,11 @@ module CloudFiles
         resphash = {}
         response.headers_hash.select { |k,v| k.match(/^x-object-meta/) }.each { |x| resphash[x[0]] = x[1].to_s }
         {
-          :manifest => response["x-object-manifest"],
-          :bytes => response["content-length"],
-          :last_modified => Time.parse(response["last-modified"]),
-          :etag => response["etag"],
-          :content_type => response["content-type"],
+          :manifest => response.headers_hash["x-object-manifest"],
+          :bytes => response.headers_hash["content-length"],
+          :last_modified => Time.parse(response.headers_hash["last-modified"]),
+          :etag => response.headers_hash["etag"],
+          :content_type => response.headers_hash["content-type"],
           :metadata => resphash
         }
       )

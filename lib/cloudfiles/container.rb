@@ -68,12 +68,12 @@ module CloudFiles
           cdn_enabled = ((response.headers_hash["x-cdn-enabled"] || "").downcase == "true") ? true : false
           {
             :cdn_enabled => cdn_enabled,
-            :cdn_ttl => cdn_enabled ? response["x-ttl"].to_i : nil,
-            :cdn_url => cdn_enabled ? response["x-cdn-uri"] : nil,
-            :cdn_ssl_url => cdn_enabled ? response["x-cdn-ssl-uri"] : nil,
-            :user_agent_acl => response["x-user-agent-acl"],
-            :referrer_acl => response["x-referrer-acl"],
-            :cdn_log => (cdn_enabled and response["x-log-retention"] == "True") ? true : false
+            :cdn_ttl => cdn_enabled ? response.headers_hash["x-ttl"].to_i : nil,
+            :cdn_url => cdn_enabled ? response.headers_hash["x-cdn-uri"] : nil,
+            :cdn_ssl_url => cdn_enabled ? response.headers_hash["x-cdn-ssl-uri"] : nil,
+            :user_agent_acl => response.headers_hash["x-user-agent-acl"],
+            :referrer_acl => response.headers_hash["x-referrer-acl"],
+            :cdn_log => (cdn_enabled and response.headers_hash["x-log-retention"] == "True") ? true : false
           }
         )
       else

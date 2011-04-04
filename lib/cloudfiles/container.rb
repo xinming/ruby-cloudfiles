@@ -101,8 +101,8 @@ module CloudFiles
       headers = {}
       metadatahash.each{ |key, value| headers['X-Container-Meta-' + CloudFiles.escape(key.to_s.capitalize)] = value.to_s }
       response = self.connection.cfreq("POST", @storagehost, @storagepath, @storageport, @storagescheme, headers)
-      raise CloudFiles::Exception::NoSuchObject, "Container #{@name} does not exist" if (response.code == "404")
-      raise CloudFiles::Exception::InvalidResponse, "Invalid response code #{response.code}" unless (response.code =~ /^20/)
+      raise CloudFiles::Exception::NoSuchObject, "Container #{@name} does not exist" if (response.code.to_s == "404")
+      raise CloudFiles::Exception::InvalidResponse, "Invalid response code #{response.code}" unless (response.code.to_s =~ /^20/)
       true
     end
     
@@ -381,10 +381,10 @@ module CloudFiles
       if email
           headers = {"X-Purge-Email" => email}
           response = self.connection.cfreq("DELETE", @cdnmgmthost, @cdnmgmtpath, @cdnmgmtport, @cdnmgmtscheme, headers)
-          raise CloudFiles::Exception::Connection, "Error Unable to Purge Container: #{@name}" unless (response.code > "200" && response.code < "299")
+          raise CloudFiles::Exception::Connection, "Error Unable to Purge Container: #{@name}" unless (response.code.to_s =~ /^20/)
       else
           response = self.connection.cfreq("DELETE", @cdnmgmthost, @cdnmgmtpath, @cdnmgmtport, @cdnmgmtscheme)
-          raise CloudFiles::Exception::Connection, "Error Unable to Purge Container: #{@name}" unless (response.code > "200" && response.code < "299")
+          raise CloudFiles::Exception::Connection, "Error Unable to Purge Container: #{@name}" unless (response.code.to_s =~ /^20/)
       true
       end
     end

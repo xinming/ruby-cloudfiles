@@ -165,8 +165,8 @@ module CloudFiles
     def set_manifest(manifest)
       headers = {'X-Object-Manifest' => manifest}
       response = self.container.connection.cfreq("PUT", @storagehost, @storagepath, @storageport, @storagescheme, headers)
-      raise CloudFiles::Exception::NoSuchObject, "Object #{@name} does not exist" if (response.code == "404")
-      raise CloudFiles::Exception::InvalidResponse, "Invalid response code #{response.code}" unless (response.code =~ /^20/)
+      raise CloudFiles::Exception::NoSuchObject, "Object #{@name} does not exist" if (response.code.to_s == "404")
+      raise CloudFiles::Exception::InvalidResponse, "Invalid response code #{response.code}" unless (response.code.to_s =~ /^20/)
       true
     end
 

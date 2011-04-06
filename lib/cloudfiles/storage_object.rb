@@ -97,6 +97,7 @@ module CloudFiles
       raise CloudFiles::Exception::NoSuchObject, "Object #{@name} does not exist" unless (response.code =~ /^20/)
       response.body
     end
+    alias :read :data
 
     # Retrieves the data from an object and returns a stream that must be passed to a block.  Throws a
     # NoSuchObjectException if the object doesn't exist.

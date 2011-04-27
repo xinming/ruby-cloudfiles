@@ -227,6 +227,8 @@ module CloudFiles
     # If no objects exist, an empty hash is returned.  Throws an InvalidResponseException if the request fails.  Takes a
     # parameter hash as an argument, in the same form as the objects method.
     #
+    # Accepts the same options as objects to limit the returned set.
+    #
     # Returns a hash in the same format as the containers_detail from the CloudFiles class.
     #
     #   container.objects_detail

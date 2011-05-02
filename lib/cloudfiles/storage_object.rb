@@ -13,9 +13,9 @@ module CloudFiles
     # CloudFiles::Exception::NoSuchObject Exception will be raised.  If not, an "empty" CloudFiles::StorageObject will be returned, ready for data
     # via CloudFiles::StorageObject.write
     def initialize(container, objectname, force_exists = false, make_path = false)
-      if objectname.match(/\?/)
-        raise CloudFiles::Exception::Syntax, "Object #{objectname} contains an invalid character in the name (? not allowed)"
-      end
+#      if objectname.match(/\?/)
+#        raise CloudFiles::Exception::Syntax, "Object #{objectname} contains an invalid character in the name (? not allowed)"
+#      end
       @container = container
       @containername = container.name
       @name = objectname

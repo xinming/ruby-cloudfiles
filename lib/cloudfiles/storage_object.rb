@@ -274,14 +274,8 @@ module CloudFiles
       f = open(filename)
       if check_md5
           require 'digest/md5'
-          md5_hash = Digest::MD5.new()
-          # Read in 512K chunks to be easy on memory
-          read_size = 1024 * 512
-          while not f.eof?
-              md5_hash << f.read(read_size)
-          end
+          md5_hash = Digest::MD5.file(filename)
           headers["Etag"] = md5_hash.to_s()
-          f.rewind
       end
       self.write(f, headers)
       f.close

@@ -270,8 +270,13 @@ module CloudFiles
     #
     #   object.load_from_filename("/tmp/nonexistent.txt")
     #   => Errno::ENOENT: No such file or directory - /tmp/nonexistent.txt
-    def load_from_filename(filename, headers = {})
+    def load_from_filename(filename, headers = {}, check_md5 = false)
       f = open(filename)
+      if check_md5
+          require 'digest/md5'
+          md5_hash = Digest::MD5.file(filename)
+          headers["Etag"] = md5_hash.to_s()
+      end
       self.write(f, headers)
       f.close
       true

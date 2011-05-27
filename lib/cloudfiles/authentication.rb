@@ -22,7 +22,7 @@ module CloudFiles
         end
         server.start
       rescue
-        raise CloudFiles::Exception::Connection, "Unable to connect to #{server}"
+        raise CloudFiles::Exception::Connection, "Unable to connect to #{server.address}"
       end
       response = server.get(path, hdrhash)
       if (response.code =~ /^20./)

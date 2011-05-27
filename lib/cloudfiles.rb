@@ -22,7 +22,6 @@ module CloudFiles
   AUTH_USA = "https://auth.api.rackspacecloud.com/v1.0"
   AUTH_UK = "https://lon.auth.api.rackspacecloud.com/v1.0"
 
-  VERSION = IO.read(File.dirname(__FILE__) + '/../VERSION')
   require 'net/http'
   require 'net/https'
   require 'rexml/document'
@@ -39,6 +38,7 @@ module CloudFiles
   end
 
   $:.unshift(File.dirname(__FILE__))
+  require 'cloudfiles/version'
   require 'cloudfiles/exception'
   require 'cloudfiles/authentication'
   require 'cloudfiles/connection'

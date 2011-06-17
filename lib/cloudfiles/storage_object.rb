@@ -296,7 +296,7 @@ module CloudFiles
     #   object.save_to_filename("/tmp/owned_by_root.txt")
     #   => Errno::EACCES: Permission denied - /tmp/owned_by_root.txt
     def save_to_filename(filename)
-      File.open(filename, 'w+') do |f|
+      File.open(filename, 'wb+') do |f|
         self.data_stream do |chunk|
           f.write chunk
         end

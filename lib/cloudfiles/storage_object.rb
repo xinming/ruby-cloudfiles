@@ -76,6 +76,10 @@ module CloudFiles
     def content_type
       self.object_metadata[:content_type]
     end
+
+    def content_type=(type)
+      self.copy(:headers => {'Content-Type' => type})
+    end
  
     # Retrieves the data from an object and stores the data in memory.  The data is returned as a string.
     # Throws a NoSuchObjectException if the object doesn't exist.
@@ -343,7 +347,7 @@ module CloudFiles
     #
     # Returns the new CloudFiles::StorageObject for the copied item.
     def copy(options = {})
-      raise CloudFiles::Exception::Syntax, "You must either provide the :container or the :name for this operation" unless (options[:container] || options[:name])
+      raise CloudFiles::Exception::Syntax, "You must provide the :container, :name, or :headers for this operation" unless (options[:container] || options[:name] || options[:headers])
       new_container = options[:container] || self.container.name
       new_name = options[:name] || self.name
       new_headers = options[:headers] || {}

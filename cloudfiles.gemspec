@@ -1,4 +1,4 @@
-require 'lib/cloudfiles/version'
+require File.expand_path('../lib/cloudfiles/version', __FILE__)
 
 Gem::Specification.new do |s|
   s.name = %q{cloudfiles}

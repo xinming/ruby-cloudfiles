@@ -108,12 +108,12 @@ module CloudFiles
     
     # Size of the container (in bytes)
     def bytes
-      self.metadata[:bytes]
+      self.container_metadata[:bytes]
     end
 
     # Number of objects in the container
     def count
-      self.metadata[:count]
+      self.container_metadata[:count]
     end
 
     # Returns true if the container is public and CDN-enabled.  Returns false otherwise.

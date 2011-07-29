@@ -45,7 +45,12 @@ module CloudFiles
         response = self.container.connection.cfreq("HEAD", @storagehost, @storagepath, @storageport, @storagescheme)
         raise CloudFiles::Exception::NoSuchObject, "Object #{@name} does not exist" unless (response.code =~ /^20/)
         resphash = {}
-        response.to_hash.select { |k,v| k.match(/^x-object-meta/) }.each { |x| resphash[x[0]] = x[1].to_s }
+        metas = response.to_hash.select { |k,v| k.match(/^x-object-meta/) }
+
+        metas.each do |x,y|
+          resphash[x] = (y.respond_to?(:join) ? y.join('') : y.to_s)
+        end
+
         {
           :manifest => response["x-object-manifest"],
           :bytes => response["content-length"],

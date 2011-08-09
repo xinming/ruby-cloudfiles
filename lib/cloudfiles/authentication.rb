@@ -14,15 +14,17 @@ module CloudFiles
       path = parsed_auth_url.path
       hdrhash = { "X-Auth-User" => connection.authuser, "X-Auth-Key" => connection.authkey }
       begin
-        server             = get_server(connection, parsed_auth_url)
+        server = get_server(connection, parsed_auth_url)
 
         if parsed_auth_url.scheme == "https"
           server.use_ssl     = true
           server.verify_mode = OpenSSL::SSL::VERIFY_NONE
         end
         server.start
-      rescue
-        raise CloudFiles::Exception::Connection, "Unable to connect to #{server.address}"
+      rescue Exception => e
+        # uncomment if you suspect a problem with this branch of code
+#         $stderr.puts "got error #{e.class}: #{e.message.inspect}\n" << e.traceback.map{|n| "\t#{n}"}.join("\n")
+        raise CloudFiles::Exception::Connection, "Unable to connect to #{server.address}", caller
       end
       response = server.get(path, hdrhash)
       if (response.code =~ /^20./)

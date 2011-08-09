@@ -7,7 +7,7 @@ class CloudfilesStorageObjectTest < Test::Unit::TestCase
     connection = stub(:storagehost => 'test.storage.example', :storagepath => '/dummy/path', :storageport => 443, :storagescheme => 'https', :cdnmgmthost => 'cdm.test.example', :cdnmgmtpath => '/dummy/path', :cdnmgmtport => 443, :cdnmgmtscheme => 'https', :cdn_available? => true)
     response = {'x-container-bytes-used' => '42', 'x-container-object-count' => '5', 'last-modified' => Time.now.to_s}
     response.stubs(:code).returns('204')
-    connection.stubs(:cfreq => response)
+    connection.stubs(:storage_request => response)
     container = CloudFiles::Container.new(connection, 'test_container')
     @object = CloudFiles::StorageObject.new(container, 'test_object')
     assert_equal @object.name, 'test_object'
@@ -19,7 +19,7 @@ class CloudfilesStorageObjectTest < Test::Unit::TestCase
     connection = stub(:storagehost => 'test.storage.example', :storagepath => '/dummy/path', :storageport => 443, :storagescheme => 'https', :cdnmgmthost => 'cdm.test.example', :cdnmgmtpath => '/dummy/path', :cdnmgmtport => 443, :cdnmgmtscheme => 'https', :cdn_available? => false)
     response = {'x-container-bytes-used' => '42', 'x-container-object-count' => '5', 'last-modified' => Time.now.to_s}
     response.stubs(:code).returns('204')
-    connection.stubs(:cfreq => response)
+    connection.stubs(:storage_request => response)
     container = CloudFiles::Container.new(connection, 'test_container')
     @object = CloudFiles::StorageObject.new(container, 'test_object')
     assert_equal @object.name, 'test_object'
@@ -28,7 +28,7 @@ class CloudfilesStorageObjectTest < Test::Unit::TestCase
   end
   
   def test_public_url_exists
-    build_net_http_object(:public => true, :name => 'test object')
+    build_net_http_object(:public => true, :name => 'test object', :cdn_request => true)
     assert_equal @object.public_url, "http://cdn.test.example/test%20object"
   end
   
@@ -111,7 +111,7 @@ class CloudfilesStorageObjectTest < Test::Unit::TestCase
     connection = stub(:storagehost => 'test.storage.example', :storagepath => '/dummy/path', :storageport => 443, :storagescheme => 'https', :cdnmgmthost => 'cdm.test.example', :cdnmgmtpath => '/dummy/path', :cdnmgmtport => 443, :cdnmgmtscheme => 'https', :cdn_available? => true)
     response = {'x-container-bytes-used' => '42', 'x-container-object-count' => '5', 'x-object-meta-foo' => 'Bar', 'x-object-meta-spam' => ['peanut', 'butter'], 'last-modified' => Time.now.to_s}
     response.stubs(:code).returns('204')
-    connection.stubs(:cfreq => response)
+    connection.stubs(:storage_request => response)
     container = CloudFiles::Container.new(connection, 'test_container')
     @object = CloudFiles::StorageObject.new(container, 'test_object')
     assert_equal @object.metadata, {'foo' => 'Bar', 'spam' => 'peanutbutter'}
@@ -130,7 +130,7 @@ class CloudfilesStorageObjectTest < Test::Unit::TestCase
     connection = stub(:storagehost => 'test.storage.example', :storagepath => '/dummy/path', :storageport => 443, :storagescheme => 'https', :cdnmgmthost => 'cdm.test.example', :cdnmgmtpath => '/dummy/path', :cdnmgmtport => 443, :cdnmgmtscheme => 'https', :cdn_available? => true)
     response = {'x-container-bytes-used' => '42', 'x-container-object-count' => '5', 'last-modified' => Time.now.to_s}
     response.stubs(:code).returns('204').then.returns('204').then.returns('201').then.returns('204')
-    connection.stubs(:cfreq => response)
+    connection.stubs(:storage_request => response)
     CloudFiles::Container.any_instance.stubs(:populate).returns(true)
     container = CloudFiles::Container.new(connection, 'test_container')
     @object = CloudFiles::StorageObject.new(container, 'path/to/my/test_object', false, true)
@@ -162,7 +162,7 @@ class CloudfilesStorageObjectTest < Test::Unit::TestCase
   end
   
   def test_purge_from_cdn_succeeds
-    build_net_http_object
+    build_net_http_object(:cdn_request => true)
     assert_nothing_raised do
       @object.purge_from_cdn
       @object.purge_from_cdn("small.fox@hole.org")
@@ -198,8 +198,9 @@ class CloudfilesStorageObjectTest < Test::Unit::TestCase
   end
   
   private
-  
-  def build_net_http_object(args={:code => '204' })
+
+  def build_net_http_object(args={})
+    args.merge!(:code => '204' ) unless args[:code]
     CloudFiles::Container.any_instance.stubs(:metadata).returns({})
     CloudFiles::Container.any_instance.stubs(:populate).returns(true)
     CloudFiles::Container.any_instance.stubs(:container_metadata).returns({:bytes => 99, :count => 2})
@@ -208,7 +209,11 @@ class CloudfilesStorageObjectTest < Test::Unit::TestCase
     response = {'x-cdn-management-url' => 'http://cdn.example.com/path', 'x-storage-url' => 'http://cdn.example.com/storage', 'authtoken' => 'dummy_token', 'last-modified' => Time.now.to_s}.merge(args[:response])
     response.stubs(:code).returns(args[:code])
     response.stubs(:body).returns args[:body] || nil
-    connection.stubs(:cfreq => response)
+
+    connection.stubs(:cdn_request => response) if args[:cdn_request]
+
+    connection.stubs(:storage_request => response)
+
     container = CloudFiles::Container.new(connection, 'test_container')
     container.stubs(:connection).returns(connection)
     container.stubs(:public?).returns(args[:public] || false)

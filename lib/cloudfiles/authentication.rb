@@ -30,15 +30,17 @@ module CloudFiles
       if (response.code =~ /^20./)
         if response["x-cdn-management-url"]
           connection.cdn_available = true
-          connection.cdnmgmthost   = URI.parse(response["x-cdn-management-url"]).host
-          connection.cdnmgmtpath   = URI.parse(response["x-cdn-management-url"]).path
-          connection.cdnmgmtport   = URI.parse(response["x-cdn-management-url"]).port
-          connection.cdnmgmtscheme = URI.parse(response["x-cdn-management-url"]).scheme
+          parsed_cdn_url = URI.parse(response["x-cdn-management-url"])
+          connection.cdnmgmthost   = parsed_cdn_url.host
+          connection.cdnmgmtpath   = parsed_cdn_url.path
+          connection.cdnmgmtport   = parsed_cdn_url.port
+          connection.cdnmgmtscheme = parsed_cdn_url.scheme
         end
-        connection.storagehost   = set_snet(connection, URI.parse(response["x-storage-url"]).host)
-        connection.storagepath   = URI.parse(response["x-storage-url"]).path
-        connection.storageport   = URI.parse(response["x-storage-url"]).port
-        connection.storagescheme = URI.parse(response["x-storage-url"]).scheme
+        parsed_storage_url = URI.parse(response["x-storage-url"])
+        connection.storagehost   = set_snet(connection, parsed_storage_url.host)
+        connection.storagepath   = parsed_storage_url.path
+        connection.storageport   = parsed_storage_url.port
+        connection.storagescheme = parsed_storage_url.scheme
         connection.authtoken     = response["x-auth-token"]
         connection.authok        = true
       else

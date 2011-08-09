@@ -133,7 +133,7 @@ module CloudFiles
     #   cf.bytes
     #   => 42438527
     def get_info
-      response = cfreq("HEAD", @storagehost, @storagepath, @storageport, @storagescheme)
+      response = storage_request("HEAD")
       raise CloudFiles::Exception::InvalidResponse, "Unable to obtain account size" unless (response.code == "204")
       @bytes = response["x-account-bytes-used"].to_i
       @count = response["x-account-container-count"].to_i
@@ -166,7 +166,7 @@ module CloudFiles
       query = []
       query << "limit=#{CloudFiles.escape limit.to_s}" if limit.to_i > 0
       query << "marker=#{CloudFiles.escape marker.to_s}" unless marker.to_s.empty?
-      response = cfreq("GET", @storagehost, "#{@storagepath}?#{query.join '&'}", @storageport, @storagescheme)
+      response = storage_request("GET", "?#{query.join('&')}")
       return [] if (response.code == "204")
       raise CloudFiles::Exception::InvalidResponse, "Invalid response code #{response.code}" unless (response.code == "200")
       CloudFiles.lines(response.body)
@@ -187,7 +187,7 @@ module CloudFiles
       query = ['format=xml']
       query << "limit=#{CloudFiles.escape limit.to_s}" if limit.to_i > 0
       query << "marker=#{CloudFiles.escape marker.to_s}" unless marker.to_s.empty?
-      response = cfreq("GET", @storagehost, "#{@storagepath}?#{query.join '&'}", @storageport, @storagescheme)
+      response = storage_request("GET", "?#{query.join('&')}")
       return {} if (response.code == "204")
       raise CloudFiles::Exception::InvalidResponse, "Invalid response code #{response.code}" unless (response.code == "200")
       doc = REXML::Document.new(response.body)
@@ -208,7 +208,7 @@ module CloudFiles
     #   cf.container_exists?('bad_container')
     #   => false
     def container_exists?(containername)
-      response = cfreq("HEAD", @storagehost, "#{@storagepath}/#{CloudFiles.escape containername}", @storageport, @storagescheme)
+      response = storage_request("HEAD", CloudFiles.escape(containername))
       return (response.code == "204")? true : false ;
     end
 
@@ -227,7 +227,7 @@ module CloudFiles
     def create_container(containername)
       raise CloudFiles::Exception::Syntax, "Container name cannot contain the characters '/' or '?'" if containername.match(/[\/\?]/)
       raise CloudFiles::Exception::Syntax, "Container name is limited to 256 characters" if containername.length > 256
-      response = cfreq("PUT", @storagehost, "#{@storagepath}/#{CloudFiles.escape containername}", @storageport, @storagescheme)
+      response = storage_request("PUT", CloudFiles.escape(containername))
       raise CloudFiles::Exception::InvalidResponse, "Unable to create container #{containername}" unless (response.code == "201" || response.code == "202")
       CloudFiles::Container.new(self, containername)
     end
@@ -244,7 +244,7 @@ module CloudFiles
     #   cf.delete_container('nonexistent')
     #   => NoSuchContainerException: Container nonexistent does not exist
     def delete_container(containername)
-      response = cfreq("DELETE", @storagehost, "#{@storagepath}/#{CloudFiles.escape containername}", @storageport, @storagescheme)
+      response = storage_request("DELETE", CloudFiles.escape(containername))
       raise CloudFiles::Exception::NonEmptyContainer, "Container #{containername} is not empty" if (response.code == "409")
       raise CloudFiles::Exception::NoSuchContainer, "Container #{containername} does not exist" unless (response.code == "204")
       true
@@ -261,10 +261,20 @@ module CloudFiles
     #   => ["video", "webpics"]
     def public_containers(enabled_only = false)
       paramstr = enabled_only == true ? "enabled_only=true" : ""
-      response = cfreq("GET", @cdnmgmthost, "#{@cdnmgmtpath}?#{paramstr}", @cdnmgmtport, @cdnmgmtscheme)
+      response = cdn_request("GET", "?#{paramstr}")
       return [] if (response.code == "204")
       raise CloudFiles::Exception::InvalidResponse, "Invalid response code #{response.code}" unless (response.code == "200")
       CloudFiles.lines(response.body)
+    end
+
+    def storage_request(method, path = "", headers = {}, data = nil, attempts = 0, &block)
+      path = "#{@storagepath}/#{path}" unless (path[0,1] == '/')
+      cfreq(method, @storagehost, path, @storageport, @storagescheme, headers, data, attempts, &block)
+    end
+
+    def cdn_request(method, path = "", headers = {}, data = nil, attempts = 0, &block)
+      path = "#{@cdnmgmtpath}/#{path}" unless (path[0,1] == '/')
+      cfreq(method, @cdnmgmthost, path, @cdnmgmtport, @cdnmgmtscheme, headers, data, attempts, &block)
     end
 
     # This method actually makes the HTTP calls out to the server

@@ -81,7 +81,49 @@ class CloudfilesConnectionTest < Test::Unit::TestCase
       response = @connection.cfreq("HEAD", "test.server.example", "/dummypath", "80", "http")
     end
   end
-  
+
+  def test_storage_request
+    build_net_http_object
+    assert_nothing_raised do
+      response = @connection.storage_request("HEAD", "dummypath")
+    end
+  end
+
+  def test_storage_request_adds_path
+    build_net_http_object({}, {:method => "HEAD", :path => "#{@connection.storagepath}/dummypath"})
+    assert_nothing_raised do
+      response = @connection.storage_request("HEAD", "dummypath")
+    end
+  end
+
+  def test_storage_path_does_not_add_path_when_absolute
+    build_net_http_object({}, {:method => "HEAD", :path => "/dummypath"})
+    assert_nothing_raised do
+      response = @connection.storage_request("HEAD", "/dummypath")
+    end
+  end
+
+  def test_cdn_request
+    build_net_http_object
+    assert_nothing_raised do
+      response = @connection.cdn_request("HEAD", "dummypath")
+    end
+  end
+
+  def test_cdn_request_adds_path
+    build_net_http_object({}, {:method => "HEAD", :path => "#{@connection.cdnmgmtpath}/dummypath"})
+    assert_nothing_raised do
+      response = @connection.cdn_request("HEAD", "dummypath")
+    end
+  end
+
+  def test_cdn_path_does_not_add_path_when_absolute
+    build_net_http_object({}, {:method => "HEAD", :path => "/dummypath"})
+    assert_nothing_raised do
+      response = @connection.cdn_request("HEAD", "/dummypath")
+    end
+  end
+ 
   def test_net_http_raises_connection_exception
     Net::HTTP.expects(:new).raises(CloudFiles::Exception::Connection)
     assert_raises(CloudFiles::Exception::Connection) do
@@ -288,7 +330,8 @@ class CloudfilesConnectionTest < Test::Unit::TestCase
     
   private
   
-  def build_net_http_object(args={:code => '204' }, cfreq_expectations={})
+  def build_net_http_object(args={}, cfreq_expectations={})
+    args.merge!(:code => '204') unless args[:code]
     args[:response] = {} unless args[:response]
     response = {'x-cdn-management-url' => 'http://cdn.example.com/path', 'x-storage-url' => 'http://cdn.example.com/storage', 'authtoken' => 'dummy_token'}.merge(args[:response])
     response.stubs(:code).returns(args[:code])

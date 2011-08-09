@@ -103,6 +103,32 @@ class CloudfilesContainerTest < Test::Unit::TestCase
     assert_equal @container.empty?, true
   end
   
+  def test_read_acl_is_set_from_headers
+    connection = stub()
+    response = {
+      'x-container-bytes-used' => '0',
+      'x-container-object-count' => '0',
+      'x-container-read' => ".r:*"
+    }
+    response.stubs(:code).returns('204')
+    connection.stubs(:storage_request => response)
+    @container = CloudFiles::Container.new(connection, 'test_container')
+    assert_equal response["x-container-read"], @container.read_acl
+  end
+
+  def test_write_acl_is_set_from_headers
+    connection = stub()
+    response = {
+      'x-container-bytes-used' => '0',
+      'x-container-object-count' => '0',
+      'x-container-write' => ".r:*"
+    }
+    response.stubs(:code).returns('204')
+    connection.stubs(:storage_request => response)
+    @container = CloudFiles::Container.new(connection, 'test_container')
+    assert_equal response["x-container-write"], @container.write_acl
+  end
+
   def test_log_retention_is_true
     connection = stub(:storagehost => 'test.storage.example', :storagepath => '/dummy/path', :storageport => 443, :storagescheme => 'https', :cdnmgmthost => 'cdm.test.example', :cdnmgmtpath => '/dummy/path', :cdnmgmtport => 443, :cdnmgmtscheme => 'https', :cdn_available? => true)
     response = {'x-container-bytes-used' => '0', 'x-container-object-count' => '0', 'x-cdn-enabled' => 'True', 'x-log-retention' => 'True'}

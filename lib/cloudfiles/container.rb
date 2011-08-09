@@ -45,7 +45,7 @@ module CloudFiles
         raise CloudFiles::Exception::NoSuchContainer, "Container #{@name} does not exist" unless (response.code =~ /^20/)
         resphash = {}
         response.to_hash.select { |k,v| k.match(/^x-container-meta/) }.each { |x| resphash[x[0]] = x[1].to_s }
-        {:bytes => response["x-container-bytes-used"].to_i, :count => response["x-container-object-count"].to_i, :metadata => resphash}
+        {:bytes => response["x-container-bytes-used"].to_i, :count => response["x-container-object-count"].to_i, :metadata => resphash, :container_read => response["x-container-read"], :container_write => response["x-container-write"]}
       )
     end
 
@@ -144,6 +144,16 @@ module CloudFiles
     # The container ACL on the site Referrer
     def referrer_acl
       self.cdn_metadata[:referrer_acl]
+    end
+
+    #used by openstack swift
+    def read_acl
+      self.container_metadata[:container_read]
+    end
+
+    #used by openstack swift
+    def write_acl
+      self.container_metadata[:container_write]
     end
 
     # Returns true if log retention is enabled on this container, false otherwise
@@ -334,7 +344,19 @@ module CloudFiles
       refresh
       true
     end
-    
+
+    # Only to be used with openstack swift
+    def set_write_acl(write_string)
+      headers = {"X-Container-Write" => write_string}
+      post_with_headers(headers)
+    end
+
+    # Only to be used with openstack swift
+    def set_read_acl(read_string)
+      headers = {"X-Container-Read" => read_string}
+      post_with_headers(headers)
+    end
+
     def post_with_headers(headers = {})
       if cdn_enabled?
         response = self.connection.cdn_request("POST", escaped_name, headers)

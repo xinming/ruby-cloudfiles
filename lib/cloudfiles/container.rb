@@ -156,7 +156,7 @@ module CloudFiles
     # Change the log retention status for this container.  Values are true or false.
     #
     # These logs will be periodically (at unpredictable intervals) compressed and uploaded
-    # to a “.CDN_ACCESS_LOGS” container in the form of “container_name.YYYYMMDDHH-XXXX.gz”.
+    # to a ".CDN_ACCESS_LOGS" container in the form of "container_name.YYYYMMDDHH-XXXX.gz".
     def log_retention=(value)
       raise Exception::CDNNotAvailable unless cdn_available?
       response = self.connection.cdn_request("POST", escaped_name, {"x-log-retention" => value.to_s.capitalize})

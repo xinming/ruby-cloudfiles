@@ -292,7 +292,7 @@ module CloudFiles
       response
     rescue Errno::EPIPE, Timeout::Error, Errno::EINVAL, EOFError, IOError
       # Server closed the connection, retry
-      raise CloudFiles::Exception::Connection, "Unable to reconnect to #{server.address} after #{attempts} attempts" if attempts >= 5
+      raise CloudFiles::Exception::Connection, "Unable to reconnect to #{server.address} after #{attempts} attempts", caller if attempts >= 5
       attempts += 1
       begin
         @http[server].finish
@@ -302,7 +302,7 @@ module CloudFiles
       start_http(server, path, port, scheme, headers)
       retry
     rescue ExpiredAuthTokenException
-      raise CloudFiles::Exception::Connection, "Authentication token expired and you have requested not to retry" if @retry_auth == false
+      raise CloudFiles::Exception::Connection, "Authentication token expired and you have requested not to retry", caller if @retry_auth == false
       CloudFiles::Authentication.new(self)
       retry
     end
@@ -329,8 +329,8 @@ module CloudFiles
             @http[server].verify_mode = OpenSSL::SSL::VERIFY_NONE
           end
           @http[server].start
-        rescue
-          raise CloudFiles::Exception::Connection, "Unable to connect to #{server.address}"
+        rescue Exception
+          raise CloudFiles::Exception::Connection, "Unable to connect to #{server.address}", caller
         end
       end
     end

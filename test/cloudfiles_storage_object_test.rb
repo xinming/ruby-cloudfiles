@@ -109,12 +109,12 @@ class CloudfilesStorageObjectTest < Test::Unit::TestCase
   
   def test_read_metadata_succeeds
     connection = stub(:storagehost => 'test.storage.example', :storagepath => '/dummy/path', :storageport => 443, :storagescheme => 'https', :cdnmgmthost => 'cdm.test.example', :cdnmgmtpath => '/dummy/path', :cdnmgmtport => 443, :cdnmgmtscheme => 'https', :cdn_available? => true)
-    response = {'x-container-bytes-used' => '42', 'x-container-object-count' => '5', 'x-object-meta-foo' => 'Bar', 'x-object-meta-spam' => ['peanut', 'butter'], 'last-modified' => Time.now.to_s}
+    response = {'x-container-bytes-used' => '42', 'x-container-object-count' => '5', 'x-object-meta-foo' => 'Bar', 'last-modified' => Time.now.to_s}
     response.stubs(:code).returns('204')
     connection.stubs(:cfreq => response)
     container = CloudFiles::Container.new(connection, 'test_container')
     @object = CloudFiles::StorageObject.new(container, 'test_object')
-    assert_equal @object.metadata, {'foo' => 'Bar', 'spam' => 'peanutbutter'}
+    assert_equal @object.metadata, {'foo' => 'Bar'}
   end
   
   def test_write_succeeds

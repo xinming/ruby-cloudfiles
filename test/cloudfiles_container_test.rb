@@ -102,31 +102,68 @@ class CloudfilesContainerTest < Test::Unit::TestCase
     @container = CloudFiles::Container.new(connection, 'test_container')
     assert_equal @container.empty?, true
   end
-  
-  def test_read_acl_is_set_from_headers
-    connection = stub()
-    response = {
+
+  def build_acl_test_state(opts={})
+    @connection = stub(:storagehost => 'test.storage.example', :storagepath => '/dummy/path', :storageport => 443, :storagescheme => 'https', :cdn_available? => false)
+
+    @response = {
       'x-container-bytes-used' => '0',
       'x-container-object-count' => '0',
-      'x-container-read' => ".r:*"
-    }
-    response.stubs(:code).returns('204')
-    connection.stubs(:storage_request => response)
-    @container = CloudFiles::Container.new(connection, 'test_container')
-    assert_equal response["x-container-read"], @container.read_acl
+    }.merge(opts.fetch(:response, {}))
+
+    @response.stubs(:code).returns(opts.fetch(:code, '204'))
+    @connection.stubs(:storage_request => @response)
+    @container = CloudFiles::Container.new(@connection, 'test_container')
+  end
+  
+  def test_read_acl_is_set_from_headers
+    build_acl_test_state :response => { 'x-container-read' => '.r:*' }, :code => '204'
+    assert_equal @response["x-container-read"], @container.read_acl
+  end
+
+  def test_set_read_acl_fails
+    build_acl_test_state
+
+    response = stub(:code => '999')
+
+    @connection.stubs(:storage_request => response)
+
+    assert_raises(CloudFiles::Exception::NoSuchContainer) do
+      @container.set_read_acl('.r:*')
+    end
+  end
+
+  def test_set_read_acl_succeeds
+    build_acl_test_state
+
+    @connection.stubs(:storage_request => stub(:code => '204'))
+
+    assert_equal @container.set_read_acl('.r:*'), true
   end
 
   def test_write_acl_is_set_from_headers
-    connection = stub()
-    response = {
-      'x-container-bytes-used' => '0',
-      'x-container-object-count' => '0',
-      'x-container-write' => ".r:*"
-    }
-    response.stubs(:code).returns('204')
-    connection.stubs(:storage_request => response)
-    @container = CloudFiles::Container.new(connection, 'test_container')
-    assert_equal response["x-container-write"], @container.write_acl
+    build_acl_test_state :response => { 'x-container-write' => '.r:*' }, :code => '204'
+    assert_equal @response["x-container-write"], @container.write_acl
+  end
+
+  def test_set_write_acl_fails
+    build_acl_test_state
+
+    response = stub(:code => '999')
+
+    @connection.stubs(:storage_request => response)
+
+    assert_raises(CloudFiles::Exception::NoSuchContainer) do
+      @container.set_write_acl('.r:*')
+    end
+  end
+
+  def test_set_write_acl_succeeds
+    build_acl_test_state
+
+    @connection.stubs(:storage_request => stub(:code => '204'))
+
+    assert_equal @container.set_write_acl('.r:*'), true
   end
 
   def test_log_retention_is_true

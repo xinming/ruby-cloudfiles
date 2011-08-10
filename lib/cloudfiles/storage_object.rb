@@ -17,16 +17,8 @@ module CloudFiles
       @containername = container.name
       @name = objectname
       @make_path = make_path
-      @storagehost = self.container.connection.storagehost
-      @storagepath = self.container.connection.storagepath + "/#{CloudFiles.escape @containername}/#{CloudFiles.escape @name, '/'}"
-      @storageport = self.container.connection.storageport
-      @storagescheme = self.container.connection.storagescheme
-      if self.container.connection.cdn_available?
-        @cdnmgmthost = self.container.connection.cdnmgmthost
-        @cdnmgmtpath = self.container.connection.cdnmgmtpath + "/#{CloudFiles.escape @containername}/#{CloudFiles.escape @name, '/'}"
-        @cdnmgmtport = self.container.connection.cdnmgmtport
-        @cdnmgmtscheme = self.container.connection.cdnmgmtscheme
-      end
+      @storagepath = "#{CloudFiles.escape @containername}/#{CloudFiles.escape @name, '/'}"
+
       if force_exists
         raise CloudFiles::Exception::NoSuchObject, "Object #{@name} does not exist" unless container.object_exists?(objectname)
       end
@@ -42,7 +34,7 @@ module CloudFiles
     # Retrieves Metadata for the object
     def object_metadata
       @object_metadata ||= (
-        response = self.container.connection.cfreq("HEAD", @storagehost, @storagepath, @storageport, @storagescheme)
+        response = self.container.connection.storage_request("HEAD", @storagepath)
         raise CloudFiles::Exception::NoSuchObject, "Object #{@name} does not exist" unless (response.code =~ /^20/)
         resphash = {}
         metas = response.to_hash.select { |k,v| k.match(/^x-object-meta/) }
@@ -99,7 +91,7 @@ module CloudFiles
         range = sprintf("bytes=%d-%d", offset.to_i, (offset.to_i + size.to_i) - 1)
         headers['Range'] = range
       end
-      response = self.container.connection.cfreq("GET", @storagehost, @storagepath, @storageport, @storagescheme, headers)
+      response = self.container.connection.storage_request("GET", @storagepath, headers)
       raise CloudFiles::Exception::NoSuchObject, "Object #{@name} does not exist" unless (response.code =~ /^20/)
       response.body
     end
@@ -123,7 +115,7 @@ module CloudFiles
         range = sprintf("bytes=%d-%d", offset.to_i, (offset.to_i + size.to_i) - 1)
         headers['Range'] = range
       end
-      self.container.connection.cfreq("GET", @storagehost, @storagepath, @storageport, @storagescheme, headers, nil) do |response|
+      self.container.connection.storage_request("GET", @storagepath, headers, nil) do |response|
         raise CloudFiles::Exception::NoSuchObject, "Object #{@name} does not exist. Response code #{response.code}" unless (response.code =~ /^20./)
         response.read_body(&block)
       end
@@ -148,7 +140,7 @@ module CloudFiles
     def set_metadata(metadatahash)
       headers = {}
       metadatahash.each{ |key, value| headers['X-Object-Meta-' + key.to_s.capitalize] = value.to_s }
-      response = self.container.connection.cfreq("POST", @storagehost, @storagepath, @storageport, @storagescheme, headers)
+      response = self.container.connection.storage_request("POST", @storagepath, headers)
       raise CloudFiles::Exception::NoSuchObject, "Object #{@name} does not exist" if (response.code == "404")
       raise CloudFiles::Exception::InvalidResponse, "Invalid response code #{response.code}" unless (response.code =~ /^20/)
       true
@@ -172,7 +164,7 @@ module CloudFiles
     # fails.
     def set_manifest(manifest)
       headers = {'X-Object-Manifest' => manifest}
-      response = self.container.connection.cfreq("PUT", @storagehost, @storagepath, @storageport, @storagescheme, headers)
+      response = self.container.connection.storage_request("PUT", @storagepath, headers)
       raise CloudFiles::Exception::NoSuchObject, "Object #{@name} does not exist" if (response.code == "404")
       raise CloudFiles::Exception::InvalidResponse, "Invalid response code #{response.code}" unless (response.code =~ /^20/)
       true
@@ -219,7 +211,7 @@ module CloudFiles
       end
       # If we're taking data from standard input, send that IO object to cfreq
       data = $stdin if (data.nil? && $stdin.tty? == false)
-      response = self.container.connection.cfreq("PUT", @storagehost, "#{@storagepath}", @storageport, @storagescheme, headers, data)
+      response = self.container.connection.storage_request("PUT", @storagepath, headers, data)
       code = response.code
       raise CloudFiles::Exception::InvalidResponse, "Invalid content-length header sent" if (code == "412")
       raise CloudFiles::Exception::MisMatchedChecksum, "Mismatched etag" if (code == "422")
@@ -247,14 +239,10 @@ module CloudFiles
     #   => true
     def purge_from_cdn(email=nil)
       raise Exception::CDNNotAvailable unless cdn_available?
-      if email
-          headers = {"X-Purge-Email" => email}
-          response = self.container.connection.cfreq("DELETE", @cdnmgmthost, @cdnmgmtpath, @cdnmgmtport, @cdnmgmtscheme, headers)
-          raise CloudFiles::Exception::Connection, "Error Unable to Purge Object: #{@name}" unless (response.code.to_s =~ /^20.$/)
-      else
-          response = self.container.connection.cfreq("DELETE", @cdnmgmthost, @cdnmgmtpath, @cdnmgmtport, @cdnmgmtscheme)
-          raise CloudFiles::Exception::Connection, "Error Unable to Purge Object: #{@name}" unless (response.code.to_s =~ /^20.$/)
-      end
+      headers = {}
+      headers = {"X-Purge-Email" => email} if email
+      response = self.container.connection.cdn_request("DELETE", @storagepath, headers)
+      raise CloudFiles::Exception::Connection, "Error Unable to Purge Object: #{@name}" unless (response.code.to_s =~ /^20.$/)
       true
     end
 
@@ -360,8 +348,8 @@ module CloudFiles
       new_name.sub!(/^\//,'')
       headers = {'X-Copy-From' => "#{self.container.name}/#{self.name}", 'Content-Type' => self.content_type.sub(/;.+/, '')}.merge(new_headers)
       # , 'Content-Type' => self.content_type
-      new_path = self.container.connection.storagepath + "/#{CloudFiles.escape new_container}/#{CloudFiles.escape new_name, '/'}"
-      response = self.container.connection.cfreq("PUT", @storagehost, new_path, @storageport, @storagescheme, headers)
+      new_path = "#{CloudFiles.escape new_container}/#{CloudFiles.escape new_name, '/'}"
+      response = self.container.connection.storage_request("PUT", new_path, headers)
       code = response.code
       raise CloudFiles::Exception::InvalidResponse, "Invalid response code #{response.code}" unless (response.code =~ /^20/)
       return CloudFiles::Container.new(self.container.connection, new_container).object(new_name)

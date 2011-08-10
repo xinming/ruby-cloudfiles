@@ -16,16 +16,6 @@ module CloudFiles
     def initialize(connection, name)
       @connection = connection
       @name = name
-      @storagehost = self.connection.storagehost
-      @storagepath = self.connection.storagepath + "/" + CloudFiles.escape(@name)
-      @storageport = self.connection.storageport
-      @storagescheme = self.connection.storagescheme
-      if self.connection.cdn_available?
-        @cdnmgmthost = self.connection.cdnmgmthost
-        @cdnmgmtpath = self.connection.cdnmgmtpath + "/" + CloudFiles.escape(@name) if self.connection.cdnmgmtpath
-        @cdnmgmtport = self.connection.cdnmgmtport
-        @cdnmgmtscheme = self.connection.cdnmgmtscheme
-      end
       # Load the metadata now, so we'll get a CloudFiles::Exception::NoSuchContainer exception should the container
       # not exist.
       self.container_metadata
@@ -51,11 +41,11 @@ module CloudFiles
     # Retrieves Metadata for the container
     def container_metadata
       @metadata ||= (
-        response = self.connection.cfreq("HEAD", @storagehost, @storagepath + "/", @storageport, @storagescheme)
+        response = self.connection.storage_request("HEAD", "#{escaped_name}/")
         raise CloudFiles::Exception::NoSuchContainer, "Container #{@name} does not exist" unless (response.code =~ /^20/)
         resphash = {}
         response.to_hash.select { |k,v| k.match(/^x-container-meta/) }.each { |x| resphash[x[0]] = x[1].to_s }
-        {:bytes => response["x-container-bytes-used"].to_i, :count => response["x-container-object-count"].to_i, :metadata => resphash}
+        {:bytes => response["x-container-bytes-used"].to_i, :count => response["x-container-object-count"].to_i, :metadata => resphash, :container_read => response["x-container-read"], :container_write => response["x-container-write"]}
       )
     end
 
@@ -64,7 +54,7 @@ module CloudFiles
       return @cdn_metadata if @cdn_metadata
       if cdn_available?
         @cdn_metadata = (
-          response = self.connection.cfreq("HEAD", @cdnmgmthost, @cdnmgmtpath, @cdnmgmtport, @cdnmgmtscheme)
+          response = self.connection.cdn_request("HEAD", escaped_name)
           cdn_enabled = ((response["x-cdn-enabled"] || "").downcase == "true") ? true : false
           {
             :cdn_enabled => cdn_enabled,
@@ -100,7 +90,7 @@ module CloudFiles
     def set_metadata(metadatahash)
       headers = {}
       metadatahash.each{ |key, value| headers['X-Container-Meta-' + CloudFiles.escape(key.to_s.capitalize)] = value.to_s }
-      response = self.connection.cfreq("POST", @storagehost, @storagepath, @storageport, @storagescheme, headers)
+      response = self.connection.storage_request("POST", escaped_name, headers)
       raise CloudFiles::Exception::NoSuchObject, "Container #{@name} does not exist" if (response.code == "404")
       raise CloudFiles::Exception::InvalidResponse, "Invalid response code #{response.code}" unless (response.code =~ /^20/)
       true
@@ -156,6 +146,16 @@ module CloudFiles
       self.cdn_metadata[:referrer_acl]
     end
 
+    #used by openstack swift
+    def read_acl
+      self.container_metadata[:container_read]
+    end
+
+    #used by openstack swift
+    def write_acl
+      self.container_metadata[:container_write]
+    end
+
     # Returns true if log retention is enabled on this container, false otherwise
     def cdn_log
       self.cdn_metadata[:cdn_log]
@@ -166,10 +166,10 @@ module CloudFiles
     # Change the log retention status for this container.  Values are true or false.
     #
     # These logs will be periodically (at unpredictable intervals) compressed and uploaded
-    # to a “.CDN_ACCESS_LOGS” container in the form of “container_name.YYYYMMDDHH-XXXX.gz”.
+    # to a ".CDN_ACCESS_LOGS" container in the form of "container_name.YYYYMMDDHH-XXXX.gz".
     def log_retention=(value)
       raise Exception::CDNNotAvailable unless cdn_available?
-      response = self.connection.cfreq("POST", @cdnmgmthost, @cdnmgmtpath, @cdnmgmtport, @cdnmgmtscheme, {"x-log-retention" => value.to_s.capitalize})
+      response = self.connection.cdn_request("POST", escaped_name, {"x-log-retention" => value.to_s.capitalize})
       raise CloudFiles::Exception::InvalidResponse, "Invalid response code #{response.code}" unless (response.code == "201" or response.code == "202")
       return true
     end
@@ -216,7 +216,7 @@ module CloudFiles
           query << "#{param}=#{CloudFiles.escape(value.to_s)}"
         end
       end
-      response = self.connection.cfreq("GET", @storagehost, "#{@storagepath}?#{query.join '&'}", @storageport, @storagescheme)
+      response = self.connection.storage_request("GET", "#{escaped_name}?#{query.join '&'}")
       return [] if (response.code == "204")
       raise CloudFiles::Exception::InvalidResponse, "Invalid response code #{response.code}" unless (response.code == "200")
       return CloudFiles.lines(response.body)
@@ -249,7 +249,7 @@ module CloudFiles
           query << "#{param}=#{CloudFiles.escape(value.to_s)}"
         end
       end
-      response = self.connection.cfreq("GET", @storagehost, "#{@storagepath}?#{query.join '&'}", @storageport, @storagescheme)
+      response = self.connection.storage_request("GET", "#{escaped_name}?#{query.join '&'}")
       return {} if (response.code == "204")
       raise CloudFiles::Exception::InvalidResponse, "Invalid response code #{response.code}" unless (response.code == "200")
       doc = REXML::Document.new(response.body)
@@ -281,7 +281,7 @@ module CloudFiles
     #   container.object_exists?('badfile.txt')
     #   => false
     def object_exists?(objectname)
-      response = self.connection.cfreq("HEAD", @storagehost, "#{@storagepath}/#{CloudFiles.escape objectname}", @storageport, @storagescheme)
+      response = self.connection.storage_request("HEAD", "#{escaped_name}/#{CloudFiles.escape objectname}")
       return (response.code =~ /^20/)? true : false
     end
 
@@ -306,7 +306,7 @@ module CloudFiles
     #   container.delete_object('nonexistent_file.txt')
     #   => NoSuchObjectException: Object nonexistent_file.txt does not exist
     def delete_object(objectname)
-      response = self.connection.cfreq("DELETE", @storagehost, "#{@storagepath}/#{CloudFiles.escape objectname}", @storageport, @storagescheme)
+      response = self.connection.storage_request("DELETE", "#{escaped_name}/#{CloudFiles.escape objectname}")
       raise CloudFiles::Exception::NoSuchObject, "Object #{objectname} does not exist" if (response.code == "404")
       raise CloudFiles::Exception::InvalidResponse, "Invalid response code #{response.code}" unless (response.code =~ /^20/)
       true
@@ -333,16 +333,38 @@ module CloudFiles
         options = {:ttl => ttl}
       end
 
-      response = self.connection.cfreq("PUT", @cdnmgmthost, @cdnmgmtpath, @cdnmgmtport, @cdnmgmtscheme)
+      response = self.connection.cdn_request("PUT", escaped_name)
       raise CloudFiles::Exception::NoSuchContainer, "Container #{@name} does not exist" unless (response.code == "201" || response.code == "202")
 
       headers = { "X-TTL" => options[:ttl].to_s , "X-CDN-Enabled" => "True" }
       headers["X-User-Agent-ACL"] = options[:user_agent_acl] if options[:user_agent_acl]
       headers["X-Referrer-ACL"] = options[:referrer_acl] if options[:referrer_acl]
-      response = self.connection.cfreq("POST", @cdnmgmthost, @cdnmgmtpath, @cdnmgmtport, @cdnmgmtscheme, headers)
+      response = post_with_headers(headers)
       raise CloudFiles::Exception::NoSuchContainer, "Container #{@name} does not exist" unless (response.code == "201" || response.code == "202")
       refresh
       true
+    end
+
+    # Only to be used with openstack swift
+    def set_write_acl(write_string)
+      headers = {"X-Container-Write" => write_string}
+      post_with_headers(headers)
+    end
+
+    # Only to be used with openstack swift
+    def set_read_acl(read_string)
+      headers = {"X-Container-Read" => read_string}
+      post_with_headers(headers)
+    end
+
+    def post_with_headers(headers = {})
+      if cdn_enabled?
+        response = self.connection.cdn_request("POST", escaped_name, headers)
+      else
+        response = self.connection.storage_request("POST", escaped_name, headers)
+      end
+      raise CloudFiles::Exception::NoSuchContainer, "Container #{@name} does not exist" unless (response.code =~ /^20/)
+      response
     end
    
     # Makes a container private and returns true upon success.  Throws NoSuchContainerException
@@ -355,7 +377,7 @@ module CloudFiles
     def make_private
       raise Exception::CDNNotAvailable unless cdn_available?
       headers = { "X-CDN-Enabled" => "False" }
-      response = self.connection.cfreq("POST", @cdnmgmthost, @cdnmgmtpath, @cdnmgmtport, @cdnmgmtscheme, headers)
+      response = self.connection.cdn_request("POST", escaped_name, headers)
       raise CloudFiles::Exception::NoSuchContainer, "Container #{@name} does not exist" unless (response.code == "201" || response.code == "202")
       refresh
       true
@@ -380,15 +402,11 @@ module CloudFiles
     #   => true
     def purge_from_cdn(email=nil)
       raise Exception::CDNNotAvailable unless cdn_available?
-      if email
-          headers = {"X-Purge-Email" => email}
-          response = self.connection.cfreq("DELETE", @cdnmgmthost, @cdnmgmtpath, @cdnmgmtport, @cdnmgmtscheme, headers)
-          raise CloudFiles::Exception::Connection, "Error Unable to Purge Container: #{@name}" unless (response.code > "200" && response.code < "299")
-      else
-          response = self.connection.cfreq("DELETE", @cdnmgmthost, @cdnmgmtpath, @cdnmgmtport, @cdnmgmtscheme)
-          raise CloudFiles::Exception::Connection, "Error Unable to Purge Container: #{@name}" unless (response.code > "200" && response.code < "299")
+      headers = {}
+      headers = {"X-Purge-Email" => email} if email
+      response = self.connection.cdn_request("DELETE", escaped_name, headers)
+      raise CloudFiles::Exception::Connection, "Error Unable to Purge Container: #{@name}" unless (response.code > "200" && response.code < "299")
       true
-      end
     end
 
     def to_s # :nodoc:
@@ -397,6 +415,10 @@ module CloudFiles
 
     def cdn_available?
       self.connection.cdn_available?
+    end
+    
+    def escaped_name
+      CloudFiles.escape(@name)
     end
 
   end

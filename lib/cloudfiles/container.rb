@@ -347,14 +347,18 @@ module CloudFiles
 
     # Only to be used with openstack swift
     def set_write_acl(write_string)
+      refresh
       headers = {"X-Container-Write" => write_string}
       post_with_headers(headers)
+      true
     end
 
     # Only to be used with openstack swift
     def set_read_acl(read_string)
+      refresh
       headers = {"X-Container-Read" => read_string}
       post_with_headers(headers)
+      true
     end
 
     def post_with_headers(headers = {})
@@ -363,7 +367,7 @@ module CloudFiles
       else
         response = self.connection.storage_request("POST", escaped_name, headers)
       end
-      raise CloudFiles::Exception::NoSuchContainer, "Container #{@name} does not exist" unless (response.code =~ /^20/)
+      raise CloudFiles::Exception::NoSuchContainer, "Container #{@name} does not exist (response code: #{response.code})" unless (response.code =~ /^20/)
       response
     end
    

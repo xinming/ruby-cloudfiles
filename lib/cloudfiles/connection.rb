@@ -132,12 +132,18 @@ module CloudFiles
     #   => {:count=>8, :bytes=>42438527}
     #   cf.bytes
     #   => 42438527
+    # Hostname of the storage server
+
     def get_info
-      response = storage_request("HEAD")
-      raise CloudFiles::Exception::InvalidResponse, "Unable to obtain account size" unless (response.code == "204")
-      @bytes = response["x-account-bytes-used"].to_i
-      @count = response["x-account-container-count"].to_i
-      {:bytes => @bytes, :count => @count}
+      begin
+        raise CloudFiles::Exception::AuthenticationException, "Not authenticated" unless self.authok?
+        response = SwiftClient.head_account(storageurl, self.authtoken)
+        @bytes = response["x-account-bytes-used"].to_i
+        @count = response["x-account-container-count"].to_i
+        {:bytes => @bytes, :count => @count}
+      rescue ClientException => e
+        raise CloudFiles::Exception::InvalidResponse, "Unable to obtain account size" unless (e.status.to_s == "204")
+      end
     end
     
     # The total size in bytes under this connection
@@ -162,14 +168,13 @@ module CloudFiles
     #
     #   cf.containers(2,'cftest')
     #   => ["test", "video"]
-    def containers(limit = 0, marker = "")
-      query = []
-      query << "limit=#{CloudFiles.escape limit.to_s}" if limit.to_i > 0
-      query << "marker=#{CloudFiles.escape marker.to_s}" unless marker.to_s.empty?
-      response = storage_request("GET", "?#{query.join('&')}")
-      return [] if (response.code == "204")
-      raise CloudFiles::Exception::InvalidResponse, "Invalid response code #{response.code}" unless (response.code == "200")
-      CloudFiles.lines(response.body)
+    def containers(limit = nil, marker = nil)
+      begin
+        response = SwiftClient.get_account(storageurl, self.authtoken, marker, limit)
+        response[1].collect{|c| c['name']}
+      rescue ClientException => e
+        raise CloudFiles::Exception::InvalidResponse, "Invalid response code #{e.status.to_s}" unless (e.status.to_s == "200")
+      end
     end
     alias :list_containers :containers
 
@@ -183,20 +188,13 @@ module CloudFiles
     #   cf.containers_detail
     #   => { "container1" => { :bytes => "36543", :count => "146" },
     #        "container2" => { :bytes => "105943", :count => "25" } }
-    def containers_detail(limit = 0, marker = "")
-      query = ['format=xml']
-      query << "limit=#{CloudFiles.escape limit.to_s}" if limit.to_i > 0
-      query << "marker=#{CloudFiles.escape marker.to_s}" unless marker.to_s.empty?
-      response = storage_request("GET", "?#{query.join('&')}")
-      return {} if (response.code == "204")
-      raise CloudFiles::Exception::InvalidResponse, "Invalid response code #{response.code}" unless (response.code == "200")
-      doc = REXML::Document.new(response.body)
-      detailhash = {}
-      doc.elements.each("account/container/") { |c|
-        detailhash[c.elements["name"].text] = { :bytes => c.elements["bytes"].text, :count => c.elements["count"].text  }
-      }
-      doc = nil
-      return detailhash
+    def containers_detail(limit = nil, marker = nil)
+      begin
+        response = SwiftClient.get_account(storageurl, self.authtoken, marker, limit)
+        Hash[*response[1].collect{|c| [c['name'], {:bytes => c['bytes'], :count => c['count']}]}.flatten]
+      rescue ClientException => e
+        raise CloudFiles::Exception::InvalidResponse, "Invalid response code #{e.status.to_s}" unless (e.status.to_s == "200")
+      end
     end
     alias :list_containers_info :containers_detail
 
@@ -208,8 +206,12 @@ module CloudFiles
     #   cf.container_exists?('bad_container')
     #   => false
     def container_exists?(containername)
-      response = storage_request("HEAD", CloudFiles.escape(containername))
-      return (response.code == "204")? true : false ;
+      begin
+        response = SwiftClient.head_container(storageurl, self.authtoken, containername)
+        true
+      rescue ClientException => e
+        false
+      end
     end
 
     # Creates a new container and returns the CloudFiles::Container object.  Throws an InvalidResponseException if the
@@ -322,7 +324,7 @@ module CloudFiles
     end
 
     private
-
+  
     # Sets up standard HTTP headers
     def headerprep(headers = {}) # :nodoc:
       default_headers = {}
@@ -348,7 +350,10 @@ module CloudFiles
         end
       end
     end
-
+    
+    def storageurl
+      "#{self.storagescheme}://#{self.storagehost}:#{self.storageport.to_s}#{self.storagepath}"
+    end
   end
 
 end

@@ -38,6 +38,7 @@ module CloudFiles
   end
 
   $:.unshift(File.dirname(__FILE__))
+  require 'client'
   require 'cloudfiles/version'
   require 'cloudfiles/exception'
   require 'cloudfiles/authentication'

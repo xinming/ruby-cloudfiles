@@ -10,44 +10,33 @@ module CloudFiles
     #
     # Should probably never be called directly.
     def initialize(connection)
-      parsed_auth_url = URI.parse(connection.auth_url)
-      path = parsed_auth_url.path
-      hdrhash = { "X-Auth-User" => connection.authuser, "X-Auth-Key" => connection.authkey }
       begin
-        server = get_server(connection, parsed_auth_url)
-
-        if parsed_auth_url.scheme == "https"
-          server.use_ssl     = true
-          server.verify_mode = OpenSSL::SSL::VERIFY_NONE
-        end
-        server.start
+        storage_url, auth_token, headers = SwiftClient.get_auth(connection.auth_url, connection.authuser, connection.authkey, connection.snet?)
       rescue Exception => e
         # uncomment if you suspect a problem with this branch of code
-#         $stderr.puts "got error #{e.class}: #{e.message.inspect}\n" << e.traceback.map{|n| "\t#{n}"}.join("\n")
-        raise CloudFiles::Exception::Connection, "Unable to connect to #{server.address}", caller
+        # $stderr.puts "got error #{e.class}: #{e.message.inspect}\n" << e.traceback.map{|n| "\t#{n}"}.join("\n")
+        raise CloudFiles::Exception::Connection, "Unable to connect to #{connection.auth_url}", caller
       end
-      response = server.get(path, hdrhash)
-      if (response.code =~ /^20./)
-        if response["x-cdn-management-url"]
+      if auth_token 
+        if headers["x-cdn-management-url"]
           connection.cdn_available = true
-          parsed_cdn_url = URI.parse(response["x-cdn-management-url"])
+          parsed_cdn_url = URI.parse(headers["x-cdn-management-url"])
           connection.cdnmgmthost   = parsed_cdn_url.host
           connection.cdnmgmtpath   = parsed_cdn_url.path
           connection.cdnmgmtport   = parsed_cdn_url.port
           connection.cdnmgmtscheme = parsed_cdn_url.scheme
         end
-        parsed_storage_url = URI.parse(response["x-storage-url"])
+        parsed_storage_url = URI.parse(headers["x-storage-url"])
         connection.storagehost   = set_snet(connection, parsed_storage_url.host)
         connection.storagepath   = parsed_storage_url.path
         connection.storageport   = parsed_storage_url.port
         connection.storagescheme = parsed_storage_url.scheme
-        connection.authtoken     = response["x-auth-token"]
+        connection.authtoken     = headers["x-auth-token"]
         connection.authok        = true
       else
         connection.authtoken = false
         raise CloudFiles::Exception::Authentication, "Authentication failed"
       end
-      server.finish
     end
 
     private

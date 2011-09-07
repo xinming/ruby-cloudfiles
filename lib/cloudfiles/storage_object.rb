@@ -313,7 +313,7 @@ module CloudFiles
       self.container.public? ? self.container.cdn_url + "/#{CloudFiles.escape @name, '/'}" : nil
     end
 
-        # If the parent container is public (CDN-enabled), returns the SSL CDN URL to this object.  Otherwise, return nil
+    # If the parent container is public (CDN-enabled), returns the SSL CDN URL to this object.  Otherwise, return nil
     #
     #   public_object.public_ssl_url
     #   => "https://c61.ssl.cf0.rackcdn.com/myfile.jpg"
@@ -324,6 +324,16 @@ module CloudFiles
       self.container.public? ? self.container.cdn_ssl_url + "/#{CloudFiles.escape @name, '/'}" : nil
     end
 
+    # If the parent container is public (CDN-enabled), returns the SSL CDN URL to this object.  Otherwise, return nil
+    #
+    #   public_object.public_streaming_url
+    #   => "https://c61.stream.rackcdn.com/myfile.jpg"
+    #
+    #   private_object.public_streaming_url
+    #   => nil
+    def public_streaming_url
+      self.container.public? ? self.container.cdn_streaming_url + "/#{CloudFiles.escape @name, '/'}" : nil
+    end
     
     # Copy this object to a new location (optionally in a new container)
     #

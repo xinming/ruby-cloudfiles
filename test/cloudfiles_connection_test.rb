@@ -19,6 +19,13 @@ class CloudfilesConnectionTest < Test::Unit::TestCase
     assert_equal @connection.authkey, 'dummy_key'
   end
   
+  def test_initalize_with_hash
+    CloudFiles::Authentication.expects(:new).returns(true)
+    @hash_connection = CloudFiles::Connection.new(:username => 'dummy_user', :api_key => 'dummy_key')
+    assert_equal @hash_connection.authuser, "dummy_user"
+    assert_equal @hash_connection.authkey, "dummy_key"
+  end
+  
   def test_authok
     # This would normally be set in CloudFiles::Authentication
     assert_equal @connection.authok?, false
@@ -186,68 +193,75 @@ class CloudfilesConnectionTest < Test::Unit::TestCase
       end
     end
     
-  #   def test_public_containers
-  #     build_net_http_object(:body => "foo\nbar\nbaz", :code => '200', :response => {})
-  #     public_containers = @connection.public_containers
-  #     assert_equal public_containers.size, 3
-  #     assert_equal public_containers.first, 'foo'
-  #   end
-  #   
-  #   def test_public_containers_empty
-  #     build_net_http_object
-  #     public_containers = @connection.public_containers
-  #     assert_equal public_containers.size, 0
-  #     assert_equal public_containers.class, Array
-  #   end
-  #   
-  #   def test_public_containers_exception
-  #     build_net_http_object(:code => '999')
-  #     assert_raises(CloudFiles::Exception::InvalidResponse) do
-  #       public_containers = @connection.public_containers
-  #     end
-  #   end
-  #   
-  #   def test_delete_container
-  #     build_net_http_object
-  #     response = @connection.delete_container("good_container")
-  #     assert_equal response, true
-  #   end
-  #   
-  #   def test_delete_nonempty_container
-  #     build_net_http_object(:code => '409')
-  #     assert_raises(CloudFiles::Exception::NonEmptyContainer) do
-  #       response = @connection.delete_container("not_empty")
-  #     end
-  #   end
-  #   
-  #   def test_delete_unknown_container
-  #     build_net_http_object(:code => '999')
-  #     assert_raises(CloudFiles::Exception::NoSuchContainer) do
-  #       response = @connection.delete_container("not_empty")
-  #     end
-  #   end
-  #   
-  #   def test_create_container
-  #     CloudFiles::Container.any_instance.stubs(:populate)
-  #     build_net_http_object(:code => '201')
-  #     container = @connection.create_container('good_container')
-  #     assert_equal container.name, 'good_container'
-  #   end
-  #   
-  #   def test_create_container_with_invalid_name
-  #     CloudFiles::Container.stubs(:new)
-  #     assert_raise(CloudFiles::Exception::Syntax) do
-  #       container = @connection.create_container('a'*300)
-  #     end
-  #   end
-  #   
-  #   def test_create_container_name_filter
-  #     CloudFiles::Container.any_instance.stubs(:populate)
-  #     build_net_http_object(:code => '201')
-  #     assert_raises(CloudFiles::Exception::Syntax) do 
-  #       container = @connection.create_container('this/has/bad?characters')
-  #     end
-  #   end
+    def test_public_containers
+      response = [nil, [{"name" => 'foo'}, {"name" => "bar"}, {"name" => "baz"}]]
+      SwiftClient.stubs(:get_account).returns(response)
+      public_containers = @connection.public_containers
+      assert_equal public_containers.size, 3
+      assert_equal public_containers.first, 'foo'
+    end
+    
+    def test_public_containers_empty
+      response = [nil, []]
+      SwiftClient.stubs(:get_account).returns(response)
+      public_containers = @connection.public_containers
+      assert_equal public_containers.size, 0
+      assert_equal public_containers.class, Array
+    end
+    
+    def test_public_containers_exception
+      SwiftClient.stubs(:get_account).raises(ClientException.new("test_public_containers_exception", :http_status => 999))
+      assert_raises(CloudFiles::Exception::InvalidResponse) do
+        public_containers = @connection.public_containers
+      end
+    end
+    
+    def test_delete_container
+      SwiftClient.stubs(:delete_container).returns(nil)
+      response = @connection.delete_container("good_container")
+      assert_equal response, true
+    end
+    
+    def test_delete_nonempty_container
+      SwiftClient.stubs(:delete_container).raises(ClientException.new("test_delete_nonempty_container", :http_status => 409))
+      assert_raises(CloudFiles::Exception::NonEmptyContainer) do
+        response = @connection.delete_container("not_empty")
+      end
+    end
+    
+    def test_delete_unknown_container
+      SwiftClient.stubs(:delete_container).raises(ClientException.new("test_delete_unknown_container", :http_status => 999))
+      assert_raises(CloudFiles::Exception::NoSuchContainer) do
+        response = @connection.delete_container("not_empty")
+      end
+    end
+    
+    def test_create_container
+      response = [ { "content-type"=>"application/json; charset=utf-8", "x-container-object-count"=>"1", "date"=>"", "x-container-bytes-used"=>"0", "content-length"=>"0", "accept-ranges"=>"bytes", "x-trans-id"=>"foo" }, [ { "bytes"=>0, "name"=>"foo.jpg", "content_type"=>"image/jpeg", "hash"=>"foo", "last_modified"=>"" } ] ]
+      CloudFiles::Container.any_instance.stubs(:container_metadata).returns(response[0])
+      SwiftClient.stubs(:put_container).returns(nil)
+      container = @connection.create_container('good_container')
+      assert_equal container.name, 'good_container'
+    end
+    
+    def test_create_container_with_invalid_name
+      assert_raise(CloudFiles::Exception::Syntax) do
+        container = @connection.create_container('a'*300)
+      end
+    end
+    
+    def test_create_container_name_filter
+      assert_raises(CloudFiles::Exception::Syntax) do 
+        container = @connection.create_container('this/has/bad?characters')
+      end
+    end
+    
+    def test_create_container_error
+      SwiftClient.stubs(:put_container).raises(ClientException.new("test_create_container_general_error", :http_status => 999))
+      assert_raise(CloudFiles::Exception::InvalidResponse) do
+        container = @connection.create_container('foobar')
+      end
+    end
     
     def test_container_exists_true
       response = {"x-container-object-count"=>"0", "date"=>"Fri, 02 Sep 2011 20:27:15 GMT", "x-container-bytes-used"=>"0", "content-length"=>"0", "accept-ranges"=>"bytes", "x-trans-id"=>"foo"}
@@ -260,24 +274,22 @@ class CloudfilesConnectionTest < Test::Unit::TestCase
       assert_equal @connection.container_exists?('this_does_not_exist'), false
     end
     
-  #   def test_fetch_exisiting_container
-  #     CloudFiles::Container.any_instance.stubs(:populate)
-  #     build_net_http_object
-  #     container = @connection.container('good_container')
-  #     assert_equal container.name, 'good_container'
-  #   end
-  #   
-  #   def test_fetch_nonexistent_container
-  #     CloudFiles::Container.any_instance.stubs(:container_metadata).raises(CloudFiles::Exception::NoSuchContainer)
-  #     build_net_http_object
-  #     assert_raise(CloudFiles::Exception::NoSuchContainer) do
-  #       container = @connection.container('bad_container')
-  #     end
-  #   end
+    def test_fetch_exisiting_container
+      response = [ { "content-type"=>"application/json; charset=utf-8", "x-container-object-count"=>"1", "date"=>"", "x-container-bytes-used"=>"0", "content-length"=>"0", "accept-ranges"=>"bytes", "x-trans-id"=>"foo" }, [ { "bytes"=>0, "name"=>"foo.jpg", "content_type"=>"image/jpeg", "hash"=>"foo", "last_modified"=>"" } ] ]
+      CloudFiles::Container.any_instance.stubs(:container_metadata).returns(response[0])
+      container = @connection.container('good_container')
+      assert_equal container.name, 'good_container'
+    end
+    
+    def test_fetch_nonexistent_container
+      CloudFiles::Container.any_instance.stubs(:container_metadata).raises(CloudFiles::Exception::NoSuchContainer)
+      assert_raise(CloudFiles::Exception::NoSuchContainer) do
+        container = @connection.container('bad_container')
+      end
+    end
     
     def test_containers
       response = [nil, [{"name" => 'foo'}, {"name" => "bar"}, {"name" => "baz"}, {"name" => "boo"}]]
-      @connection.authok = true
       SwiftClient.stubs(:get_account).returns(response)
       containers = @connection.containers
       assert_equal containers.size, 4
@@ -286,7 +298,6 @@ class CloudfilesConnectionTest < Test::Unit::TestCase
     
     def test_containers_with_limit
       response = [nil, [{"name" => 'foo'}]]
-      @connection.authok = true
       SwiftClient.stubs(:get_account).returns(response)
       containers = @connection.containers(1)
       assert_equal containers.size, 1
@@ -295,7 +306,6 @@ class CloudfilesConnectionTest < Test::Unit::TestCase
     
     def test_containers_with_marker
       response = [nil, [{"name" => "boo"}]]
-      @connection.authok = true
       SwiftClient.stubs(:get_account).returns(response)
       containers = @connection.containers(0, 'baz')
       assert_equal containers.size, 1
@@ -304,7 +314,6 @@ class CloudfilesConnectionTest < Test::Unit::TestCase
     
     def test_no_containers_yet
       response = [nil, []]
-      @connection.authok = true
       SwiftClient.stubs(:get_account).returns(response)
       containers = @connection.containers
       assert_equal containers.size, 0
@@ -339,28 +348,28 @@ class CloudfilesConnectionTest < Test::Unit::TestCase
       end
     end
     
-  private
-  
-  def build_net_http_object(args={}, cfreq_expectations={})
-    args.merge!(:code => '204') unless args[:code]
-    args[:response] = {} unless args[:response]
-    response = {'x-cdn-management-url' => 'http://cdn.example.com/path', 'x-storage-url' => 'http://cdn.example.com/storage', 'authtoken' => 'dummy_token'}.merge(args[:response])
-    response.stubs(:code).returns(args[:code])
-    response.stubs(:body).returns args[:body] || nil
-
-    if !cfreq_expectations.empty?
-      parameter_expectations = [anything(), anything(), anything(), anything(), anything(), anything(), anything(), anything()]
-      parameter_expectations[0] = cfreq_expectations[:method] if cfreq_expectations[:method]
-      parameter_expectations[2] = cfreq_expectations[:path] if cfreq_expectations[:path]
-      
-      @connection.expects(:cfreq).with(*parameter_expectations).returns(response)
-    else  
-      @connection.stubs(:cfreq).returns(response)
-    end
-
-  end
-
-  def build_net_http_object_with_cfreq_expectations(args={:code => '204' }, cfreq_expectations={})
-    build_net_http_object(args, cfreq_expectations)
-  end
+  # private
+  # 
+  # def build_net_http_object(args={}, cfreq_expectations={})
+  #   args.merge!(:code => '204') unless args[:code]
+  #   args[:response] = {} unless args[:response]
+  #   response = {'x-cdn-management-url' => 'http://cdn.example.com/path', 'x-storage-url' => 'http://cdn.example.com/storage', 'authtoken' => 'dummy_token'}.merge(args[:response])
+  #   response.stubs(:code).returns(args[:code])
+  #   response.stubs(:body).returns args[:body] || nil
+  # 
+  #   if !cfreq_expectations.empty?
+  #     parameter_expectations = [anything(), anything(), anything(), anything(), anything(), anything(), anything(), anything()]
+  #     parameter_expectations[0] = cfreq_expectations[:method] if cfreq_expectations[:method]
+  #     parameter_expectations[2] = cfreq_expectations[:path] if cfreq_expectations[:path]
+  #     
+  #     @connection.expects(:cfreq).with(*parameter_expectations).returns(response)
+  #   else  
+  #     @connection.stubs(:cfreq).returns(response)
+  #   end
+  # 
+  # end
+  # 
+  # def build_net_http_object_with_cfreq_expectations(args={:code => '204' }, cfreq_expectations={})
+  #   build_net_http_object(args, cfreq_expectations)
+  # end
 end

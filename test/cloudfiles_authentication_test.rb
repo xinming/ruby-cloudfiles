@@ -21,7 +21,6 @@ class CloudfilesAuthenticationTest < Test::Unit::TestCase
   
   def test_bad_authentication
     SwiftClient.stubs(:get_auth).returns(nil)
-    # CloudFiles::Authentication.any_instance.stubs(:get_server).returns(server)
     @connection = stub(:authuser => 'bad_user', :authkey => 'bad_key', :authok= => true, :authtoken= => true,  :auth_url => 'https://auth.api.rackspacecloud.com/v1.0', :cdn_available? => true, :snet? => false)
     assert_raises(CloudFiles::Exception::Authentication) do
       result = CloudFiles::Authentication.new(@connection)

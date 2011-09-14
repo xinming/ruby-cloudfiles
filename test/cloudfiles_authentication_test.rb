@@ -2,7 +2,6 @@ $:.unshift File.dirname(__FILE__)
 require 'test_helper'
 
 class CloudfilesAuthenticationTest < Test::Unit::TestCase
-  
   def test_good_authentication
     response = ['http://cdn.example.com/storage', 'dummy_token', {'x-cdn-management-url' => 'http://cdn.example.com/path', 'x-storage-url' => 'http://cdn.example.com/storage', 'authtoken' => 'dummy_token'}]
     SwiftClient.stubs(:get_auth).returns(response)
@@ -34,5 +33,12 @@ class CloudfilesAuthenticationTest < Test::Unit::TestCase
       result = CloudFiles::Authentication.new(@connection)
     end
   end
-    
+  
+  def test_authentication_general_exception
+    SwiftClient.stubs(:get_auth).raises(ClientException.new('foobar'))
+    @connection = stub(:proxy_host => nil, :proxy_port => nil, :authuser => 'bad_user', :authkey => 'bad_key', :authok= => true, :authtoken= => true, :auth_url => 'https://auth.api.rackspacecloud.com/v1.0', :cdn_available? => true, :snet? => false)
+    assert_raises(CloudFiles::Exception::Connection) do 
+      result = CloudFiles::Authentication.new(@connection)
+    end
+  end
 end

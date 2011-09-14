@@ -3,7 +3,7 @@ require 'uri'
 require 'net/http'
 require 'json'
 
-class ClientException < Exception
+class ClientException < StandardError
   attr_reader :scheme, :host, :port, :path, :query, :status, :reason, :devices
   def initialize(msg, params={})
     @msg     = msg
@@ -184,7 +184,10 @@ public
       { "x-auth-user" => user, "x-auth-key" => key })
 
     if resp.code.to_i < 200 or resp.code.to_i > 300
-      raise ClientException
+      raise ClientException.new('Account GET failed', :http_scheme=>parsed.scheme,
+                  :http_host=>conn.address, :http_port=>conn.port,
+                  :http_path=>parsed.path, :http_query=>parsed.query, :http_status=>resp.code,
+                  :http_reason=>resp.message)
     end
     url = URI::parse(resp.header['x-storage-url'])
     if snet:

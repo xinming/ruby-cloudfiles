@@ -275,7 +275,16 @@ module CloudFiles
         raise CloudFiles::Exception::InvalidResponse, "Invalid response code #{e.status.to_s}" unless (e.status.to_s == "200")
       end
     end
+    
+    def storageurl
+      "#{self.storagescheme}://#{self.storagehost}:#{self.storageport.to_s}#{self.storagepath}"
+    end
+    def cdnurl
+      "#{self.cdnmgmtscheme}://#{self.cdnmgmthost}:#{self.cdnmgmtport.to_s}#{self.cdnmgmtpath}"
+    end
 
+    
+    # ---- get rid of ----
     # def storage_request(method, path = "", headers = {}, data = nil, attempts = 0, &block)
     #   path = "#{@storagepath}/#{path}" unless (path[0,1] == '/')
     #   cfreq(method, @storagehost, path, @storageport, @storagescheme, headers, data, attempts, &block)
@@ -357,13 +366,6 @@ module CloudFiles
     #     end
     #   end
     # end
-    
-    def storageurl
-      "#{self.storagescheme}://#{self.storagehost}:#{self.storageport.to_s}#{self.storagepath}"
-    end
-    def cdnurl
-      "#{self.cdnmgmtscheme}://#{self.cdnmgmthost}:#{self.cdnmgmtport.to_s}#{self.cdnmgmtpath}"
-    end
+    # ---- get rid of ----
   end
-
 end

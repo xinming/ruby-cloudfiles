@@ -12,7 +12,7 @@ module CloudFiles
     def initialize(connection)
       begin
         storage_url, auth_token, headers = SwiftClient.get_auth(connection.auth_url, connection.authuser, connection.authkey, connection.snet?)
-      rescue Exception => e
+      rescue => e
         # uncomment if you suspect a problem with this branch of code
         # $stderr.puts "got error #{e.class}: #{e.message.inspect}\n" << e.traceback.map{|n| "\t#{n}"}.join("\n")
         raise CloudFiles::Exception::Connection, "Unable to connect to #{connection.auth_url}", caller
@@ -41,9 +41,9 @@ module CloudFiles
 
     private
 
-      def get_server(connection, parsed_auth_url)
-        Net::HTTP::Proxy(connection.proxy_host, connection.proxy_port).new(parsed_auth_url.host, parsed_auth_url.port)
-      end
+      # def get_server(connection, parsed_auth_url)
+      #   Net::HTTP::Proxy(connection.proxy_host, connection.proxy_port).new(parsed_auth_url.host, parsed_auth_url.port)
+      # end
 
       def set_snet(connection, hostname)
         if connection.snet?

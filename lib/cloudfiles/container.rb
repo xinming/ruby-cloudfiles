@@ -41,11 +41,14 @@ module CloudFiles
     # Retrieves Metadata for the container
     def container_metadata
       @metadata ||= (
-        response = self.connection.storage_request("HEAD", "#{escaped_name}/")
-        raise CloudFiles::Exception::NoSuchContainer, "Container #{@name} does not exist" unless (response.code =~ /^20/)
-        resphash = {}
-        response.to_hash.select { |k,v| k.match(/^x-container-meta/) }.each { |x| resphash[x[0]] = x[1].to_s }
-        {:bytes => response["x-container-bytes-used"].to_i, :count => response["x-container-object-count"].to_i, :metadata => resphash, :container_read => response["x-container-read"], :container_write => response["x-container-write"]}
+        begin
+          response = SwiftClient.head_container(self.connection.storageurl, self.connection.authtoken, escaped_name)
+          resphash = {}
+          response.to_hash.select { |k,v| k.match(/^x-container-meta/) }.each { |x| resphash[x[0]] = x[1].to_s }
+          {:bytes => response["x-container-bytes-used"].to_i, :count => response["x-container-object-count"].to_i, :metadata => resphash, :container_read => response["x-container-read"], :container_write => response["x-container-write"]}
+        rescue ClientException => e
+          raise CloudFiles::Exception::NoSuchContainer, "Container #{@name} does not exist" unless (e.status.to_s =~ /^20/)
+        end
       )
     end
 
@@ -54,17 +57,21 @@ module CloudFiles
       return @cdn_metadata if @cdn_metadata
       if cdn_available?
         @cdn_metadata = (
-          response = self.connection.cdn_request("HEAD", escaped_name)
-          cdn_enabled = ((response["x-cdn-enabled"] || "").downcase == "true") ? true : false
-          {
-            :cdn_enabled => cdn_enabled,
-            :cdn_ttl => cdn_enabled ? response["x-ttl"].to_i : nil,
-            :cdn_url => cdn_enabled ? response["x-cdn-uri"] : nil,
-            :cdn_ssl_url => cdn_enabled ? response["x-cdn-ssl-uri"] : nil,
-            :user_agent_acl => response["x-user-agent-acl"],
-            :referrer_acl => response["x-referrer-acl"],
-            :cdn_log => (cdn_enabled and response["x-log-retention"] == "True") ? true : false
-          }
+          begin
+            response = SwiftClient.head_container(self.connection.cdnurl, self.connection.authtoken, escaped_name)
+            cdn_enabled = ((response["x-cdn-enabled"] || "").downcase == "true") ? true : false
+            {
+              :cdn_enabled => cdn_enabled,
+              :cdn_ttl => cdn_enabled ? response["x-ttl"].to_i : nil,
+              :cdn_url => cdn_enabled ? response["x-cdn-uri"] : nil,
+              :cdn_ssl_url => cdn_enabled ? response["x-cdn-ssl-uri"] : nil,
+              :user_agent_acl => response["x-user-agent-acl"],
+              :referrer_acl => response["x-referrer-acl"],
+              :cdn_log => (cdn_enabled and response["x-log-retention"] == "True") ? true : false
+            }
+          rescue ClientException => e
+            raise CloudFiles::Exception::NoSuchContainer, "Container #{@name} does not exist" unless (e.status.to_s =~ /^20/)
+          end
         )
       else
         @cdn_metadata = {}
@@ -169,9 +176,15 @@ module CloudFiles
     # to a ".CDN_ACCESS_LOGS" container in the form of "container_name.YYYYMMDDHH-XXXX.gz".
     def log_retention=(value)
       raise Exception::CDNNotAvailable unless cdn_available?
-      response = self.connection.cdn_request("POST", escaped_name, {"x-log-retention" => value.to_s.capitalize})
-      raise CloudFiles::Exception::InvalidResponse, "Invalid response code #{response.code}" unless (response.code == "201" or response.code == "202")
-      return true
+      begin
+        SwiftClient.post_container(self.connection.cdnurl, self.connection.authtoken, escaped_name, {"x-log-retention" => value.to_s.capitalize})
+        # response = self.connection.cdn_request("POST", escaped_name, {"x-log-retention" => value.to_s.capitalize})
+        true
+      rescue ClientException => e
+        raise CloudFiles::Exception::InvalidResponse, "Invalid response code #{e.status}" unless (e.status.to_s == "201" or e.status.to_s == "202")
+        false
+      end
+
     end
 
 
@@ -216,10 +229,13 @@ module CloudFiles
           query << "#{param}=#{CloudFiles.escape(value.to_s)}"
         end
       end
-      response = self.connection.storage_request("GET", "#{escaped_name}?#{query.join '&'}")
-      return [] if (response.code == "204")
-      raise CloudFiles::Exception::InvalidResponse, "Invalid response code #{response.code}" unless (response.code == "200")
-      return CloudFiles.lines(response.body)
+      # response = self.connection.storage_request("GET", "#{escaped_name}?#{query.join '&'}")
+      begin
+        response = SwiftClient.get_container(self.connection.storageurl, self.connection.authtoken, escaped_name, params[:marker], params[:limit], params[:prefix], params[:delimiter])
+        return response[1].collect{|o| o['name']}
+      rescue ClientException => e
+        raise CloudFiles::Exception::InvalidResponse, "Invalid response code #{e.status}" unless (e.status.to_s == "200")
+      end
     end
     alias :list_objects :objects
 
@@ -249,16 +265,20 @@ module CloudFiles
           query << "#{param}=#{CloudFiles.escape(value.to_s)}"
         end
       end
-      response = self.connection.storage_request("GET", "#{escaped_name}?#{query.join '&'}")
-      return {} if (response.code == "204")
-      raise CloudFiles::Exception::InvalidResponse, "Invalid response code #{response.code}" unless (response.code == "200")
-      doc = REXML::Document.new(response.body)
-      detailhash = {}
-      doc.elements.each("container/object") { |o|
-        detailhash[o.elements["name"].text] = { :bytes => o.elements["bytes"].text, :hash => o.elements["hash"].text, :content_type => o.elements["content_type"].text, :last_modified => DateTime.parse(o.elements["last_modified"].text) }
-      }
-      doc = nil
-      return detailhash
+      begin 
+        response = SwiftClient.get_container(self.connection.storageurl, self.connection.authtoken, escaped_name, params[:marker], params[:limit], params[:prefix], params[:delimiter])
+        return Hash[*response[1].collect{|o| [o['name'],{ :bytes => o["bytes"], :hash => o["hash"], :content_type => o["content_type"], :last_modified => DateTime.parse(o["last_modified"])}] }.flatten]
+        # response = self.connection.storage_request("GET", "#{escaped_name}?#{query.join '&'}")
+      rescue ClientException => e
+        raise CloudFiles::Exception::InvalidResponse, "Invalid response code #{e.status}" unless (e.status.to_s == "200")
+      end
+      # doc = REXML::Document.new(response.body)
+      # detailhash = {}
+      # doc.elements.each("container/object") { |o|
+      #   detailhash[o.elements["name"].text] = { :bytes => o.elements["bytes"].text, :hash => o.elements["hash"].text, :content_type => o.elements["content_type"].text, :last_modified => DateTime.parse(o.elements["last_modified"].text) }
+      # }
+      # doc = nil
+      # return detailhash
     end
     alias :list_objects_info :objects_detail
 
@@ -281,8 +301,12 @@ module CloudFiles
     #   container.object_exists?('badfile.txt')
     #   => false
     def object_exists?(objectname)
-      response = self.connection.storage_request("HEAD", "#{escaped_name}/#{CloudFiles.escape objectname}")
-      return (response.code =~ /^20/)? true : false
+      begin
+        response = SwiftClient.head_object(self.connection.storageurl, self.connection.authtoken, escaped_name, objectname)
+        true
+      rescue ClientException => e
+        false
+      end
     end
 
     # Creates a new CloudFiles::StorageObject in the current container.
@@ -306,10 +330,13 @@ module CloudFiles
     #   container.delete_object('nonexistent_file.txt')
     #   => NoSuchObjectException: Object nonexistent_file.txt does not exist
     def delete_object(objectname)
-      response = self.connection.storage_request("DELETE", "#{escaped_name}/#{CloudFiles.escape objectname}")
-      raise CloudFiles::Exception::NoSuchObject, "Object #{objectname} does not exist" if (response.code == "404")
-      raise CloudFiles::Exception::InvalidResponse, "Invalid response code #{response.code}" unless (response.code =~ /^20/)
-      true
+      begin
+        SwiftClient.delete_object(self.connection.storageurl, self.connection.authtoken, escaped_name, objectname)
+        true
+      rescue ClientException => e
+        raise CloudFiles::Exception::NoSuchObject, "Object #{objectname} does not exist" if (e.status.to_s == "404")
+        raise CloudFiles::Exception::InvalidResponse, "Invalid response code #{e.status}" unless (e.status.to_s =~ /^20/)
+      end
     end
 
     # Makes a container publicly available via the Cloud Files CDN and returns true upon success.  Throws NoSuchContainerException
@@ -333,14 +360,17 @@ module CloudFiles
         options = {:ttl => ttl}
       end
 
-      response = self.connection.cdn_request("PUT", escaped_name)
-      raise CloudFiles::Exception::NoSuchContainer, "Container #{@name} does not exist" unless (response.code == "201" || response.code == "202")
-
+      begin
+        SwiftClient.put_container(self.connection.cdnurl, self.connection.authtoken, escaped_name)
+      rescue ClientException => e
+        raise CloudFiles::Exception::NoSuchContainer, "Container #{@name} does not exist" unless (e.status.to_s == "201" || e.status.to_s == "202")
+      end
       headers = { "X-TTL" => options[:ttl].to_s , "X-CDN-Enabled" => "True" }
       headers["X-User-Agent-ACL"] = options[:user_agent_acl] if options[:user_agent_acl]
       headers["X-Referrer-ACL"] = options[:referrer_acl] if options[:referrer_acl]
-      response = post_with_headers(headers)
-      raise CloudFiles::Exception::NoSuchContainer, "Container #{@name} does not exist" unless (response.code == "201" || response.code == "202")
+
+      post_with_headers(headers)
+      # raise CloudFiles::Exception::NoSuchContainer, "Container #{@name} does not exist" unless (response.code == "201" || response.code == "202")
       refresh
       true
     end
@@ -362,13 +392,11 @@ module CloudFiles
     end
 
     def post_with_headers(headers = {})
-      if cdn_enabled?
-        response = self.connection.cdn_request("POST", escaped_name, headers)
-      else
-        response = self.connection.storage_request("POST", escaped_name, headers)
+      begin
+        SwiftClient.post_container(cdn_enabled? ? self.connection.cdnurl : self.connection.storageurl, self.connection.authtoken, escaped_name, headers)
+      rescue ClientException => e
+        raise CloudFiles::Exception::NoSuchContainer, "Container #{@name} does not exist (response code: #{e.status.to_s})" unless (e.status.to_s =~ /^20/)
       end
-      raise CloudFiles::Exception::NoSuchContainer, "Container #{@name} does not exist (response code: #{response.code})" unless (response.code =~ /^20/)
-      response
     end
    
     # Makes a container private and returns true upon success.  Throws NoSuchContainerException
@@ -381,10 +409,13 @@ module CloudFiles
     def make_private
       raise Exception::CDNNotAvailable unless cdn_available?
       headers = { "X-CDN-Enabled" => "False" }
-      response = self.connection.cdn_request("POST", escaped_name, headers)
-      raise CloudFiles::Exception::NoSuchContainer, "Container #{@name} does not exist" unless (response.code == "201" || response.code == "202")
-      refresh
-      true
+      begin
+        SwiftClient.post_container(self.connection.cdnurl, self.connection.authtoken, escaped_name, headers)
+        refresh
+        true
+      rescue ClientException => e
+        raise CloudFiles::Exception::NoSuchContainer, "Container #{@name} does not exist" unless (e.status.to_s == "201" || e.status.to_s == "202")
+      end
     end
 
     # Purges CDN Edge Cache for all objects inside of this container
@@ -408,9 +439,17 @@ module CloudFiles
       raise Exception::CDNNotAvailable unless cdn_available?
       headers = {}
       headers = {"X-Purge-Email" => email} if email
-      response = self.connection.cdn_request("DELETE", escaped_name, headers)
-      raise CloudFiles::Exception::Connection, "Error Unable to Purge Container: #{@name}" unless (response.code > "200" && response.code < "299")
-      true
+      # if email
+      #   raise "you need to add header support to all container and object methods"
+      # end
+      begin
+        SwiftClient.delete_container(self.connection.cdnurl, self.connection.authtoken, escaped_name)
+        # response = self.connection.cdn_request("DELETE", escaped_name, headers)
+        true
+      rescue ClientException => e
+        raise CloudFiles::Exception::Connection, "Error Unable to Purge Container: #{@name}" unless (e.status.to_s > "200" && e.status.to_s < "299")
+        false
+      end
     end
 
     def to_s # :nodoc:

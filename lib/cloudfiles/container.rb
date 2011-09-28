@@ -61,7 +61,7 @@ module CloudFiles
             :cdn_ttl => cdn_enabled ? response["x-ttl"].to_i : nil,
             :cdn_url => cdn_enabled ? response["x-cdn-uri"] : nil,
             :cdn_ssl_url => cdn_enabled ? response["x-cdn-ssl-uri"] : nil,
-            :cdn_streaming_url => cdn_enabled ? response["x-cdn-streaming-uri"] nil,
+            :cdn_streaming_url => cdn_enabled ? response["x-cdn-streaming-uri"] : nil,
             :user_agent_acl => response["x-user-agent-acl"],
             :referrer_acl => response["x-referrer-acl"],
             :cdn_log => (cdn_enabled and response["x-log-retention"] == "True") ? true : false

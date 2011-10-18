@@ -97,10 +97,14 @@ module CloudFiles
     def set_metadata(metadatahash)
       headers = {}
       metadatahash.each{ |key, value| headers['X-Container-Meta-' + CloudFiles.escape(key.to_s.capitalize)] = value.to_s }
-      response = self.connection.storage_request("POST", escaped_name, headers)
-      raise CloudFiles::Exception::NoSuchObject, "Container #{@name} does not exist" if (response.code == "404")
-      raise CloudFiles::Exception::InvalidResponse, "Invalid response code #{response.code}" unless (response.code =~ /^20/)
-      true
+      begin
+        SwiftClient.post_container(self.connection.storageurl, self.connection.authtoken, escaped_name, headers)
+        self.refresh
+        true
+      rescue ClientException => e
+        raise CloudFiles::Exception::NoSuchObject, "Container #{@name} does not exist" if (e.status.to_s == "404")
+        raise CloudFiles::Exception::InvalidResponse, "Invalid response code #{e.status}" unless (e.status.to_s =~ /^20/)
+      end
     end
     
     # Size of the container (in bytes)
@@ -178,13 +182,10 @@ module CloudFiles
       raise Exception::CDNNotAvailable unless cdn_available?
       begin
         SwiftClient.post_container(self.connection.cdnurl, self.connection.authtoken, escaped_name, {"x-log-retention" => value.to_s.capitalize})
-        # response = self.connection.cdn_request("POST", escaped_name, {"x-log-retention" => value.to_s.capitalize})
         true
       rescue ClientException => e
         raise CloudFiles::Exception::InvalidResponse, "Invalid response code #{e.status}" unless (e.status.to_s == "201" or e.status.to_s == "202")
-        false
       end
-
     end
 
 
@@ -229,7 +230,6 @@ module CloudFiles
           query << "#{param}=#{CloudFiles.escape(value.to_s)}"
         end
       end
-      # response = self.connection.storage_request("GET", "#{escaped_name}?#{query.join '&'}")
       begin
         response = SwiftClient.get_container(self.connection.storageurl, self.connection.authtoken, escaped_name, params[:marker], params[:limit], params[:prefix], params[:delimiter])
         return response[1].collect{|o| o['name']}
@@ -268,17 +268,9 @@ module CloudFiles
       begin 
         response = SwiftClient.get_container(self.connection.storageurl, self.connection.authtoken, escaped_name, params[:marker], params[:limit], params[:prefix], params[:delimiter])
         return Hash[*response[1].collect{|o| [o['name'],{ :bytes => o["bytes"], :hash => o["hash"], :content_type => o["content_type"], :last_modified => DateTime.parse(o["last_modified"])}] }.flatten]
-        # response = self.connection.storage_request("GET", "#{escaped_name}?#{query.join '&'}")
       rescue ClientException => e
         raise CloudFiles::Exception::InvalidResponse, "Invalid response code #{e.status}" unless (e.status.to_s == "200")
       end
-      # doc = REXML::Document.new(response.body)
-      # detailhash = {}
-      # doc.elements.each("container/object") { |o|
-      #   detailhash[o.elements["name"].text] = { :bytes => o.elements["bytes"].text, :hash => o.elements["hash"].text, :content_type => o.elements["content_type"].text, :last_modified => DateTime.parse(o.elements["last_modified"].text) }
-      # }
-      # doc = nil
-      # return detailhash
     end
     alias :list_objects_info :objects_detail
 
@@ -439,16 +431,11 @@ module CloudFiles
       raise Exception::CDNNotAvailable unless cdn_available?
       headers = {}
       headers = {"X-Purge-Email" => email} if email
-      # if email
-      #   raise "you need to add header support to all container and object methods"
-      # end
       begin
-        SwiftClient.delete_container(self.connection.cdnurl, self.connection.authtoken, escaped_name)
-        # response = self.connection.cdn_request("DELETE", escaped_name, headers)
+        SwiftClient.delete_container(self.connection.cdnurl, self.connection.authtoken, escaped_name, headers)
         true
       rescue ClientException => e
         raise CloudFiles::Exception::Connection, "Error Unable to Purge Container: #{@name}" unless (e.status.to_s > "200" && e.status.to_s < "299")
-        false
       end
     end
 

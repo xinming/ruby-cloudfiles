@@ -34,8 +34,11 @@ module CloudFiles
     # Retrieves Metadata for the object
     def object_metadata
       @object_metadata ||= (
-        response = self.container.connection.storage_request("HEAD", @storagepath)
-        raise CloudFiles::Exception::NoSuchObject, "Object #{@name} does not exist" unless (response.code =~ /^20/)
+        begin
+          response = SwiftClient.head_object(self.container.connection.storageurl, self.container.connection.authtoken, self.container.escaped_name, (CloudFiles.escape self.name))
+        rescue ClientException => e
+          raise CloudFiles::Exception::NoSuchObject, "Object #{@name} does not exist" unless (e.status.to_s =~ /^20/)
+        end
         resphash = {}
         metas = response.to_hash.select { |k,v| k.match(/^x-object-meta/) }
 
@@ -91,9 +94,12 @@ module CloudFiles
         range = sprintf("bytes=%d-%d", offset.to_i, (offset.to_i + size.to_i) - 1)
         headers['Range'] = range
       end
-      response = self.container.connection.storage_request("GET", @storagepath, headers)
-      raise CloudFiles::Exception::NoSuchObject, "Object #{@name} does not exist" unless (response.code =~ /^20/)
-      response.body
+      begin
+        response = SwiftClient.get_object(self.container.connection.storageurl, self.container.connection.authtoken, self.container.escaped_name, (CloudFiles.escape self.name))
+        response[1]
+      rescue ClientException => e
+        raise CloudFiles::Exception::NoSuchObject, "Object #{@name} does not exist" unless (e.status.to_s =~ /^20/)
+      end
     end
     alias :read :data
 
@@ -115,9 +121,8 @@ module CloudFiles
         range = sprintf("bytes=%d-%d", offset.to_i, (offset.to_i + size.to_i) - 1)
         headers['Range'] = range
       end
-      self.container.connection.storage_request("GET", @storagepath, headers, nil) do |response|
-        raise CloudFiles::Exception::NoSuchObject, "Object #{@name} does not exist. Response code #{response.code}" unless (response.code =~ /^20./)
-        response.read_body(&block)
+      begin
+        SwiftClient.get_object(self.container.connection.storageurl, self.container.connection.authtoken, self.container.escaped_name, (CloudFiles.escape self.name), nil, nil, &block)
       end
     end
 
@@ -140,10 +145,14 @@ module CloudFiles
     def set_metadata(metadatahash)
       headers = {}
       metadatahash.each{ |key, value| headers['X-Object-Meta-' + key.to_s.capitalize] = value.to_s }
-      response = self.container.connection.storage_request("POST", @storagepath, headers)
-      raise CloudFiles::Exception::NoSuchObject, "Object #{@name} does not exist" if (response.code == "404")
-      raise CloudFiles::Exception::InvalidResponse, "Invalid response code #{response.code}" unless (response.code =~ /^20/)
-      true
+      begin
+        SwiftClient.post_object(self.container.connection.storageurl, self.container.connection.authtoken, self.container.escaped_name, (CloudFiles.escape self.name), headers)
+        true
+      rescue ClientException => e
+        raise CloudFiles::Exception::NoSuchObject, "Object #{@name} does not exist" if (e.status.to_s == "404")
+        raise CloudFiles::Exception::InvalidResponse, "Invalid response code #{e.status.to_s}" unless (e.status.to_s =~ /^20/)
+        false
+      end
     end
     alias :metadata= :set_metadata
     
@@ -164,10 +173,14 @@ module CloudFiles
     # fails.
     def set_manifest(manifest)
       headers = {'X-Object-Manifest' => manifest}
-      response = self.container.connection.storage_request("PUT", @storagepath, headers)
-      raise CloudFiles::Exception::NoSuchObject, "Object #{@name} does not exist" if (response.code == "404")
-      raise CloudFiles::Exception::InvalidResponse, "Invalid response code #{response.code}" unless (response.code =~ /^20/)
-      true
+      begin
+        SwiftClient.post_object(self.container.connection.storageurl, self.container.connection.authtoken, self.container.escaped_name, (CloudFiles.escape self.name), headers)
+        true
+      rescue ClientException => e
+        raise CloudFiles::Exception::NoSuchObject, "Object #{@name} does not exist" if (response.code == "404")
+        raise CloudFiles::Exception::InvalidResponse, "Invalid response code #{response.code}" unless (response.code =~ /^20/)
+        false
+      end
     end
 
 
@@ -211,11 +224,14 @@ module CloudFiles
       end
       # If we're taking data from standard input, send that IO object to cfreq
       data = $stdin if (data.nil? && $stdin.tty? == false)
-      response = self.container.connection.storage_request("PUT", @storagepath, headers, data)
-      code = response.code
-      raise CloudFiles::Exception::InvalidResponse, "Invalid content-length header sent" if (code == "412")
-      raise CloudFiles::Exception::MisMatchedChecksum, "Mismatched etag" if (code == "422")
-      raise CloudFiles::Exception::InvalidResponse, "Invalid response code #{code}" unless (code =~ /^20./)
+      begin
+        response = SwiftClient.put_object(self.container.connection.storageurl, self.container.connection.authtoken, self.container.escaped_name, (CloudFiles.escape self.name), data, nil, nil, nil, nil, headers)
+      rescue ClientException => e
+        code = e.status.to_s
+        raise CloudFiles::Exception::InvalidResponse, "Invalid content-length header sent" if (code == "412")
+        raise CloudFiles::Exception::MisMatchedChecksum, "Mismatched etag" if (code == "422")
+        raise CloudFiles::Exception::InvalidResponse, "Invalid response code #{code}" unless (code =~ /^20./)
+      end
       make_path(File.dirname(self.name)) if @make_path == true
       self.refresh
       true
@@ -241,9 +257,13 @@ module CloudFiles
       raise Exception::CDNNotAvailable unless cdn_available?
       headers = {}
       headers = {"X-Purge-Email" => email} if email
-      response = self.container.connection.cdn_request("DELETE", @storagepath, headers)
-      raise CloudFiles::Exception::Connection, "Error Unable to Purge Object: #{@name}" unless (response.code.to_s =~ /^20.$/)
-      true
+      begin
+        SwiftClient.delete_object(self.container.connection.cdnurl, self.container.connection.authtoken, self.container.escaped_name, (CloudFiles.escape self.name), nil, headers)
+        true
+      rescue ClientException => e
+        raise CloudFiles::Exception::Connection, "Error Unable to Purge Object: #{@name}" unless (e.status.to_s =~ /^20.$/)
+        false
+      end
     end
 
     # A convenience method to stream data into an object from a local file (or anything that can be loaded by Ruby's open method)
@@ -296,6 +316,7 @@ module CloudFiles
     def save_to_filename(filename)
       File.open(filename, 'wb+') do |f|
         self.data_stream do |chunk|
+          puts chunk.length
           f.write chunk
         end
       end
@@ -349,10 +370,13 @@ module CloudFiles
       headers = {'X-Copy-From' => "#{self.container.name}/#{self.name}", 'Content-Type' => self.content_type.sub(/;.+/, '')}.merge(new_headers)
       # , 'Content-Type' => self.content_type
       new_path = "#{CloudFiles.escape new_container}/#{CloudFiles.escape new_name, '/'}"
-      response = self.container.connection.storage_request("PUT", new_path, headers)
-      code = response.code
-      raise CloudFiles::Exception::InvalidResponse, "Invalid response code #{response.code}" unless (response.code =~ /^20/)
-      return CloudFiles::Container.new(self.container.connection, new_container).object(new_name)
+      begin
+        response = SwiftClient.put_object(self.container.connection.storageurl, self.container.connection.authtoken, (CloudFiles.escape new_container), (CloudFiles.escape new_name), nil, nil, nil, nil, nil, headers)
+        return CloudFiles::Container.new(self.container.connection, new_container).object(new_name)
+      rescue ClientException => e
+        code = e.status.to_s
+        raise CloudFiles::Exception::InvalidResponse, "Invalid response code #{response.code}" unless (response.code =~ /^20/)
+      end
     end
     
     # Takes the same options as the copy method, only it does a copy followed by a delete on the original object.

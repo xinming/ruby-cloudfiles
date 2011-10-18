@@ -46,7 +46,10 @@ class CloudfilesContainerTest < Test::Unit::TestCase
   end
   
   def test_to_s
-    build_net_http_object
+    connection = stub(:storagehost => 'test.storage.example', :storagepath => '/dummy/path', :storageport => 443, :storagescheme => 'https', :cdnmgmthost => 'cdm.test.example', :cdnmgmtpath => '/dummy/path', :cdnmgmtport => 443, :cdnmgmtscheme => 'https', :cdn_available? => true, :cdnurl => nil, :storageurl => nil, :authtoken => "dummy token")
+    response = {'x-container-bytes-used' => '42', 'x-container-object-count' => '5', 'x-cdn-enabled' => 'True', 'x-cdn-uri' => 'http://cdn.test.example/container', 'x-ttl' => '86400'}
+    SwiftClient.stubs(:head_container).returns(response)
+    @container = CloudFiles::Container.new(connection, 'test_container')
     assert_equal @container.to_s, 'test_container'
   end
   
@@ -81,6 +84,18 @@ class CloudfilesContainerTest < Test::Unit::TestCase
     @container = CloudFiles::Container.new(connection, 'test_container')
     assert_nothing_raised do
       @container.make_public
+    end
+  end
+  
+  def test_make_public_fixnum_ttl_deprication_warning_and_succeeds
+    connection = stub(:storagehost => 'test.storage.example', :storagepath => '/dummy/path', :storageport => 443, :storagescheme => 'https', :cdnmgmthost => 'cdm.test.example', :cdnmgmtpath => '/dummy/path', :cdnmgmtport => 443, :cdnmgmtscheme => 'https', :cdn_available? => true, :cdnurl => 'http://cdn.test.example/container', :storageurl => nil, :authtoken => "dummy token")
+    response = {'x-container-bytes-used' => '42', 'x-container-object-count' => '5', 'x-cdn-enabled' => 'True', 'x-cdn-uri' => 'http://cdn.test.example/container', 'x-ttl' => '86400'}
+    SwiftClient.stubs(:put_container).returns(nil)
+    SwiftClient.stubs(:head_container).returns(response)
+    CloudFiles::Container.any_instance.stubs(:post_with_headers).returns(nil)
+    @container = CloudFiles::Container.new(connection, 'test_container')
+    assert_nothing_raised do
+      @container.make_public(123)
     end
   end
   
@@ -263,6 +278,17 @@ class CloudfilesContainerTest < Test::Unit::TestCase
     assert_equal objects.first, 'foo'
   end
   
+  def test_fetch_objects_fails
+    connection = stub(:storagehost => 'test.storage.example', :storagepath => '/dummy/path', :storageport => 443, :storagescheme => 'https', :cdnmgmthost => 'cdm.test.example', :cdnmgmtpath => '/dummy/path', :cdnmgmtport => 443, :cdnmgmtscheme => 'https', :cdn_available? => true, :cdnurl => 'http://foo.test.example/container', :storageurl => 'http://foo.test.example/container', :authtoken => "dummy token")
+    SwiftClient.stubs(:head_container).returns({'x-container-bytes-used' => '10','x-container-object-count' => '1'})
+    SwiftClient.stubs(:get_container).raises(ClientException.new("test_fetch_object_fails", :http_status => 500))
+    @container = CloudFiles::Container.new(connection, "test_container")
+    
+    assert_raise(CloudFiles::Exception::InvalidResponse) do
+      objects = @container.objects
+    end
+  end
+  
   def test_fetch_objects_with_limit
     connection = stub(:storagehost => 'test.storage.example', :storagepath => '/dummy/path', :storageport => 443, :storagescheme => 'https', :cdnmgmthost => 'cdm.test.example', :cdnmgmtpath => '/dummy/path', :cdnmgmtport => 443, :cdnmgmtscheme => 'https', :cdn_available? => true, :cdnurl => 'http://foo.test.example/container', :storageurl => 'http://foo.test.example/container', :authtoken => "dummy token")
     SwiftClient.stubs(:head_container).returns({'x-container-bytes-used' => '10','x-container-object-count' => '1'})
@@ -379,6 +405,18 @@ class CloudfilesContainerTest < Test::Unit::TestCase
     
     assert(@container.log_retention='false')
   end
+
+  def test_setting_log_retention_fails
+    connection = stub(:storagehost => 'test.storage.example', :storagepath => '/dummy/path', :storageport => 443, :storagescheme => 'https', :cdnmgmthost => 'cdm.test.example', :cdnmgmtpath => '/dummy/path', :cdnmgmtport => 443, :cdnmgmtscheme => 'https', :cdn_available? => true, :cdnurl => 'http://foo.test.example/container', :storageurl => 'http://foo.test.example/container', :authtoken => "dummy token")
+    SwiftClient.stubs(:head_container).returns({'x-container-bytes-used' => '0','x-container-object-count' => '0'})
+    SwiftClient.stubs(:post_container).raises(ClientException.new("test_setting_log_retention_fails", :http_status => 500))
+    @container = CloudFiles::Container.new(connection, "test_container")
+    
+    assert_raise(CloudFiles::Exception::InvalidResponse) do
+      @container.log_retention='false'
+    end
+  end
+  
   
   def test_purge_from_cdn_succeeds
     connection = stub(:storagehost => 'test.storage.example', :storagepath => '/dummy/path', :storageport => 443, :storagescheme => 'https', :cdnmgmthost => 'cdm.test.example', :cdnmgmtpath => '/dummy/path', :cdnmgmtport => 443, :cdnmgmtscheme => 'https', :cdn_available? => true, :cdnurl => 'http://foo.test.example/container', :storageurl => 'http://foo.test.example/container', :authtoken => "dummy token")
@@ -392,49 +430,81 @@ class CloudfilesContainerTest < Test::Unit::TestCase
     end
   end
   
-  private
-  
-  def build_net_http_object(args={}, cfreq_expectations={})
-    args.merge!(:code => '204') unless args[:code]
-    CloudFiles::Container.any_instance.stubs(:populate).returns(true)
-    CloudFiles::Container.any_instance.stubs(:metadata).returns()
-    CloudFiles::Container.any_instance.stubs(:container_metadata).returns({:bytes => 99, :count => 2})
-    args[:connection] = {} unless args[:connection]
-    connection_args = {:storagehost => 'test.storage.example', :storagepath => '/dummy/path', :storageport => 443, :storagescheme => 'https', :cdnmgmthost => 'cdm.test.example', :cdnmgmtpath => '/dummy/path', :cdnmgmtport => 443, :cdnmgmtscheme => 'https', :cdn_available? => false, :cdnurl => 'http://cdn.test.example.com/container', :storageurl => 'http://test.example.com/storage', :authtoken => "dummy_token"}.update(args[:connection])
-    # connection_args.each_pair { |k,v| puts "\t#{k} => #{v}" }
-    connection = stub(connection_args)
-    args[:response] = {} unless args[:response]
-    response = {'x-cdn-management-url' => 'http://cdn.example.com/path', 'x-storage-url' => 'http://cdn.example.com/storage', 'authtoken' => 'dummy_token', 'last-modified' => Time.now.to_s}.merge(args[:response])
-    # response.each_pair { |k,v| puts "\t#{k} => #{v}" }
-    # response.stubs(:code).returns(args[:code])
-    # response.stubs(:body).returns args[:body] || nil
+  def test_purge_from_cdn_fails
+    connection = stub(:storagehost => 'test.storage.example', :storagepath => '/dummy/path', :storageport => 443, :storagescheme => 'https', :cdnmgmthost => 'cdm.test.example', :cdnmgmtpath => '/dummy/path', :cdnmgmtport => 443, :cdnmgmtscheme => 'https', :cdn_available? => true, :cdnurl => 'http://foo.test.example/container', :storageurl => 'http://foo.test.example/container', :authtoken => "dummy token")
+    SwiftClient.stubs(:head_container).returns({'x-container-bytes-used' => '0','x-container-object-count' => '0'})
+    SwiftClient.stubs(:delete_container).raises(ClientException.new("test_purge_from_cdn_fails", :http_status => 500))
+    @container = CloudFiles::Container.new(connection, "test_container")
     
-    if !cfreq_expectations.empty?
-      #cfreq(method,server,path,port,scheme,headers = {},data = nil,attempts = 0,&block)
-      
-      parameter_expectations = [anything(), anything(), anything(), anything(), anything(), anything()]
-      parameter_expectations[0] = cfreq_expectations[:method] if cfreq_expectations[:method]
-      parameter_expectations[1] = cfreq_expectations[:path] if cfreq_expectations[:path]
-      
-      connection.expects(:cdn_request).with(*parameter_expectations).returns(response) if args[:cdn_request]
-      connection.expects(:storage_request).with(*parameter_expectations).returns(response)
-    else  
-      if args[:code]
-        SwiftClient.stubs(:head_container).raises(ClientException.new('error', :http_status => args[:code]))
-        SwiftClient.stubs(:put_container).raises(ClientException.new('error', :http_status => args[:code]))
-      else
-        SwiftClient.stubs(:head_container).returns(response)
-        SwiftClient.stubs(:put_container).returns(nil)
-      end
-      # connection.stubs(:cdn_request => response) if args[:cdn_request]
-      # connection.stubs(:storage_request => response)
+    assert_raise(CloudFiles::Exception::Connection) do
+      @container.purge_from_cdn
     end
-    
-    @container = CloudFiles::Container.new(connection, 'test_container')
-    @container.stubs(:connection).returns(connection)
   end
   
-  def build_net_http_object_with_cfreq_expectations(args={}, cfreq_expectations={})
-    build_net_http_object(args, cfreq_expectations)
+  
+  def test_cdn_metadata_fails
+    connection = stub(:storagehost => 'test.storage.example', :storagepath => '/dummy/path', :storageport => 443, :storagescheme => 'https', :cdnmgmthost => 'cdm.test.example', :cdnmgmtpath => '/dummy/path', :cdnmgmtport => 443, :cdnmgmtscheme => 'https', :cdn_available? => true, :cdnurl => 'http://foo.test.example/container', :storageurl => 'http://foo.test.example/container', :authtoken => "dummy token")
+    SwiftClient.stubs(:head_container).returns({'x-container-bytes-used' => '0','x-container-object-count' => '0'})
+    @container = CloudFiles::Container.new(connection, "test_container")    
+    SwiftClient.stubs(:head_container).raises(ClientException.new("test_cdn_metadata_fails", :http_status => 404))    
+    assert_raise(CloudFiles::Exception::NoSuchContainer) do
+      @container.cdn_metadata
+    end
+  end
+  
+  def test_cdn_metadata_no_cdn
+    connection = stub(:storagehost => 'test.storage.example', :storagepath => '/dummy/path', :storageport => 443, :storagescheme => 'https', :cdnmgmthost => 'cdm.test.example', :cdnmgmtpath => '/dummy/path', :cdnmgmtport => 443, :cdnmgmtscheme => 'https', :cdn_available? => false, :cdnurl => 'http://foo.test.example/container', :storageurl => 'http://foo.test.example/container', :authtoken => "dummy token")
+    SwiftClient.stubs(:head_container).returns({'x-container-bytes-used' => '0','x-container-object-count' => '0'})
+    @container = CloudFiles::Container.new(connection, "test_container")    
+    assert_equal @container.cdn_metadata, {}
+  end
+  
+  def test_bytes
+    connection = stub(:storagehost => 'test.storage.example', :storagepath => '/dummy/path', :storageport => 443, :storagescheme => 'https', :cdnmgmthost => 'cdm.test.example', :cdnmgmtpath => '/dummy/path', :cdnmgmtport => 443, :cdnmgmtscheme => 'https', :cdn_available? => false, :cdnurl => 'http://foo.test.example/container', :storageurl => 'http://foo.test.example/container', :authtoken => "dummy token")
+    SwiftClient.stubs(:head_container).returns({'x-container-bytes-used' => '99','x-container-object-count' => '10'})
+    @container = CloudFiles::Container.new(connection, "test_container")    
+    assert_equal @container.bytes, 99
+  end
+  
+  def test_count
+    connection = stub(:storagehost => 'test.storage.example', :storagepath => '/dummy/path', :storageport => 443, :storagescheme => 'https', :cdnmgmthost => 'cdm.test.example', :cdnmgmtpath => '/dummy/path', :cdnmgmtport => 443, :cdnmgmtscheme => 'https', :cdn_available? => false, :cdnurl => 'http://foo.test.example/container', :storageurl => 'http://foo.test.example/container', :authtoken => "dummy token")
+    SwiftClient.stubs(:head_container).returns({'x-container-bytes-used' => '0','x-container-object-count' => '10'})
+    @container = CloudFiles::Container.new(connection, "test_container")    
+    assert_equal @container.count, 10    
+  end
+  
+  def test_cdn_ssl_url
+    connection = stub(:storagehost => 'test.storage.example', :storagepath => '/dummy/path', :storageport => 443, :storagescheme => 'https', :cdnmgmthost => 'cdm.test.example', :cdnmgmtpath => '/dummy/path', :cdnmgmtport => 443, :cdnmgmtscheme => 'https', :cdn_available? => true, :cdnurl => 'http://foo.test.example/container', :storageurl => 'http://foo.test.example/container', :authtoken => "dummy token")
+    SwiftClient.stubs(:head_container).returns({'x-container-bytes-used' => '0','x-container-object-count' => '10', 'x-cdn-ssl-uri' => 'https://ssl.cdn.test.example/container', "x-cdn-enabled" => 'True'})
+    @container = CloudFiles::Container.new(connection, "test_container")    
+    assert_equal @container.cdn_ssl_url, 'https://ssl.cdn.test.example/container'
+  end
+  
+  def test_cdn_url
+    connection = stub(:storagehost => 'test.storage.example', :storagepath => '/dummy/path', :storageport => 443, :storagescheme => 'https', :cdnmgmthost => 'cdm.test.example', :cdnmgmtpath => '/dummy/path', :cdnmgmtport => 443, :cdnmgmtscheme => 'https', :cdn_available? => true, :cdnurl => 'http://foo.test.example/container', :storageurl => 'http://foo.test.example/container', :authtoken => "dummy token")
+    SwiftClient.stubs(:head_container).returns({'x-container-bytes-used' => '0','x-container-object-count' => '10', 'x-cdn-uri' => 'http://cdn.test.example/container', "x-cdn-enabled" => 'True'})
+    @container = CloudFiles::Container.new(connection, "test_container")    
+    assert_equal @container.cdn_url, 'http://cdn.test.example/container'
+  end
+  
+  def test_user_agent_acl
+    connection = stub(:storagehost => 'test.storage.example', :storagepath => '/dummy/path', :storageport => 443, :storagescheme => 'https', :cdnmgmthost => 'cdm.test.example', :cdnmgmtpath => '/dummy/path', :cdnmgmtport => 443, :cdnmgmtscheme => 'https', :cdn_available? => true, :cdnurl => 'http://foo.test.example/container', :storageurl => 'http://foo.test.example/container', :authtoken => "dummy token")
+    SwiftClient.stubs(:head_container).returns({'x-container-bytes-used' => '0','x-container-object-count' => '10', 'x-user-agent-acl' => nil})
+    @container = CloudFiles::Container.new(connection, "test_container")    
+    assert_equal @container.user_agent_acl, nil  
+  end
+  
+  def test_referrer_agent
+    connection = stub(:storagehost => 'test.storage.example', :storagepath => '/dummy/path', :storageport => 443, :storagescheme => 'https', :cdnmgmthost => 'cdm.test.example', :cdnmgmtpath => '/dummy/path', :cdnmgmtport => 443, :cdnmgmtscheme => 'https', :cdn_available? => true, :cdnurl => 'http://foo.test.example/container', :storageurl => 'http://foo.test.example/container', :authtoken => "dummy token")
+    SwiftClient.stubs(:head_container).returns({'x-container-bytes-used' => '0','x-container-object-count' => '10', 'x-referrer-acl' => nil})
+    @container = CloudFiles::Container.new(connection, "test_container")    
+    assert_equal @container.referrer_acl, nil      
+  end
+  
+  def test_metadata
+    connection = stub(:storagehost => 'test.storage.example', :storagepath => '/dummy/path', :storageport => 443, :storagescheme => 'https', :cdnmgmthost => 'cdm.test.example', :cdnmgmtpath => '/dummy/path', :cdnmgmtport => 443, :cdnmgmtscheme => 'https', :cdn_available? => true, :cdnurl => 'http://foo.test.example/container', :storageurl => 'http://foo.test.example/container', :authtoken => "dummy token")
+    SwiftClient.stubs(:head_container).returns({'x-container-bytes-used' => '0','x-container-object-count' => '10', 'x-container-meta-foo' => 'bar'})
+    @container = CloudFiles::Container.new(connection, "test_container")
+    assert_equal @container.metadata, {'foo' => 'bar'}
   end
 end

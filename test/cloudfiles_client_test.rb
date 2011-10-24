@@ -633,32 +633,6 @@ class SwiftClientTest < Test::Unit::TestCase
     end
   end
   
-  # def test_put_object_chunked
-  #   require 'tempfile'
-  #   out = Tempfile.new('test')
-  #   out.write("This is some test data")
-  #   response = stub(
-  #     :code => "201", 
-  #     :header => {"Content-Length" => 118, "Content-Type" => "text/html; charset=UTF-8", "Etag" => "asfasdfsdafasd2313241ukyhuyhj", "X-Trans-Id" => "txfoo1231231231232123"}, 
-  #     :message => "created"
-  #   )
-  #   conn = mock("Net::HTTP")
-  #   conn.stubs(:port).returns(123)
-  #   conn.stubs(:address).returns("foobar.com")
-  #   conn.stubs(:started?).returns(true)
-  #   conn.stubs(:put).returns(response)
-  #   SwiftClient.expects(:http_connection).returns([@parsed, conn])
-  #   begin
-  #     assert_nothing_raised do
-  #       out.rewind
-  #       SwiftClient.put_object(@url, @token, 'test_container', 'test_object', out, 2)
-  #     end
-  #   ensure
-  #     out.close
-  #     out.unlink
-  #   end
-  # end
-  
   def test_put_object_fails
     response = stub(
       :code => "500", 
@@ -744,6 +718,17 @@ class SwiftClientTest < Test::Unit::TestCase
       SwiftClient.delete_object(@url, @token, 'test_container', 'test_object')
     end
   end
+  
+  def test_retry_fails
+    auth_response = ['http://foo.bar:1234/v1/AUTH_test', 'AUTH_test', {'x-storage-url' => 'http://foo.bar:1234/v1/AUTH_test', 'x-storage-token' => 'AUTH_test', 'x-auth-token' => 'AUTH_test', 'content-length' => 0, 'date' => 'Tue, 11 Oct 2011 20:54:06 GMT'}]
+    SwiftClient.expects(:get_auth).returns(auth_response)
+    SwiftClient.any_instance.stubs(:http_connection).raises(ClientException.new("foobar"))
+    sc = SwiftClient.new(@url, @user, @key)
+    sc.get_auth
+    assert_raise(ClientException) do 
+      sc.get_container("test_container")
+    end
+  end
 
   def test_oop_swiftclient
     auth_response = ['http://foo.bar:1234/v1/AUTH_test', 'AUTH_test', {'x-storage-url' => 'http://foo.bar:1234/v1/AUTH_test', 'x-storage-token' => 'AUTH_test', 'x-auth-token' => 'AUTH_test', 'content-length' => 0, 'date' => 'Tue, 11 Oct 2011 20:54:06 GMT'}]
@@ -759,7 +744,8 @@ class SwiftClientTest < Test::Unit::TestCase
       {'Last-Modified' => 'Tue, 01 Jan 2011 00:00:01 GMT', 'Etag' => 'somelarge123hashthingy123foobar', 'Accept-Ranges' => 'bytes', 'Content-Length' => 29, 'Content-Type' => 'application/x-www-form-urlencoded', 'X-Trans-Id' => 'txffffffff00000001231231232112321', 'Date' => 'Tue, 01 Jan 2011 00:00:02 GMT', 'foo' => 'bar'},
       "some data that is from swift"
     ]
-    SwiftClient.expects(:http_connection).returns([@parsed, @conn])
+    # SwiftClient.expects(:http_connection).raises(Net::HTTPExceptions)
+    SwiftClient.expects(:http_connection).returns(Net::HTTPExceptions, [@parsed, @conn])
     SwiftClient.expects(:get_auth).returns(auth_response)
     SwiftClient.expects(:get_account).returns(account_response)
     SwiftClient.expects(:head_account).returns(account_response[0])
@@ -775,25 +761,38 @@ class SwiftClientTest < Test::Unit::TestCase
     SwiftClient.expects(:post_object).returns(nil)
     SwiftClient.expects(:delete_object).returns(nil)
     
-
-    sc = SwiftClient.new(@url, @user, @key)
-    #test account
-    sc.get_auth
-    sc.get_account
-    head_data = sc.head_account
-    sc.post_account({'foo'=>'bar'})
-    #test container
-    sc.get_container('test_container')
-    sc.head_container('test_container')
-    sc.put_container('test_container')
-    sc.post_container('test_container', {'foo' => 'bar'})
-    sc.delete_container('test_container')
-    #test object
-    sc.get_object('test_container', 'test_object')
-    sc.head_object('test_container', 'test_object')
-    sc.put_object('test_container', 'test_object', 'some data to put up')
-    sc.post_object('test_container', 'test_object', {"foo" => "bar"})
-    sc.delete_object('test_container', 'test_object')
-
+    assert_nothing_raised do
+      sc = SwiftClient.new(@url, @user, @key)
+      #test account
+      sc.get_auth
+      get_a   = sc.get_account
+      assert_equal 123456, get_a[0]['x-account-bytes-used']
+      assert_equal 123, get_a[0]['x-account-object-count']
+      assert_equal 'First', get_a[1][1]['name']
+      head_a  = sc.head_account
+      assert_equal 123456, head_a['x-account-bytes-used']
+      assert_equal 123, head_a['x-account-object-count']
+      sc.post_account({'foo'=>'bar'})
+      #test container
+      get_c   = sc.get_container('test_container')
+      assert_equal 'foo.mp4', get_c[1][0]['name']
+      assert_equal 6, get_c[0]['x-container-object-count']
+      assert_equal 'bar', get_c[0]['x-container-meta-foo']
+      head_c  = sc.head_container('test_container')
+      assert_equal 6, head_c['x-container-object-count']
+      assert_equal 'bar', head_c['x-container-meta-foo']
+      sc.put_container('test_container')
+      sc.post_container('test_container', {'foo' => 'bar'})
+      sc.delete_container('test_container')
+      #test object
+      get_o   = sc.get_object('test_container', 'test_object')
+      assert_equal "some data that is from swift", get_o[1] 
+      assert_equal "somelarge123hashthingy123foobar", get_o[0]['Etag']
+      head_o  = sc.head_object('test_container', 'test_object')
+      assert_equal "somelarge123hashthingy123foobar", head_o['Etag']
+      sc.put_object('test_container', 'test_object', 'some data to put up')
+      sc.post_object('test_container', 'test_object', {"foo" => "bar"})
+      sc.delete_object('test_container', 'test_object')
+    end
   end
 end

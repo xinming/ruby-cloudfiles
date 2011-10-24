@@ -1,6 +1,7 @@
 require 'rubygems'
 require 'uri'
-require 'net/http'
+# require 'net/http'
+# require 'net/https'
 require 'json'
 
 class ClientException < StandardError
@@ -153,10 +154,14 @@ private
 public
   def self.http_connection(url, proxy_host=nil, proxy_port=nil)
     parsed = URI::parse(url)
-    conn = Net::HTTP::Proxy(proxy_host, proxy_port).new(parsed.host, parsed.port)
+    
     if parsed.scheme == 'http'
+      require 'net/http'
+      conn = Net::HTTP::Proxy(proxy_host, proxy_port).new(parsed.host, parsed.port)
       [parsed, conn]
     elsif parsed.scheme == 'https'
+      require 'net/https'
+      conn = Net::HTTP::Proxy(proxy_host, proxy_port).new(parsed.host, parsed.port)
       conn.use_ssl = true
       conn.verify_mode = OpenSSL::SSL::VERIFY_NONE
       [parsed, conn]
@@ -176,9 +181,8 @@ public
   
   def self.get_auth(url, user, key, snet=false)
     parsed, conn = http_connection(url)
-    conn.start if !conn.started?
-    resp = conn.get(parsed.request_uri, 
-      { "x-auth-user" => user, "x-auth-key" => key })
+    conn.start if not conn.started?
+    resp = conn.get(URI.encode(parsed.request_uri), {"x-auth-user" => user, "x-auth-key" => key })
     if resp.code.to_i < 200 or resp.code.to_i > 300
       raise ClientException.new('Account GET failed', :http_scheme=>parsed.scheme,
                   :http_host=>conn.address, :http_port=>conn.port,

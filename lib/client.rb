@@ -1,7 +1,5 @@
 require 'rubygems'
 require 'uri'
-# require 'net/http'
-# require 'net/https'
 require 'json'
 
 class ClientException < StandardError

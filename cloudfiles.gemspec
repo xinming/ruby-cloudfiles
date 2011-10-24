@@ -23,6 +23,7 @@ Gem::Specification.new do |s|
      "TODO",
      "cloudfiles.gemspec",
      "lib/cloudfiles.rb",
+     "lib/client.rb",
      "lib/cloudfiles/authentication.rb",
      "lib/cloudfiles/connection.rb",
      "lib/cloudfiles/container.rb",
@@ -34,6 +35,7 @@ Gem::Specification.new do |s|
      "test/cloudfiles_connection_test.rb",
      "test/cloudfiles_container_test.rb",
      "test/cloudfiles_storage_object_test.rb",
+     "test/cloudfiles_client_test.rb",
      "test/test_helper.rb"
   ]
   s.homepage = %q{http://www.rackspacecloud.com/cloud_hosting_products/files}
@@ -47,6 +49,7 @@ Gem::Specification.new do |s|
      "test/cloudfiles_connection_test.rb",
      "test/cloudfiles_container_test.rb",
      "test/cloudfiles_storage_object_test.rb",
+     "test/cloudfiles_client_test.rb",
      "test/test_helper.rb"
   ]
 

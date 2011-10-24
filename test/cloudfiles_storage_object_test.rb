@@ -3,11 +3,6 @@ require 'test_helper'
 
 class CloudfilesStorageObjectTest < Test::Unit::TestCase
 
-  def setup
-    # @connection = stub(:storagehost => 'test.storage.example', :storagepath => '/dummy/path', :storageport => 443, :storagescheme => 'https', :cdnmgmthost => 'cdm.test.example', :cdnmgmtpath => '/dummy/path', :cdnmgmtport => 443, :cdnmgmtscheme => 'https', :cdn_available? => true, :cdnurl => 'http://foo.test.example/container', :storageurl => 'http://foo.test.example/container', :authtoken => "dummy token")
-    # @response = {'x-cdn-management-url' => 'http://cdn.example.com/path', 'x-storage-url' => 'http://cdn.example.com/storage', 'authtoken' => 'dummy_token', 'last-modified' => Time.now.to_s}
-  end
-
   def test_object_creation
     build_swift_client_object
     assert_equal @object.name, 'test_object'

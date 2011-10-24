@@ -417,7 +417,6 @@ class CloudfilesContainerTest < Test::Unit::TestCase
     end
   end
   
-  
   def test_purge_from_cdn_succeeds
     connection = stub(:storagehost => 'test.storage.example', :storagepath => '/dummy/path', :storageport => 443, :storagescheme => 'https', :cdnmgmthost => 'cdm.test.example', :cdnmgmtpath => '/dummy/path', :cdnmgmtport => 443, :cdnmgmtscheme => 'https', :cdn_available? => true, :cdnurl => 'http://foo.test.example/container', :storageurl => 'http://foo.test.example/container', :authtoken => "dummy token")
     SwiftClient.stubs(:head_container).returns({'x-container-bytes-used' => '0','x-container-object-count' => '0'})
@@ -440,7 +439,6 @@ class CloudfilesContainerTest < Test::Unit::TestCase
       @container.purge_from_cdn
     end
   end
-  
   
   def test_cdn_metadata_fails
     connection = stub(:storagehost => 'test.storage.example', :storagepath => '/dummy/path', :storageport => 443, :storagescheme => 'https', :cdnmgmthost => 'cdm.test.example', :cdnmgmtpath => '/dummy/path', :cdnmgmtport => 443, :cdnmgmtscheme => 'https', :cdn_available? => true, :cdnurl => 'http://foo.test.example/container', :storageurl => 'http://foo.test.example/container', :authtoken => "dummy token")

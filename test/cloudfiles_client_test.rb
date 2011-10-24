@@ -719,7 +719,7 @@ class SwiftClientTest < Test::Unit::TestCase
     end
   end
   
-  def test_retry_fails
+  def test_retry_failse
     auth_response = ['http://foo.bar:1234/v1/AUTH_test', 'AUTH_test', {'x-storage-url' => 'http://foo.bar:1234/v1/AUTH_test', 'x-storage-token' => 'AUTH_test', 'x-auth-token' => 'AUTH_test', 'content-length' => 0, 'date' => 'Tue, 11 Oct 2011 20:54:06 GMT'}]
     SwiftClient.expects(:get_auth).returns(auth_response)
     SwiftClient.any_instance.stubs(:http_connection).raises(ClientException.new("foobar"))
@@ -744,7 +744,6 @@ class SwiftClientTest < Test::Unit::TestCase
       {'Last-Modified' => 'Tue, 01 Jan 2011 00:00:01 GMT', 'Etag' => 'somelarge123hashthingy123foobar', 'Accept-Ranges' => 'bytes', 'Content-Length' => 29, 'Content-Type' => 'application/x-www-form-urlencoded', 'X-Trans-Id' => 'txffffffff00000001231231232112321', 'Date' => 'Tue, 01 Jan 2011 00:00:02 GMT', 'foo' => 'bar'},
       "some data that is from swift"
     ]
-    # SwiftClient.expects(:http_connection).raises(Net::HTTPExceptions)
     SwiftClient.expects(:http_connection).returns(Net::HTTPExceptions, [@parsed, @conn])
     SwiftClient.expects(:get_auth).returns(auth_response)
     SwiftClient.expects(:get_account).returns(account_response)

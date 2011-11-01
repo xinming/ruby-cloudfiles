@@ -145,6 +145,10 @@ module CloudFiles
     def cdn_ssl_url
       self.cdn_metadata[:cdn_ssl_url]
     end
+    # CDN Streaming container URL (if container is public)
+    def cdn_ssl_url
+      self.cdn_metadata[:cdn_streaming_url]
+    end
 
     # CDN Streaming container URL (if container is public)
     def cdn_ssl_url

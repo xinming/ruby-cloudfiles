@@ -66,8 +66,6 @@ module CloudFiles
               :cdn_url => cdn_enabled ? response["x-cdn-uri"] : nil,
               :cdn_ssl_url => cdn_enabled ? response["x-cdn-ssl-uri"] : nil,
               :cdn_streaming_url => cdn_enabled ? response["x-cdn-streaming-uri"] : nil,
-              :user_agent_acl => response["x-user-agent-acl"],
-              :referrer_acl => response["x-referrer-acl"],
               :cdn_log => (cdn_enabled and response["x-log-retention"] == "True") ? true : false
             }
           rescue ClientException => e
@@ -153,16 +151,6 @@ module CloudFiles
        self.cdn_metadata[:cdn_streaming_url]
     end
 
-    # The container ACL on the User Agent
-    def user_agent_acl
-      self.cdn_metadata[:user_agent_acl]
-    end
-
-    # The container ACL on the site Referrer
-    def referrer_acl
-      self.cdn_metadata[:referrer_acl]
-    end
-
     #used by openstack swift
     def read_acl
       self.container_metadata[:container_read]
@@ -179,6 +167,7 @@ module CloudFiles
     end
     alias :log_retention? :cdn_log
     alias :cdn_log? :cdn_log
+
 
     # Change the log retention status for this container.  Values are true or false.
     #

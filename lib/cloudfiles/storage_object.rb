@@ -214,14 +214,6 @@ module CloudFiles
 
     def write(data = nil, headers = {})
       raise CloudFiles::Exception::Syntax, "No data or header updates supplied" if ((data.nil? && $stdin.tty?) and headers.empty?)
-      if headers['Content-Type'].nil?
-        type = MIME::Types.type_for(self.name).first.to_s
-        if type.empty?
-          headers['Content-Type'] = "application/octet-stream"
-        else
-          headers['Content-Type'] = type
-        end
-      end
       # If we're taking data from standard input, send that IO object to cfreq
       data = $stdin if (data.nil? && $stdin.tty? == false)
       begin

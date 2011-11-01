@@ -1,3 +1,3 @@
 module CloudFiles
-  VERSION = '1.4.17scott'
+  VERSION = '1.5.0'
 end

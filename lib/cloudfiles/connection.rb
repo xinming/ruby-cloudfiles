@@ -217,7 +217,7 @@ module CloudFiles
     # Creates a new container and returns the CloudFiles::Container object.  Throws an InvalidResponseException if the
     # request fails.
     #
-    # Slash (/) and question mark (?) are invalid characters, and will be stripped out.  The container name is limited to
+    # "/" is not valid in a container name.  The container name is limited to
     # 256 characters or less.
     #
     #   container = cf.create_container('new_container')
@@ -225,9 +225,9 @@ module CloudFiles
     #   => "new_container"
     #
     #   container = cf.create_container('bad/name')
-    #   => SyntaxException: Container name cannot contain the characters '/' or '?'
+    #   => SyntaxException: Container name cannot contain '/'
     def create_container(containername)
-      raise CloudFiles::Exception::Syntax, "Container name cannot contain the characters '/' or '?'" if containername.match(/[\/\?]/)
+      raise CloudFiles::Exception::Syntax, "Container name cannot contain '/'" if containername.match("/")
       raise CloudFiles::Exception::Syntax, "Container name is limited to 256 characters" if containername.length > 256
       begin
         SwiftClient.put_container(storageurl, self.authtoken, containername)
@@ -282,90 +282,5 @@ module CloudFiles
     def cdnurl
       "#{self.cdnmgmtscheme}://#{self.cdnmgmthost}:#{self.cdnmgmtport.to_s}#{self.cdnmgmtpath}"
     end
-
-    
-    # ---- get rid of ----
-    # def storage_request(method, path = "", headers = {}, data = nil, attempts = 0, &block)
-    #   path = "#{@storagepath}/#{path}" unless (path[0,1] == '/')
-    #   cfreq(method, @storagehost, path, @storageport, @storagescheme, headers, data, attempts, &block)
-    # end
-    # 
-    # def cdn_request(method, path = "", headers = {}, data = nil, attempts = 0, &block)
-    #   path = "#{@cdnmgmtpath}/#{path}" unless (path[0,1] == '/')
-    #   cfreq(method, @cdnmgmthost, path, @cdnmgmtport, @cdnmgmtscheme, headers, data, attempts, &block)
-    # end
-    # 
-    # # This method actually makes the HTTP calls out to the server
-    # def cfreq(method, server, path, port, scheme, headers = {}, data = nil, attempts = 0, &block) # :nodoc:
-    #   start = Time.now
-    #   headers['Transfer-Encoding'] = "chunked" if data.respond_to?(:read)
-    #   hdrhash = headerprep(headers)
-    #   start_http(server, path, port, scheme, hdrhash)
-    #   request = Net::HTTP.const_get(method.to_s.capitalize).new(path, hdrhash)
-    #   data.rewind if data.respond_to?(:rewind)
-    #   if data
-    #     if data.respond_to?(:read)
-    #       request.body_stream = data
-    #     else
-    #       request.body = data
-    #     end
-    #     unless data.is_a?(IO)
-    #       request.content_length = data.respond_to?(:lstat) ? data.stat.size : data.size
-    #     end
-    #   else
-    #     request.content_length = 0
-    #   end
-    #   response = @http[server].request(request, &block)
-    #   raise CloudFiles::Exception::ExpiredAuthToken if response.code == "401"
-    #   response
-    # rescue Errno::EPIPE, Timeout::Error, Errno::EINVAL, EOFError, IOError
-    #   # Server closed the connection, retry
-    #   if attempts >= 5
-    #     host_str = server.respond_to?(:address) ? server.address : server
-    #     raise CloudFiles::Exception::Connection, "Unable to reconnect to #{host_str} after #{attempts} attempts", caller
-    #   end
-    # 
-    #   attempts += 1
-    #   begin
-    #     @http[server].finish
-    #   rescue
-    #     nil
-    #   end
-    #   start_http(server, path, port, scheme, headers)
-    #   retry
-    # rescue ExpiredAuthTokenException
-    #   raise CloudFiles::Exception::Connection, "Authentication token expired and you have requested not to retry", caller if @retry_auth == false
-    #   CloudFiles::Authentication.new(self)
-    #   retry
-    # end
-    # 
-    # private
-    #   
-    # # Sets up standard HTTP headers
-    # def headerprep(headers = {}) # :nodoc:
-    #   default_headers = {}
-    #   default_headers["X-Auth-Token"] = @authtoken if (authok? && @account.nil?)
-    #   default_headers["X-Storage-Token"] = @authtoken if (authok? && !@account.nil?)
-    #   default_headers["Connection"] = "Keep-Alive"
-    #   default_headers["User-Agent"] = "CloudFiles Ruby API #{VERSION}"
-    #   default_headers.merge(headers)
-    # end
-    # 
-    # # Starts (or restarts) the HTTP connection
-    # def start_http(server, path, port, scheme, headers) # :nodoc:
-    #   if (@http[server].nil?)
-    #     begin
-    #       @http[server] = Net::HTTP::Proxy(self.proxy_host, self.proxy_port).new(server, port)
-    #       if scheme == "https"
-    #         @http[server].use_ssl = true
-    #         @http[server].verify_mode = OpenSSL::SSL::VERIFY_NONE
-    #       end
-    #       @http[server].start
-    #     rescue Exception
-    #       raise CloudFiles::Exception::Connection, "Unable to connect to #{server.address}", caller
-    #     end
-    #   end
-    # end
-    # ---- get rid of ----
   end
 end

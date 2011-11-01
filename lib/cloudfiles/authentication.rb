@@ -8,7 +8,7 @@ module CloudFiles
     # cdmmgmtpath, storagehost, storagepath, authtoken, and authok variables on the connection.  If it fails, it raises
     # an CloudFiles::Exception::Authentication exception.
     #
-    # Should probably never be called directly.
+    # Should never be called directly.
     def initialize(connection)
       begin
         storage_url, auth_token, headers = SwiftClient.get_auth(connection.auth_url, connection.authuser, connection.authkey, connection.snet?)
@@ -40,10 +40,6 @@ module CloudFiles
     end
 
     private
-
-      # def get_server(connection, parsed_auth_url)
-      #   Net::HTTP::Proxy(connection.proxy_host, connection.proxy_port).new(parsed_auth_url.host, parsed_auth_url.port)
-      # end
 
       def set_snet(connection, hostname)
         if connection.snet?

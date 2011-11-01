@@ -30,7 +30,6 @@ module CloudFiles
   require 'digest/md5'
   require 'time'
   require 'rubygems'
-  require 'mime/types'
 
   unless "".respond_to? :each_char
     require "jcode"

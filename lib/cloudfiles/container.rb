@@ -145,14 +145,10 @@ module CloudFiles
     def cdn_ssl_url
       self.cdn_metadata[:cdn_ssl_url]
     end
-    # CDN Streaming container URL (if container is public)
-    def cdn_ssl_url
-      self.cdn_metadata[:cdn_streaming_url]
-    end
 
     # CDN Streaming container URL (if container is public)
-    def cdn_ssl_url
-       self.cdn_metadata[:cdn_streaming_url]
+    def cdn_streaming_url
+      self.cdn_metadata[:cdn_streaming_url]
     end
 
     #used by openstack swift

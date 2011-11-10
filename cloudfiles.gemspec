@@ -53,6 +53,8 @@ Gem::Specification.new do |s|
      "test/test_helper.rb"
   ]
 
+  s.add_dependency('json')
+
   if s.respond_to? :specification_version then
     s.specification_version = 3
 

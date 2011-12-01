@@ -34,7 +34,9 @@ class SwiftClientTest < Test::Unit::TestCase
   def test_query
     query = Query.new("foo=bar&baz=quu")
     query.add("chunky", "bacon")
-    assert_equal "chunky=bacon&baz=quu&foo=bar", query.to_s
+    assert_match /chunky=bacon/, query.to_s
+    assert_match /foo=bar/, query.to_s
+    assert_match /baz=quu/, query.to_s
     assert query.has_key? "chunky"
     query.delete("chunky")
     assert_equal false, query.has_key?("chunky")

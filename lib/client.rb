@@ -34,16 +34,13 @@ end
 class ChunkedConnectionWrapper
   def initialize(data, chunk_size)
     @size = chunk_size
-    if data.respond_to? :read
-      @file = data
-    end
+    @file = data
   end
   
   def read(foo)
-    if @file
-      @file.read(@size)
-    end
+    @file.read(@size)
   end
+
   def eof!
     @file.eof!
   end
@@ -509,8 +506,9 @@ public
   end
 
   def self.put_object(url, token=nil, container=nil, name=nil, contents=nil,
-                 content_length=nil, etag=nil, chunk_size=65536,
+                 content_length=nil, etag=nil, chunk_size=nil,
                  content_type=nil, headers={}, http_conn=nil, proxy=nil)
+    chunk_size ||= 65536
     if not http_conn
       http_conn = http_connection(url)
     end

@@ -559,10 +559,8 @@ class SwiftClientTest < Test::Unit::TestCase
     conn.stubs(:head).returns(response)
     SwiftClient.expects(:http_connection).returns([@parsed, conn])
     
-    assert_nothing_raised do
-      headers = SwiftClient.head_object(@url, @token, 'test_container', 'test_object')
-      assert response.header, headers
-    end
+    headers = SwiftClient.head_object(@url, @token, 'test_container', 'test_object')
+    assert_equal response.header, headers
   end
   
   def test_head_object_fails

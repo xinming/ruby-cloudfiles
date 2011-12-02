@@ -308,7 +308,6 @@ module CloudFiles
     def save_to_filename(filename)
       File.open(filename, 'wb+') do |f|
         self.data_stream do |chunk|
-          puts chunk.length
           f.write chunk
         end
       end

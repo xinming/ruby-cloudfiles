@@ -95,7 +95,7 @@ class CloudfilesContainerTest < Test::Unit::TestCase
     CloudFiles::Container.any_instance.stubs(:post_with_headers).returns(nil)
     @container = CloudFiles::Container.new(connection, 'test_container')
     assert_nothing_raised do
-      @container.make_public(123)
+      @container.make_public(:ttl => 123)
     end
   end
   

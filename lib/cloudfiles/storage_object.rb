@@ -376,7 +376,7 @@ module CloudFiles
       # , 'Content-Type' => self.content_type
       new_path = "#{CloudFiles.escape new_container}/#{escape_name new_name}"
       begin
-        response = SwiftClient.put_object(self.container.connection.storageurl, self.container.connection.authtoken, (CloudFiles.escape new_container), escaped_name(new_name), nil, nil, nil, nil, nil, headers)
+        response = SwiftClient.put_object(self.container.connection.storageurl, self.container.connection.authtoken, (CloudFiles.escape new_container), escape_name(new_name), nil, nil, nil, nil, nil, headers)
         return CloudFiles::Container.new(self.container.connection, new_container).object(new_name)
       rescue ClientException => e
         code = e.status.to_s

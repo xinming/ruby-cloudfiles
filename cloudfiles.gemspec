@@ -3,7 +3,6 @@ require File.expand_path('../lib/cloudfiles/version', __FILE__)
 Gem::Specification.new do |s|
   s.name = %q{cloudfiles}
   s.version = CloudFiles::VERSION
-
   s.required_rubygems_version = Gem::Requirement.new(">= 0") if s.respond_to? :required_rubygems_version=
   s.authors = ["H. Wade Minter", "Rackspace Hosting"]
   s.description = %q{A Ruby version of the Rackspace Cloud Files API.}
@@ -41,7 +40,7 @@ Gem::Specification.new do |s|
   s.homepage = %q{http://www.rackspacecloud.com/cloud_hosting_products/files}
   s.rdoc_options = ["--charset=UTF-8"]
   s.require_paths = ["lib"]
-  s.rubygems_version = %q{1.5.0}
+  s.rubygems_version = %q{1.5.0.1}
   s.summary = %q{A Ruby API into Rackspace Cloud Files}
   s.test_files = [
     "test/cf-testunit.rb",

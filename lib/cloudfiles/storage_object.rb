@@ -400,7 +400,7 @@ module CloudFiles
     end
 
     def escape_name(name)
-      CloudFiles.escape name, "\/"
+      CloudFiles.escape name
     end
 
     private

@@ -40,6 +40,9 @@ See the class definitions for documentation on specific methods and operations.
   # Or, if you want to access the United Kingdom cloud installations, there's a handy constant:
   cf = CloudFiles::Connection.new(:username => "MY_USERNAME", :api_key => "MY_API_KEY", :auth_url => CloudFiles::AUTH_UK)
 
+  # Or, if you want to access CloudFiles from within the Rackspace network
+  cf = CloudFiles::Connection.new(:username => "MY_USERNAME", :api_key => "MY_API_KEY", :snet => true)
+
   # Get a listing of all containers under this account
   cf.containers
   => ["backup", "Books", "cftest", "test", "video", "webpics"]

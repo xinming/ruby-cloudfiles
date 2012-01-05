@@ -28,6 +28,7 @@ module CloudFiles
   require 'cgi'
   require 'uri'
   require 'digest/md5'
+  require 'date'
   require 'time'
   require 'rubygems'
 

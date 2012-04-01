@@ -188,6 +188,19 @@ module CloudFiles
     end
 
 
+    def set_cors_header(origin_domain = "*")
+      headers = {"Access-Control-Allow-Origin" => origin_domain}
+      begin
+        SwiftClient.post_object(self.container.connection.storageurl, self.container.connection.authtoken, self.container.escaped_name, escaped_name, headers)
+        true
+      rescue ClientException => e
+        raise CloudFiles::Exception::NoSuchObject, "Object #{@name} does not exist" if (response.code == "404")
+        raise CloudFiles::Exception::InvalidResponse, "Invalid response code #{response.code}" unless (response.code =~ /^20/)
+        false
+      end
+    end
+
+
     # Takes supplied data and writes it to the object, saving it.  You can supply an optional hash of headers, including
     # Content-Type and ETag, that will be applied to the object.
     #
